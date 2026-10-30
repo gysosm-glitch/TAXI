@@ -23,6 +23,7 @@ python scripts/build_app_data_and_seed.py .
 | 06 | **정책 옵션·재정 앵커** — 시뮬레이터 | `06_policy/policy_params.json` | P0~P4 옵션, 앵커(4억/40억/33억), 보정계수 | [보도]+[가정] | — |
 | 07 | **출처** — 출처 화면, 발표 각주 | `07_sources/sources.json` | id, publisher, date, claim, url | — | — |
 | 08 | **세종·대전 확장** — 로드맵 페이지 | `08_expansion/expansion_regions.json` | 사업구역 제약, 회랑(오송–세종, 청주–대전), 제안 | [보도] | — |
+| 09 | **법적 요건** — 법·안전 탭, 동의·본인확인·동성 매칭·탑승 전 고지·112 | `09_compliance/legal_requirements.json` | law, requirement, implemented, screen, source, verified | [보도]/일부 원문 대조 필요 | — |
 
 ## 핵심 가정 (발표 때 반드시 밝힐 것)
 
@@ -40,3 +41,11 @@ python scripts/build_app_data_and_seed.py .
 | 복합할증 적용 운행·오송역 승차 집계 (#17933363) | `03_demand` 택시통행 → 실측치, 보정계수 재계산 |
 | 손실보전 기준 (#17933366) | `06_policy` anchors |
 | 개편 연구용역 보고서 (#17933359) | `06_policy` options, `07_sources` |
+
+## 사용자 시뮬레이션 (src/lib/simulate.js)
+
+- 입력: `taxi_od_pairs` 평일 택시통행 × 시간대 비중(가정) × 앱 참여율 → 포아송 분포로 가상 요청 생성
+- 매칭: 출발·도착 읍면동이 같고, 동성이며, 최대 대기(10/15/20분) 안에 출발하는 사람끼리 최대 2~3명
+- 출력: 매칭 성공률, 평균 대기, 1인 평균 부담, 할증 구간 이용자 중 '할증 없는 혼자 요금'보다 싸게 탄 비율, 일·연간 시민 절감액
+- 같은 시드면 같은 결과가 나와 발표 중 숫자가 바뀌지 않는다
+- 참고값(오송·오창 관련 구간, 15분, 3명): 참여율 1% → 매칭 22%, 5% → 46%, 10% → 56%, 20% → 64%
