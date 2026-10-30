@@ -1,10 +1,10 @@
 {
-  "name": "청주 택시 복합할증 계산기 · 합승 시뮬레이터",
-  "short_name": "청주택시",
+  "name": "같이타 청주 · 복합할증 개선 매칭",
+  "short_name": "같이타",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0b3d6e",
+  "theme_color": "#ffcd00",
   "lang": "ko",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }

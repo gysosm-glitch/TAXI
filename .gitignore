@@ -9,3 +9,7 @@ dist/
 *.xls
 .DS_Store
 Thumbs.db
+
+# 공공데이터 원본 압축·대용량 파일 (가공 결과만 커밋)
+data/web/*.zip
+data/web/10_tims/tims_region_stats_2022_2025.csv
