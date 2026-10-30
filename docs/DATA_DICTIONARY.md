@@ -1,51 +1,76 @@
-# 웹 개발용 데이터 — 요소별 정리 (data/web)
+# 데이터 목록 (팀 공유용)
 
-`scripts/build_web_data.py`가 `data/raw`에서 생성한다. 원천 데이터를 바꾸면 아래 두 줄로 전부 다시 만든다.
+> 최종 정리 2026-10-31. 표시: ✅ 앱에서 사용 · 📊 분석·발표 근거 · 🗄️ 보관(향후 기능용)
+
+## 1. 원본 데이터 `data/raw/`
+
+| 파일 | 내용 | 출처 | 기준 | 상태 |
+|---|---|---|---|---|
+| `청주시_주수단OD_2024_평일.csv` | 43존×43존 수단별 평일 통행(택시 19.3만/일) | 팀 제공 (KTDB 가공 추정, **원 출처 확인 필요**) | 2024 | 📊 |
+| `청주시_목적OD_2024_평일.csv` | 같은 존, 목적별(출근·등교·업무·귀가·기타) | 위와 같음 | 2024 | 📊 |
+| `청주시_읍면별_시내연결_요약_2024.csv` | 13개 읍·면 요약 (위 OD에서 파생) | 팀 가공 | 2024 | 📊 |
+| `청주시_노드링크별_평균택시통행량_읍면동_2025.csv` | 도로 링크 11,032개 일평균 택시통행량 | 국토부, 공공데이터포털 15069016 | 2025 | 📊 |
+| `청주시_읍면동_경계_2025.geojson` / `_shp.zip` | 43개 존 경계 | 팀 제공 (SGIS 계열 추정) | 2025 | ✅ (가공 후) |
+| `청주택시_시민설문_문항.pdf` | 설문 12문항 | 팀 작성 | 2026-10 | 연령·성별 문항 추가 필요 |
+| `충청북도_청주시_버스정보시스템_20261002.csv` | 청주 버스 정류장 2,952개 좌표 | 청주시, 공공데이터포털 15041896 | 2026-10 | ✅ (가공 후) |
+| `국토교통부_..._격자별 영업통계_20251231.zip` (25MB) | 전국 500m 격자 월별 승차·매출·거리 | 국토부 TIMS, 15160181 | 2025 | **GitHub 미포함** (용량). 공공데이터포털에서 직접 받기 |
+| `국토교통부_..._영업통계_20251231.zip` | 지자체별 월별 운행·공차 통계 | 국토부 TIMS, 15065131 | 2022~2025 | **GitHub 미포함**. 직접 받기 |
+
+## 2. 가공 데이터 `data/web/`
+
+| 폴더 | 파일 | 내용 | 상태 |
+|---|---|---|---|
+| `01_zones` | `zones.json`, `zones.csv`, `zones.geojson` | 존 번호·이름·동/읍/면·중심 좌표·경계 | ✅ |
+| `02_fare_rules` | `fare_rules.json` | 동·읍면 요율, 9/28 개편 할증 적용 규칙 (보도 기준) | ✅ |
+| `03_demand` | `taxi_od_pairs.csv` / `.min.json` | 존 쌍별 택시 통행·할증 여부·추정 거리·요금 | ✅ |
+| | `surcharge_demand_summary.csv`, `taxi_link_volume_by_zone.csv`, `top50_taxi_links.csv`, `eupmyeon_city_link_summary.csv` | 할증 구분별 통행, 링크 통행 요약 | 📊 |
+| `05_matching` | `matching_rules.json` | 매칭 조건(반경·시간·동성·분담) | ✅ |
+| | `synthetic_ride_requests.csv/.json` | 합성 합승 요청 240건 (Supabase 시드) | 🗄️ |
+| `10_tims` | `tims_app.json` | 청주 승차 요약·격자 422곳·보정계수 (앱용 묶음) | ✅ |
+| | `tims_pickups_by_zone_2025.csv` | 43개 존별 2025 승차·매출·평균요금·평균거리 | 📊 |
+| | `tims_pickups_by_cell_2025.csv` | 청주 500m 격자 2,739곳 연간 승차 | 📊 |
+| | `tims_landmarks_2025.csv`, `tims_pickups_monthly_2025.csv` | 주요 지점·월별 승차 | 📊 |
+| | `tims_region_compare_2025.csv`, `tims_cheongju_yearly.csv` | 160개 지자체 공차율 비교, 청주 연도별 | 📊 |
+| | `bus_stops_by_zone.csv` | 존별 정류장 수 | 📊 |
+| `11_solutions` | `solutions.json` | 복합할증 해결 방안 사례·연구 19건 (출처 포함) | 📊 |
+| `12_simulation` | `agent_results.json` | 택시·승객 행위자 시뮬레이션 6개 시나리오 결과 | 📊 |
+| `13_spots` | `spots.json` | 매칭 스팟 8곳 점수·순위 | ✅ |
+| | `bus_stops.json` | 정류장 좌표·이름 (위치 표시용) | ✅ |
+| `14_risk` | `empty_risk.json` | 13개 읍·면 공차 위험 지수 | 📊 |
+
+## 3. 다시 만드는 방법
 
 ```bash
 python scripts/build_web_data.py data/raw data/web
 python scripts/build_app_data_and_seed.py .
+python scripts/select_spots.py .
+python scripts/empty_risk_index.py .
+node scripts/precompute_agents.mjs
 ```
 
-신뢰 등급 표기: **[보도]** 언론 보도 기준 · **[공공]** 공공데이터 가공/추정 · **[가정]** 팀이 둔 가정값 · **[합성]** 데모용 가상 데이터
+TIMS 분석(`10_tims`)을 다시 하려면 TIMS 압축 2개를 풀어서 폴더를 지정한다.
 
-| # | 요소 (화면 기능) | 파일 | 주요 필드 | 등급 | Supabase 테이블 |
-|---|---|---|---|---|---|
-| 01 | **지역(존)** — 출발·도착 선택, 할증 판정, 지도 | `01_zones/zones.geojson`, `zones.csv`, `zones.json` | zone_id(107~149), name, gu, type(dong/eup/myeon), is_eupmyeon, adm_code, centroid_lon/lat | [공공] | `zones` |
-| 02 | **요금 규칙** — 요금 엔진 상수 | `02_fare_rules/fare_rules.json` | dong_rate / eupmyeon_rate(기본요금·기본거리·단위거리·단위요금), surcharge_applies(9/28 개편), night_surcharge(미확인) | [보도] | `fare_rules` |
-| 03 | **수요** — 정책 시뮬레이터, 대시보드 | `03_demand/taxi_od_pairs.csv`(+`.min.json`) | origin/dest, category, surcharged_now, taxi_trips_per_weekday, est_distance_km, est_fare_* | [공공]+[가정] | (앱 번들) |
-|  |  | `03_demand/surcharge_demand_summary.csv` | 구분별 택시통행·일 할증액(전체 / 오송·오창 관련) | [공공] |  |
-|  |  | `03_demand/taxi_link_volume_by_zone.csv`, `top50_taxi_links.csv` | 읍면동별 링크 택시통행량, 상위 50 링크 | [공공] |  |
-|  |  | `03_demand/eupmyeon_city_link_summary.csv` | 13개 읍·면의 시내 연결 통행 | [공공] |  |
-| 04 | **시나리오** — 요금 계산 원클릭 칩 | `04_scenarios/places.json`, `scenarios.json` | 장소 좌표, 구분, 추정거리, 현행/동요율 요금, 1~4인 1인 부담 | [가정] 거리 | `scenarios` |
-| 05 | **합승 매칭** — 요청 목록, 매칭 규칙 | `05_matching/matching_rules.json` | 반경·시간창·동성 조건·분담 방식·필수 안전 UI·법적 고지 | [보도] | — |
-|  |  | `05_matching/synthetic_ride_requests.csv`(+`.json`) | 240건(OD 가중 200 + 피크 클러스터 40), is_synthetic=true | [합성] | `ride_requests` |
-| 06 | **정책 옵션·재정 앵커** — 시뮬레이터 | `06_policy/policy_params.json` | P0~P4 옵션, 앵커(4억/40억/33억), 보정계수 | [보도]+[가정] | — |
-| 07 | **출처** — 출처 화면, 발표 각주 | `07_sources/sources.json` | id, publisher, date, claim, url | — | — |
-| 08 | **세종·대전 확장** — 로드맵 페이지 | `08_expansion/expansion_regions.json` | 사업구역 제약, 회랑(오송–세종, 청주–대전), 제안 | [보도] | — |
-| 09 | **법적 요건** — 법·안전 탭, 동의·본인확인·동성 매칭·탑승 전 고지·112 | `09_compliance/legal_requirements.json` | law, requirement, implemented, screen, source, verified | [보도]/일부 원문 대조 필요 | — |
+```bash
+python scripts/analyze_tims.py <격자CSV폴더> <영업통계CSV폴더> data/raw/충청북도_청주시_버스정보시스템_20261002.csv data/raw/청주시_읍면동_경계_2025.geojson data/web/10_tims
+python scripts/build_tims_app_data.py .
+```
 
-## 핵심 가정 (발표 때 반드시 밝힐 것)
+격자 ID는 국가지점번호 체계다. 한글 2자는 100km 블록(UTM-K), 숫자 6자리는 블록 안 500m 셀 번호(X 3자리·Y 3자리, 0~199)다.
 
-- **거리**: 존 중심 간 직선거리 × 1.35(우회계수). 같은 존 내부는 동 2.5km / 읍 3.5km / 면 4.0km. Kakao Mobility 길찾기로 교체 예정.
-- **연간 환산**: 평일 OD × 300일.
-- **보정계수 0.061**: OD로 계산한 1단계(같은 읍·면 내부) 연간 차액이 약 65.9억 원으로, 시 보전액 4억 원의 약 16배다. OD 택시통행(모형 추정치)이 과대하거나, 시 보전이 차액의 일부만 보전하기 때문으로 보인다. 이 계수를 모든 비용에 곱한다.
-- **검증 포인트**: 같은 계수로 전면 해제(P3)를 계산하면 연 약 38.8억 원 → 별도 보도된 "약 40억 원"과 일치. 두 독립 수치가 맞물린다는 점을 발표에서 강조할 수 있다.
-- **할증률 슬라이더**: 0~35% 사이는 동 요율과 읍·면 요율을 선형 보간(실제 요율 구조와 다를 수 있음).
-- **심야할증**: 고시 원문 미확인으로 계산에서 제외.
+## 4. 주요 가정
 
-## 정보공개청구 회신이 오면 바꿀 곳
+| 항목 | 값 | 비고 |
+|---|---|---|
+| 존 간 거리 | 중심점 직선거리 × 1.35 | Kakao 길찾기로 교체하면 정확해짐 |
+| OD → 실측 보정계수 | 0.2994 | TIMS 하루 승차 57,932 ÷ OD 택시 193,466 |
+| 시간대별 택시 비중 | 일반적 분포(가정) | TIMS는 시간대 정보 없음 |
+| 공차 위험 가중치 | 귀로 균형 0.35, 승차 밀도 0.35, 정류장 0.15, 거리 0.15 | 민감도 확인 필요 |
+| 스팟 점수 | 할증 구간 통행 0.6, 승차 0.3, 평균요금 0.1 | |
 
-| 회신 | 교체 대상 |
-|---|---|
-| 복합할증 적용 운행·오송역 승차 집계 (#17933363) | `03_demand` 택시통행 → 실측치, 보정계수 재계산 |
-| 손실보전 기준 (#17933366) | `06_policy` anchors |
-| 개편 연구용역 보고서 (#17933359) | `06_policy` options, `07_sources` |
+## 5. 검증이 필요한 수치
 
-## 사용자 시뮬레이션 (src/lib/simulate.js)
-
-- 입력: `taxi_od_pairs` 평일 택시통행 × 시간대 비중(가정) × 앱 참여율 → 포아송 분포로 가상 요청 생성
-- 매칭: 출발·도착 읍면동이 같고, 동성이며, 최대 대기(10/15/20분) 안에 출발하는 사람끼리 최대 2~3명
-- 출력: 매칭 성공률, 평균 대기, 1인 평균 부담, 할증 구간 이용자 중 '할증 없는 혼자 요금'보다 싸게 탄 비율, 일·연간 시민 절감액
-- 같은 시드면 같은 결과가 나와 발표 중 숫자가 바뀌지 않는다
-- 참고값(오송·오창 관련 구간, 15분, 3명): 참여율 1% → 매칭 22%, 5% → 46%, 10% → 56%, 20% → 64%
+| 수치 | 문제 | 해결 |
+|---|---|---|
+| 할증 총액(OD 기반 연 200억대) | 존 중심 거리로 추정해 과대 가능성 큼. 시 보전 언급액 33~40억과 차이 | 정보공개청구 회신(할증 운행 건수)으로 교체 |
+| 스팟별 할증 구간 비중 | 2024 평일 OD 비율을 2025 TIMS 승차에 곱한 추정 | 현장 관측·설문으로 보완 |
+| OD의 원 출처 | 팀 제공 파일에 출처 기록 없음 | 받은 경로를 확인해 `data/raw/README.md`에 기재 |

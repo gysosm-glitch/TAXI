@@ -45,11 +45,6 @@ out.append("insert into fare_rules (region, version, rules) values")
 out.append(",\n".join(f"({q(k)}, {q(fare['version'])}, {q(json.dumps(v, ensure_ascii=False))}::jsonb)"
                       for k, v in fare["regions"].items()) + "\non conflict (region) do update set rules = excluded.rules, version = excluded.version;")
 
-sc = json.loads((WEB / "04_scenarios/scenarios.json").read_text(encoding="utf-8"))
-out.append("insert into scenarios (id, description, category, distance_km, fare_now, fare_if_dong_rate, payload) values")
-out.append(",\n".join(f"({q(s['id'])}, {q(s['description'])}, {q(s['category'])}, {s['distance_km_estimated']}, {s['fare_now']}, {s['fare_if_dong_rate']}, {q(json.dumps(s, ensure_ascii=False))}::jsonb)"
-                      for s in sc) + "\non conflict (id) do update set payload = excluded.payload;")
-
 cols = ["nickname", "gender", "age_group", "origin_zone", "origin_name", "origin_lon", "origin_lat", "dest_zone", "dest_name",
         "dest_lon", "dest_lat", "depart_at", "seats", "same_gender_only", "category", "status", "is_synthetic"]
 out.append(f"insert into ride_requests ({', '.join(cols)}) values")

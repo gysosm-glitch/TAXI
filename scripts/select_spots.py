@@ -12,7 +12,7 @@ ROOT = Path(sys.argv[1])
 W = ROOT / "data/web"
 cells = pd.read_csv(W / "10_tims/tims_pickups_by_cell_2025.csv", encoding="utf-8-sig")
 pairs = pd.read_csv(W / "03_demand/taxi_od_pairs.csv", encoding="utf-8-sig")
-bus = pd.read_csv(W / "충청북도_청주시_버스정보시스템_20261002.csv", encoding="cp949")
+bus = pd.read_csv(ROOT / "data/raw/충청북도_청주시_버스정보시스템_20261002.csv", encoding="cp949")
 bus.columns = ["stop_id", "name", "lon", "lat"]
 
 def km(lat1, lon1, lat2, lon2):

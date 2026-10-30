@@ -181,39 +181,6 @@ save_csv(OUT / "03_demand/top50_taxi_links.csv", top)
 emsum = pd.read_csv(RAW / "청주시_읍면별_시내연결_요약_2024.csv", encoding=ENC)
 save_csv(OUT / "03_demand/eupmyeon_city_link_summary.csv", emsum)
 
-# ---------------------------------------------------------------- 04 scenarios
-PLACES = {
-    "cbnu": {"name": "충북대학교 정문", "lon": 127.4560, "lat": 36.6283, "zone": 130},
-    "osong_stn": {"name": "오송역", "lon": 127.3270, "lat": 36.6203, "zone": 131},
-    "ochang_center": {"name": "오창읍 중심(호수공원)", "lon": 127.4310, "lat": 36.7160, "zone": 143},
-    "ochang_tech": {"name": "오창과학산업단지", "lon": 127.4440, "lat": 36.7300, "zone": 143},
-    "intercity_bus": {"name": "청주시외버스터미널", "lon": 127.4310, "lat": 36.6260, "zone": 137},
-    "airport": {"name": "청주국제공항", "lon": 127.4990, "lat": 36.7220, "zone": 142},
-    "downtown": {"name": "성안길(시내 중심)", "lon": 127.4880, "lat": 36.6350, "zone": 113},
-}
-SCEN = [
-    ("cbnu_to_osong", "cbnu", "osong_stn", "충북대→오송역: 9/28 이후에도 할증이 남는 대표 구간"),
-    ("ochang_to_bus", "ochang_center", "intercity_bus", "오창→시외버스터미널: 출퇴근·통학 수요"),
-    ("airport_to_downtown", "airport", "downtown", "청주공항→시내: 방문객 체감 구간"),
-    ("ochang_internal", "ochang_center", "ochang_tech", "오창 내부: 9/28 1단계로 할증 해제된 구간"),
-]
-scenarios = []
-for sid, a, b, desc in SCEN:
-    pa, pb = PLACES[a], PLACES[b]
-    dist = haversine_m(pa["lon"], pa["lat"], pb["lon"], pb["lat"]) * DETOUR
-    cat = category(pa["zone"], pb["zone"])
-    f_dong, f_em = meter_fare(dist, R["dong_rate"]), meter_fare(dist, R["eupmyeon_rate"])
-    now = f_em if R["surcharge_applies"][cat] else f_dong
-    scenarios.append({
-        "id": sid, "description": desc, "origin": pa, "dest": pb, "category": cat,
-        "distance_km_estimated": round(dist / 1000, 2),
-        "distance_note": "직선거리×1.35 추정. Kakao Mobility 길찾기 결과로 교체",
-        "fare_now": now, "fare_if_dong_rate": f_dong,
-        "per_person_if_shared": {str(n): math.ceil(now / n / 100) * 100 for n in (1, 2, 3, 4)},
-    })
-save_json(OUT / "04_scenarios/places.json", PLACES)
-save_json(OUT / "04_scenarios/scenarios.json", scenarios)
-
 # ---------------------------------------------------------------- 05 matching
 MATCH = {
     "basis": "반반택시 운영 규칙(경로 1km 이내 유사, 동승 70%+, 추가시간 15분 이하)을 데모용으로 단순화",
@@ -271,77 +238,4 @@ for o, d, hh, n in HOTSPOTS:
         })
 save_csv(OUT / "05_matching/synthetic_ride_requests.csv", pd.DataFrame(req))
 
-# ---------------------------------------------------------------- 06 policy
-daily = summary[summary.scope == "all"].set_index("category")
-model_phase1 = float(daily.loc["same_eupmyeon_internal", "daily_diff_if_eupmyeon_rate_won"]) if "same_eupmyeon_internal" in daily.index else 0
-WEEKDAY_EQ_DAYS = 300  # 연간 환산 (평일 OD × 300일, 가정)
-model_phase1_year = model_phase1 * WEEKDAY_EQ_DAYS
-anchor = 400_000_000
-calib = round(anchor / model_phase1_year, 3) if model_phase1_year else None
-POLICY = {
-    "annualization_days": WEEKDAY_EQ_DAYS,
-    "anchors": [
-        {"id": "phase1_compensation", "value_won_per_year": 400_000_000, "scope": "1단계(같은 읍·면 내부) 보전", "source": "dynews_20260920", "reliability": "보도, 복수 매체"},
-        {"id": "full_removal_compensation", "value_won": 4_000_000_000, "scope": "전면 해제", "source": "nate_20260826", "reliability": "단일 보도, 부분확인"},
-        {"id": "full_removal_wiki", "value_won_per_year": 3_300_000_000, "scope": "전면 해제", "source": "thewiki_gangoe", "reliability": "낮음"},
-    ],
-    "model_calibration": {
-        "model_phase1_won_per_year_uncalibrated": round(model_phase1_year),
-        "calibration_factor_to_anchor": calib,
-        "note": "OD 택시 통행 × (읍면요율-동요율) × 300일로 계산한 1단계 비용을 시 보전액 4억 원에 맞추는 계수. 시뮬레이터의 모든 비용에 곱해 사용",
-    },
-    "options": [
-        {"id": "P0", "label": "현행(9/28 1단계)", "remove_categories": ["same_eupmyeon_internal"], "rate_pct": 35},
-        {"id": "P1", "label": "2단계 조기시행: 동↔오송·오창 해제", "remove_categories": ["same_eupmyeon_internal"], "remove_zone_pairs_with": ["오송읍", "오창읍"], "rate_pct": 35},
-        {"id": "P2", "label": "할증률 단계 인하 35→20%", "remove_categories": ["same_eupmyeon_internal"], "rate_pct": 20},
-        {"id": "P3", "label": "전면 해제", "remove_categories": ["same_eupmyeon_internal", "dong_to_eupmyeon", "eupmyeon_to_other_eupmyeon"], "rate_pct": 0},
-        {"id": "P4", "label": "오송역 특례(2017 세종청사 선례 확장)", "remove_categories": ["same_eupmyeon_internal"], "remove_zone_pairs_with": ["오송읍"], "rate_pct": 35, "note": "존 단위라 오송역만 분리 불가 → 오송읍 전체로 근사"},
-    ],
-}
-save_json(OUT / "06_policy/policy_params.json", POLICY)
-
-# ---------------------------------------------------------------- 07 sources
-SOURCES = [
-    ("newspim_20260922", "뉴스핌", "2026-09-22", "청주시 9/28 같은 읍·면 내 복합할증 해제", "https://www.newspim.com/news/view/20260922000062"),
-    ("ccdn_20260922", "충청매일", "2026-09-22", "할증 연혁(55%→35%), 1단계 해제", "https://www.ccdn.co.kr/news/articleView.html?idxno=1101594"),
-    ("goodmorningcc_20260922", "굿모닝충청", "2026-09-22", "읍·면 요율(1.12km, 135원), 심야시간 22~04시", "https://www.goodmorningcc.com/news/articleView.html?idxno=452780"),
-    ("dynews_20260920", "동양일보", "2026-09-20", "1단계 보전 연 약 4억 원, 2028 오송·오창 검토", "https://www.dynews.co.kr/news/articleView.html?idxno=866770"),
-    ("nate_20260826", "네이트뉴스", "2026-08-26", "전면 해제 약 40억 원 (부분확인)", "https://m.news.nate.com/view/20260826n32740"),
-    ("newscj_20251211", "천지일보", "2025-12-11", "시의회 5분발언: 할증 운행 70% 오창·오송", "https://www.newscj.com/news/articleView.html?idxno=3349699"),
-    ("cctimes_20260408", "충청타임즈(Daum)", "2026-04-08", "시장-택시업계 단계적 해제 협약", "https://v.daum.net/v/20260408202936076"),
-    ("cctimes_20260729", "충청타임즈(Daum)", "2026-07-29", "오송 주민 반발", "https://v.daum.net/v/20260729213024600"),
-    ("newsis_20170201", "뉴시스", "2017-02-01", "오송역↔세종청사 35% 할증 폐지, 23.2% 인하", "https://mobile.newsis.com/view/NISX20170201_0014676750"),
-    ("kpinews_20230801", "KPI뉴스", "2023-08-01", "충북 택시 기본요금 4,000원/1.8km", "https://kpinews.kr/newsView/179568433586854"),
-    ("thesegye_20260305", "더세계일보", "2026-03-05", "대전 심야 시계외 복합할증 40→50%", "https://m.thesegye.com/news/view/1065566638165376"),
-    ("thewiki_gangoe", "thewiki", "-", "전면 해제 연 33억 원 (낮은 신뢰도)", "https://thewiki.kr/w/강외면"),
-    ("maeil_20220614", "매일신문", "2022-06-14", "택시 합승 허용 조건(플랫폼·동성)", "https://www.imaeil.com/page/view/2022061416594446231"),
-    ("seoul_banban_rules", "서울시 교통 누리집", "-", "반반택시 매칭 규칙", "https://news.seoul.go.kr/traffic/archives/502059"),
-    ("smarttoday_safety", "스마트투데이", "-", "합승 플랫폼 안전 의무", "https://www.smarttoday.co.kr/ko-kr/articles/23506"),
-    ("santi_2014", "PNAS", "2014", "Santi et al. shareability network: 운행거리 40%+ 절감", "https://pmc.ncbi.nlm.nih.gov/articles/PMC4280581"),
-    ("alonso_mora_2017", "PNAS", "2017", "Alonso-Mora et al. 3,000대로 NYC 수요 98%", "https://pmc.ncbi.nlm.nih.gov/articles/PMC5255617"),
-    ("data_15160181", "공공데이터포털", "2026-07", "TIMS 격자별 영업통계(2025)", "https://www.data.go.kr/data/15160181/fileData.do"),
-    ("data_15065131", "공공데이터포털", "2026-06", "TIMS 택시운영현황 영업통계", "https://www.data.go.kr/data/15065131/fileData.do"),
-    ("data_15069016", "공공데이터포털", "2026-06", "노드링크별 평균택시통행량(2025)", "https://www.data.go.kr/data/15069016/fileData.do"),
-    ("data_15041896", "공공데이터포털", "2026-10", "청주시 버스정보시스템(정류장)", "https://www.data.go.kr/data/15041896/fileData.do"),
-]
-save_json(OUT / "07_sources/sources.json", [dict(zip(["id", "publisher", "date", "claim", "url"], s)) for s in SOURCES])
-
-# ---------------------------------------------------------------- 08 expansion
-EXP = {
-    "scope": "로드맵 전용. 사업구역 규제로 도시 간 실시간 매칭은 데모 범위 밖",
-    "constraints": [
-        {"rule": "사업구역 밖 영업 원칙적 금지(여객자동차법 시행규칙 제10조 제6항 귀로 예외)", "source": "https://news.seoul.go.kr/traffic/archives/34700"},
-        {"rule": "귀로 중 승객 하차지가 구역 밖이면 구역 내 영업으로 보지 않음(법제처 해석)", "source": "nepla 법제처 해석 요약"},
-        {"rule": "세종 택시업계 사업구역 통합 반대 전례(2018)", "source": "https://m.go.seoul.co.kr/news/2018/02/02/20180202012016"},
-    ],
-    "corridors": [
-        {"id": "osong_sejong", "from": "오송역", "to": "세종정부청사", "precedent": "2017 3자 협약으로 35% 할증 폐지(현재 효력 미확인)", "source": "newsis_20170201"},
-        {"id": "cheongju_daejeon", "from": "청주", "to": "대전", "note": "대전 시계외 30%, 심야 복합 50%(2026-03-16~)", "source": "thesegye_20260305"},
-    ],
-    "proposals": ["오송–세종 공동사업구역(인천공항 사례)", "지역별 fare_rules config로 확장 대비"],
-}
-save_json(OUT / "08_expansion/expansion_regions.json", EXP)
-
 print(summary.to_string())
-print("model phase1 won/yr:", round(model_phase1_year), "calib:", calib)
-print(json.dumps([{k: s[k] for k in ("id", "category", "distance_km_estimated", "fare_now", "fare_if_dong_rate")} for s in scenarios], ensure_ascii=False))
