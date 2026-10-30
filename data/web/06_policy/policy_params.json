@@ -1,0 +1,83 @@
+{
+  "annualization_days": 300,
+  "anchors": [
+    {
+      "id": "phase1_compensation",
+      "value_won_per_year": 400000000,
+      "scope": "1단계(같은 읍·면 내부) 보전",
+      "source": "dynews_20260920",
+      "reliability": "보도, 복수 매체"
+    },
+    {
+      "id": "full_removal_compensation",
+      "value_won": 4000000000,
+      "scope": "전면 해제",
+      "source": "nate_20260826",
+      "reliability": "단일 보도, 부분확인"
+    },
+    {
+      "id": "full_removal_wiki",
+      "value_won_per_year": 3300000000,
+      "scope": "전면 해제",
+      "source": "thewiki_gangoe",
+      "reliability": "낮음"
+    }
+  ],
+  "model_calibration": {
+    "model_phase1_won_per_year_uncalibrated": 6586843200,
+    "calibration_factor_to_anchor": 0.061,
+    "note": "OD 택시 통행 × (읍면요율-동요율) × 300일로 계산한 1단계 비용을 시 보전액 4억 원에 맞추는 계수. 시뮬레이터의 모든 비용에 곱해 사용"
+  },
+  "options": [
+    {
+      "id": "P0",
+      "label": "현행(9/28 1단계)",
+      "remove_categories": [
+        "same_eupmyeon_internal"
+      ],
+      "rate_pct": 35
+    },
+    {
+      "id": "P1",
+      "label": "2단계 조기시행: 동↔오송·오창 해제",
+      "remove_categories": [
+        "same_eupmyeon_internal"
+      ],
+      "remove_zone_pairs_with": [
+        "오송읍",
+        "오창읍"
+      ],
+      "rate_pct": 35
+    },
+    {
+      "id": "P2",
+      "label": "할증률 단계 인하 35→20%",
+      "remove_categories": [
+        "same_eupmyeon_internal"
+      ],
+      "rate_pct": 20
+    },
+    {
+      "id": "P3",
+      "label": "전면 해제",
+      "remove_categories": [
+        "same_eupmyeon_internal",
+        "dong_to_eupmyeon",
+        "eupmyeon_to_other_eupmyeon"
+      ],
+      "rate_pct": 0
+    },
+    {
+      "id": "P4",
+      "label": "오송역 특례(2017 세종청사 선례 확장)",
+      "remove_categories": [
+        "same_eupmyeon_internal"
+      ],
+      "remove_zone_pairs_with": [
+        "오송읍"
+      ],
+      "rate_pct": 35,
+      "note": "존 단위라 오송역만 분리 불가 → 오송읍 전체로 근사"
+    }
+  ]
+}

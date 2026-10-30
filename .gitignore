@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.vercel/
+.env
+.env.*
+!.env.example
+# 프로젝트와 무관한 엑셀(개인정보 포함 가능)이 섞여 들어오지 않도록 차단
+*.xlsx
+*.xls
+.DS_Store
+Thumbs.db

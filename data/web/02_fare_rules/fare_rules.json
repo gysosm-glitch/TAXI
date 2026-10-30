@@ -1,0 +1,79 @@
+{
+  "version": "2026-09-28",
+  "currency": "KRW",
+  "status_note": "동·읍면 요율은 보도 기준. 청주시 운임·요율 고시 원문 확보 후 교체할 것.",
+  "regions": {
+    "cheongju": {
+      "label": "청주시 (중형택시)",
+      "dong_rate": {
+        "base_fare": 4000,
+        "base_distance_m": 1800,
+        "unit_distance_m": 127,
+        "unit_time_s": 32,
+        "unit_fare": 100
+      },
+      "eupmyeon_rate": {
+        "base_fare": 4000,
+        "base_distance_m": 1120,
+        "unit_distance_m": 127,
+        "unit_time_s": 32,
+        "unit_fare": 135,
+        "nominal_surcharge_pct": 35
+      },
+      "surcharge_applies": {
+        "dong_to_dong": false,
+        "same_eupmyeon_internal": false,
+        "dong_to_eupmyeon": true,
+        "eupmyeon_to_other_eupmyeon": true
+      },
+      "surcharge_applies_note": "2026-09-28 04:00 1단계 개편: 같은 읍·면 내부 운행만 동 요율 적용",
+      "night_surcharge": {
+        "verified": false,
+        "windows": [
+          {
+            "from": "22:00",
+            "to": "23:00",
+            "pct": 20
+          },
+          {
+            "from": "23:00",
+            "to": "02:00",
+            "pct": 40
+          },
+          {
+            "from": "02:00",
+            "to": "04:00",
+            "pct": 20
+          }
+        ],
+        "note": "팀공유자료 p.4 기준(20/40/20 구간제). 고시 원문 미확인 → 설정값으로만 사용"
+      },
+      "out_of_area_surcharge_pct": {
+        "value": 20,
+        "verified": false
+      },
+      "sources": [
+        "kpinews_20230801",
+        "newspim_20260922",
+        "goodmorningcc_20260922",
+        "ccdn_20260922"
+      ]
+    },
+    "sejong": {
+      "label": "세종시",
+      "verified": false,
+      "note": "현행 요금표·시계외 할증률 미확인. 확장 로드맵 전용"
+    },
+    "daejeon": {
+      "label": "대전시",
+      "verified": true,
+      "out_of_area_surcharge_pct": 30,
+      "night_out_of_area_combined_pct": 50,
+      "effective": "2026-03-16",
+      "note": "대전의 '복합할증'은 심야+시계외 중첩 개념으로 청주와 다름",
+      "sources": [
+        "thesegye_20260305"
+      ]
+    }
+  }
+}

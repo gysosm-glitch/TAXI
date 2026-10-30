@@ -1,0 +1,12 @@
+{
+  "name": "청주 택시 복합할증 계산기 · 합승 시뮬레이터",
+  "short_name": "청주택시",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0b3d6e",
+  "lang": "ko",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
