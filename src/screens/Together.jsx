@@ -5,6 +5,7 @@ import Icon from '../components/Icon.jsx'
 import { Badge, SharedTaxi } from '../components/Illust.jsx'
 import { waitingBySpot, tripQuote, zones, won, spotZoneId } from '../data.js'
 import { supabase } from '../lib/supabase.js'
+import { askNotify } from '../lib/alerts.js'
 import { listRides, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError } from '../lib/rides.js'
 
 const pin = (n, on) => L.divIcon({ html: `<div class="spot-pin ${on ? 'on' : ''}">${n}</div>`, className: 'map-icon', iconSize: [30, 30], iconAnchor: [15, 15] })
@@ -41,6 +42,7 @@ export default function Together({ account, onLogin }) {
 
   const openForm = () => setForm({ dest: g.destZone ?? zones[0].zone_id, leave: 15, max: 3 })
   const act = async (fn, ok) => {
+    askNotify()                     // 모집·참여할 때 알림 허용을 물어본다
     setBusy(true); setMsg(null)
     const { error } = await fn()
     setBusy(false)

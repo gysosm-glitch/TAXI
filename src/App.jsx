@@ -7,6 +7,7 @@ import Together from './screens/Together.jsx'
 import Transit from './screens/Transit.jsx'
 import Me from './screens/Me.jsx'
 import { useAccount, signOut } from './lib/auth.js'
+import { useRideAlerts } from './lib/alerts.js'
 
 const TABS = [
   ['home', 'home', '홈'],
@@ -20,6 +21,7 @@ export default function App() {
   const [browsing, setBrowsing] = useState(false)
   const account = useAccount()
   const { session, profile, loading, setProfile } = account
+  const { toast, close } = useRideAlerts(profile ? session?.user?.id : null)
   // 로그아웃하면 첫 화면(로그인)으로, 홈 탭부터 다시 시작
   useEffect(() => { if (!session) { setBrowsing(false); setTab('home') } }, [session])
 
@@ -43,6 +45,11 @@ export default function App() {
   // 3) 앱 본 화면
   return (
     <div className="shell">
+      {toast && (
+        <button className="toast" onClick={() => { close(); setTab('together') }}>
+          <b>{toast.title.replace('같이타 · ', '')}</b><span>{toast.body}</span>
+        </button>
+      )}
       <main className="content">
         {tab === 'home' && <Home user={profile ? { name: profile.nickname } : null} account={account} onGo={setTab} />}
         {tab === 'together' && <Together account={account} onLogin={() => setBrowsing(false)} />}
