@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Icon from '../components/Icon.jsx'
+import { BusStop, Badge } from '../components/Illust.jsx'
 import { spots } from '../data.js'
 import { useLive } from '../lib/live.js'
 import { HOUR_PROFILE } from '../lib/simulate.js'
@@ -9,9 +10,10 @@ const levelCls = { 원활: 'ok', 서행: 'warn', 정체: 'bad' }
 
 function Waiting({ data }) {
   if (!data) return <p className="sub">불러오는 중…</p>
-  if (data.reason === 'no_key' || data.reason === 'no_server') return <p className="sub">실시간 연결을 준비하고 있어요.</p>
-  if (data.reason === 'key_pending') return <p className="sub">실시간 도착 정보 승인을 기다리고 있어요.</p>
-  if (data.reason === 'api_error') return <p className="sub">잠시 정보를 가져오지 못했어요.</p>
+  const msg = data.reason === 'key_pending' ? '실시간 도착 정보 승인을 기다리고 있어요.'
+    : data.reason === 'api_error' ? '잠시 정보를 가져오지 못했어요.'
+    : data.reason ? '실시간 연결을 준비하고 있어요.' : null
+  if (msg) return <div className="empty"><BusStop /><p className="sub">{msg}</p></div>
   return null
 }
 
@@ -31,7 +33,7 @@ export default function Transit() {
       </div>
 
       <div className="card">
-        <p className="card-title"><span><Icon name="bus" size={18} /> 버스 도착</span></p>
+        <p className="card-title"><span className="with-badge"><Badge tone="blue"><Icon name="bus" size={16} /></Badge>버스 도착</span></p>
         <Waiting data={bus} />
         {bus?.ok && bus.stations.length === 0 && <p className="sub">가까운 정류장 정보가 없어요.</p>}
         {bus?.ok && bus.stations.map((s) => (
@@ -43,7 +45,7 @@ export default function Transit() {
       </div>
 
       <div className="card">
-        <p className="card-title"><span><Icon name="road" size={18} /> 도로 상황</span></p>
+        <p className="card-title"><span className="with-badge"><Badge tone="amber"><Icon name="road" size={16} /></Badge>도로 상황</span></p>
         <Waiting data={road} />
         {road?.ok && road.roads.length === 0 && <p className="sub">이 주변은 도로 정보가 수집되지 않아요.</p>}
         {road?.ok && road.roads.map((r) => (

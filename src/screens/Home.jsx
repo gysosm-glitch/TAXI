@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import Icon from '../components/Icon.jsx'
+import { SharedTaxi, Badge } from '../components/Illust.jsx'
 import { waitingBySpot, tripQuote, zoneById, won } from '../data.js'
 import { useLive, nextBus, mainRoad } from '../lib/live.js'
 
@@ -60,6 +61,7 @@ export default function Home({ user, onGo }) {
 
       {q && (
         <div className="hero">
+          <div className="hero-art"><SharedTaxi /></div>
           <p className="label">지금 같이 타기</p>
           <h2>{top.spot.name} → {zoneById[top.destZone].name}</h2>
           <p className="sub">{top.waiting ? `${top.waiting}명 모집 중 · 10분 안에 출발` : '아직 모집이 없어요 · 2명이 모이면 출발'}</p>
@@ -76,12 +78,14 @@ export default function Home({ user, onGo }) {
 
       <div className="grid2">
         <div className="card">
-          <p className="label"><Icon name="bus" size={15} /> 다음 버스</p>
+          <Badge tone="blue"><Icon name="bus" size={18} /></Badge>
+          <p className="label">다음 버스</p>
           {nb ? <><p className="mid">{nb.min}분</p><p className="sub">{nb.route}번 · {nb.station}</p></>
             : <><p className="mid" style={{ color: 'var(--muted)' }}>–</p><p className="sub">{bus ? '실시간 연결 준비 중' : '불러오는 중'}</p></>}
         </div>
         <div className="card">
-          <p className="label"><Icon name="road" size={15} /> 도로</p>
+          <Badge tone="amber"><Icon name="road" size={18} /></Badge>
+          <p className="label">도로</p>
           {rd ? <><p className={`mid ${rd.level === '원활' ? 'ok' : rd.level === '서행' ? 'warn' : 'bad'}`}>{rd.level}</p><p className="sub">{rd.road} {rd.speed}km/h</p></>
             : <><p className="mid" style={{ color: 'var(--muted)' }}>–</p><p className="sub">{road ? '실시간 연결 준비 중' : '불러오는 중'}</p></>}
         </div>
@@ -91,7 +95,7 @@ export default function Home({ user, onGo }) {
         <p className="card-title">가까운 같이타기 스팟 <small onClick={() => onGo('together')} style={{ cursor: 'pointer' }}>전체 보기 ›</small></p>
         {groups.slice(0, 4).map((g) => (
           <div key={g.spot.id} className="row-item">
-            <span>{g.spot.name}</span>
+            <span className="with-badge"><Badge><Icon name="pin" size={16} /></Badge>{g.spot.name}</span>
             <span className={`r ${g.waiting ? '' : 'off'}`}>{g.waiting ? `${g.waiting}명 대기` : '대기 없음'}</span>
           </div>
         ))}
