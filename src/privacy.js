@@ -23,3 +23,15 @@ export const RULES = [
   ['신뢰', '본인인증 완료 + 평점 4.5 이상 (설정 가능)'],
   ['인원', '최대 3명, 요금은 혼자 탈 때 요금 비례로 n분의 1'],
 ]
+
+// 가입 시 동의 항목 (profiles 테이블의 agree_* 컬럼과 같은 이름)
+export const CONSENTS = [
+  { id: 'agree_terms', label: '서비스 이용약관', required: true,
+    detail: '같이타는 등록 운송플랫폼 제휴를 전제로 한 시범 서비스예요. 요금은 미터기(청주시 고시 요율)로만 부과되고, 앱은 나눌 금액을 안내해요.' },
+  { id: 'agree_privacy', label: '개인정보 수집·이용', required: true,
+    detail: '닉네임·성별·휴대폰 번호·탑승 스팟·목적지(읍면동)·출발 시각을 같이타기 매칭과 안전 안내에만 써요. 탈퇴하면 바로 지워요.' },
+  { id: 'agree_location', label: '위치정보 이용', required: true,
+    detail: '탑승 스팟 안내에만 쓰고, 이동 경로는 저장하지 않아요.' },
+  { id: 'agree_age14', label: '만 14세 이상이에요', required: true, detail: '만 14세 미만은 보호자 동의가 필요해 가입할 수 없어요.' },
+  { id: 'agree_marketing', label: '혜택·이벤트 알림', required: false, detail: '동의하지 않아도 이용에 제한이 없어요.' },
+]
