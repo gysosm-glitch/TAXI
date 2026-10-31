@@ -27,9 +27,6 @@ export function useAccount() {
 
 const redirectTo = () => window.location.origin
 
-export const signInWithGoogle = () =>
-  supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo() } })
-
 export const signUpWithEmail = (email, password) =>
   supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo() } })
 
@@ -52,7 +49,6 @@ export function authError(e) {
   if (m.includes('Email not confirmed')) return '메일함에서 가입 확인 링크를 먼저 눌러 주세요.'
   if (m.includes('already registered')) return '이미 가입된 이메일이에요. 로그인해 주세요.'
   if (m.includes('Password should be')) return '비밀번호는 6자 이상이어야 해요.'
-  if (m.includes('provider is not enabled')) return '구글 로그인이 아직 설정되지 않았어요. 이메일로 가입해 주세요.'
   if (m.includes('relation') && m.includes('profiles')) return '서버에 회원 테이블이 아직 없어요. 관리자에게 알려 주세요.'
   return m || '잠시 후 다시 시도해 주세요.'
 }
