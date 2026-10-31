@@ -1,7 +1,7 @@
 // Vercel 서버 함수: 스팟 주변 도로의 실시간 소통 정보 (국가교통정보센터 ITS 공개 API)
-// 환경변수 ITS_API_KEY = its.go.kr › 공개API › 인증키
+// 환경변수 ITS_API_KEY (Vercel에 IITS_API_KEY로 저장한 경우도 읽음) = its.go.kr › 공개API › 인증키
 export default async function handler(req, res) {
-  const key = process.env.ITS_API_KEY
+  const key = process.env.ITS_API_KEY || process.env.IITS_API_KEY
   if (!key) return res.status(200).json({ ok: false, reason: 'no_key' })
   const lat = Number(req.query.lat), lon = Number(req.query.lon)
   if (!lat || !lon) return res.status(400).json({ ok: false, reason: 'lat, lon 필요' })
