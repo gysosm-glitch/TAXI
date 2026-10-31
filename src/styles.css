@@ -45,11 +45,11 @@ a { color: var(--teal-dark); }
 .ring-card { display: flex; align-items: center; gap: 16px; }
 
 .hero { background: var(--teal); color: #fff; border-radius: var(--r-card); padding: 18px; margin-bottom: 12px; }
-.hero .label, .hero .sub { color: var(--teal-soft); }
+.hero .label, .hero .sub { color: #e1f5ee; }
 .hero h2 { font-size: 20px; margin: 4px 0 2px; }
 .hero .row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 12px; }
-.hero s { font-size: 12px; color: var(--teal-mid); }
-.pill-btn { border: 0; border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 700; background: #fff; color: var(--teal-ink); }
+.hero s { font-size: 12px; color: #9fe1cb; }
+.pill-btn { border: 0; border-radius: 999px; padding: 10px 18px; font-size: 14px; font-weight: 700; background: #fff; color: #085041; }
 .btn { width: 100%; border: 0; border-radius: 14px; padding: 14px; font-size: 16px; font-weight: 700; background: var(--teal); color: #fff; }
 .btn.ghost { background: var(--teal-soft); color: var(--teal-ink); }
 
@@ -115,3 +115,11 @@ a { color: var(--teal-dark); }
 .btn:disabled { opacity: .5; }
 .divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; font-size: 12px; color: var(--muted); }
 .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+/* 첫 화면 (로그인·회원가입) */
+.welcome { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+.welcome-top { background: var(--teal); color: #fff; padding: 48px 24px 56px; }
+.welcome-top .logo { display: inline-block; background: #fff; color: #085041; font-weight: 800; font-size: 15px; border-radius: 999px; padding: 6px 14px; margin-bottom: 20px; }
+.welcome-top h1 { font-size: 28px; line-height: 1.3; margin: 0 0 8px; }
+.welcome-top p { margin: 0; color: #e1f5ee; font-size: 15px; }
+.welcome-body { padding: 0 16px 24px; margin-top: -28px; }

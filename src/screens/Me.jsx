@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import Icon from '../components/Icon.jsx'
-import Login from './Login.jsx'
 import ProfileForm from './ProfileForm.jsx'
 import { FIELDS, NOT_COLLECTED, RULES } from '../privacy.js'
 import { signOut, deleteProfile } from '../lib/auth.js'
@@ -34,19 +33,19 @@ function Guide() {
   )
 }
 
-export default function Me({ account }) {
+export default function Me({ account, onLogin }) {
   const { session, profile, loading, setProfile } = account
   const [editing, setEditing] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
 
   if (loading) return <p className="sub">불러오는 중…</p>
 
-  // 1) 로그인 전
+  // 1) 둘러보기 중 (로그인 전)
   if (!session) return (
     <>
       <h1 className="page-title">내 정보</h1>
       <p className="page-sub">가입하면 같이타기 모집·참여를 할 수 있어요</p>
-      <Login />
+      <button className="btn" style={{ marginBottom: 12 }} onClick={onLogin}>로그인 · 회원가입</button>
       <Guide />
     </>
   )
