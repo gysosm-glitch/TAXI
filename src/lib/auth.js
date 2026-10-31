@@ -10,7 +10,8 @@ export function useAccount() {
   const loadProfile = async (s) => {
     if (!s) { setProfile(null); setLoading(false); return }
     const { data } = await supabase.from('profiles').select('*').eq('id', s.user.id).maybeSingle()
-    setProfile(data ?? null)
+    // 방금 저장한 같은 사용자의 프로필을 늦게 도착한 '없음' 응답이 덮지 않게
+    setProfile((prev) => data ?? (prev && prev.id === s.user.id ? prev : null))
     setLoading(false)
   }
 

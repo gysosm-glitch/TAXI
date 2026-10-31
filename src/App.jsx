@@ -26,7 +26,7 @@ export default function App() {
   if (loading) return <div className="shell"><main className="content"><p className="sub">불러오는 중…</p></main></div>
 
   // 1) 처음 화면: 로그인·회원가입 (둘러보기를 고르면 통과)
-  if (!session && !browsing) return <div className="shell"><Welcome onBrowse={() => setBrowsing(true)} /></div>
+  if (!session && !browsing) return <div className="shell"><Welcome onBrowse={() => setBrowsing(true)} onDemo={(p) => { setProfile(p); setTab('together') }} /></div>
 
   // 2) 로그인했지만 가입 정보가 없으면 입력부터
   if (session && !profile) return (

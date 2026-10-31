@@ -155,3 +155,10 @@ a { color: var(--teal-dark); }
 .safety-row a { flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; }
 .safety-row .sos { background: var(--red-soft); color: var(--red); }
 .safety-row .ghost-link { background: var(--bg); color: var(--ink-2); }
+
+/* 체험 계정 */
+.demo-card { border: 2px dashed var(--teal); }
+.demo-btn { border: 0; border-radius: 14px; padding: 12px; background: var(--teal-soft); color: var(--teal-ink); text-align: left; display: flex; flex-direction: column; gap: 2px; }
+.demo-btn b { font-size: 15px; }
+.demo-btn span { font-size: 12px; }
+.demo-btn:disabled { opacity: .6; }
