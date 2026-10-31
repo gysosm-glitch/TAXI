@@ -1,6 +1,6 @@
 // Vercel 서버 함수: 오송역에 곧 도착하는 열차 (국토교통부 TAGO 열차정보 15098552)
 // 환경변수 TAGO_TRAIN_API_KEY (없으면 TAGO_API_KEY)
-import { trainKey } from './_keys.js'
+import { trainKey, tagoKey } from './_keys.js'
 const BASE = 'https://apis.data.go.kr/1613000/TrainInfo'   // 2026 기준 주소 (구 TrainInfoService 폐기)
 
 const items = (json) => {
@@ -44,6 +44,21 @@ export default async function handler(req, res) {
   if (!key) return res.status(200).json({ ok: false, reason: 'no_key' })
   const k = encodeURIComponent(key)
   try {
+    if (req.query.debug === 'keys') {
+      // 키 값은 내보내지 않고, 같은지 여부와 각 키의 응답 결과만 확인한다
+      const probe = async (kk) => {
+        const c = await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${encodeURIComponent(kk)}&_type=json`)
+        return c.error ? c.error.slice(0, 80) : (c.json?.OpenAPI_ServiceResponse?.cmmMsgHeader?.errMsg ?? `OK 도시 ${items(c.json).length}개`)
+      }
+      return res.status(200).json({
+        trainKeySet: !!process.env.TAGO_TRAIN_API_KEY,
+        sameAsTagoKey: process.env.TAGO_TRAIN_API_KEY === process.env.TAGO_API_KEY,
+        trainKeyLength: (process.env.TAGO_TRAIN_API_KEY || '').length,
+        tagoKeyLength: (process.env.TAGO_API_KEY || '').length,
+        withTrainKey: await probe(trainKey()),
+        withTagoKey: await probe(tagoKey()),
+      })
+    }
     if (req.query.debug === 'cities') {
       const c = await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${k}&_type=json`)
       return res.status(200).json(c.error ? { ok: false, error: c.error } : { ok: true, raw: c.json })
