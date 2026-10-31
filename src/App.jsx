@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Icon from './components/Icon.jsx'
 import Welcome from './screens/Welcome.jsx'
 import ProfileForm from './screens/ProfileForm.jsx'
@@ -20,6 +20,8 @@ export default function App() {
   const [browsing, setBrowsing] = useState(false)
   const account = useAccount()
   const { session, profile, loading, setProfile } = account
+  // 로그아웃하면 첫 화면(로그인)으로, 홈 탭부터 다시 시작
+  useEffect(() => { if (!session) { setBrowsing(false); setTab('home') } }, [session])
 
   if (loading) return <div className="shell"><main className="content"><p className="sub">불러오는 중…</p></main></div>
 

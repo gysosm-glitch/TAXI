@@ -16,10 +16,15 @@ export default function Login() {
     if (!email.includes('@')) return setMsg({ bad: true, text: '이메일 주소를 확인해 주세요.' })
     if (pw.length < 6) return setMsg({ bad: true, text: '비밀번호는 6자 이상이어야 해요.' })
     setBusy(true); setMsg(null)
-    const { data, error } = mode === 'signup' ? await signUpWithEmail(email, pw) : await signInWithEmail(email, pw)
-    setBusy(false)
-    if (error) return setMsg({ bad: true, text: authError(error) })
-    if (mode === 'signup' && !data.session) setMsg({ text: `${email}로 가입 확인 메일을 보냈어요. 링크를 누르면 바로 시작할 수 있어요.` })
+    try {
+      const { data, error } = mode === 'signup' ? await signUpWithEmail(email.trim(), pw) : await signInWithEmail(email.trim(), pw)
+      if (error) return setMsg({ bad: true, text: authError(error) })
+      if (mode === 'signup' && !data.session) setMsg({ text: `${email}로 가입 확인 메일을 보냈어요. 링크를 누른 뒤 이 화면에서 로그인해 주세요.` })
+    } catch {
+      setMsg({ bad: true, text: '인터넷 연결을 확인하고 다시 시도해 주세요.' })
+    } finally {
+      setBusy(false)
+    }
   }
 
   return (
