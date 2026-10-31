@@ -38,7 +38,7 @@ npm run dev
 
 ## 4. Supabase
 
-1. Supabase › SQL Editor에서 `supabase/schema.sql` → `supabase/seed.sql` → `supabase/profiles.sql` → `supabase/rides.sql` 순서로 실행
+1. Supabase › SQL Editor에서 `supabase/schema.sql` → `supabase/seed.sql` → `supabase/profiles.sql` → `supabase/rides.sql` → `supabase/ops.sql` 순서로 실행
 2. Authentication › URL Configuration: Site URL과 Redirect URLs에 배포 주소, Redirect URLs에 `http://localhost:5173` 추가
 3. 무료 플랜은 1주일 접속이 없으면 일시정지된다. 발표 전날 대시보드에서 Restore.
 

@@ -69,3 +69,21 @@ export function rideError(e) {
   if (m.includes('row-level security')) return '가입 정보(성별)를 먼저 입력해 주세요.'
   return m || '잠시 후 다시 시도해 주세요.'
 }
+
+// ---- 시범 운영 (supabase/ops.sql) ----
+export const saveTrip = (row) => supabase.from('trips').upsert(row, { onConflict: 'ride_id,user_id', ignoreDuplicates: true })
+export const rateMembers = (rows) => supabase.from('ratings').upsert(rows, { onConflict: 'ride_id,rater_id,ratee_id', ignoreDuplicates: true })
+export const sendFeedback = (message, userId) => supabase.from('feedback').insert({ message, user_id: userId ?? null })
+export async function getStats() {
+  const { data, error } = await supabase.rpc('public_stats')
+  return error ? null : data
+}
+export async function getMyRating(uid) {
+  const { data } = await supabase.rpc('user_rating', { uid })
+  return data
+}
+export async function myTripsThisMonth(uid) {
+  const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0)
+  const { data } = await supabase.from('trips').select('saving, created_at').eq('user_id', uid).gte('created_at', start.toISOString())
+  return data ?? null
+}

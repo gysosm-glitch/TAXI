@@ -7,7 +7,7 @@ import { waitingBySpot, tripQuote, zones, won, spotZoneId } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { askNotify } from '../lib/alerts.js'
 import { useTrains, minutesUntil } from '../lib/live.js'
-import { listRides, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError } from '../lib/rides.js'
+import { listRides, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError, saveTrip, rateMembers } from '../lib/rides.js'
 
 const pin = (n, on) => L.divIcon({ html: `<div class="spot-pin ${on ? 'on' : ''}">${n}</div>`, className: 'map-icon', iconSize: [30, 30], iconAnchor: [15, 15] })
 const SEATS = ['조수석', '뒷좌석 오른쪽', '뒷좌석 왼쪽']
@@ -25,6 +25,7 @@ export default function Together({ account, onLogin }) {
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
   const [more, setMore] = useState(false)
+  const [rating, setRating] = useState(null)   // 도착 후 동승 평가
 
   const { session, profile } = account
   const me = session?.user?.id
@@ -62,13 +63,25 @@ export default function Together({ account, onLogin }) {
     return r
   }, '모집을 열었어요. 같은 방향 사람이 참여하면 바로 알려 드려요.')
 
-  const arrived = (r) => {
+  const arrived = async (r) => {
     const n = r.ride_members.length
     const q = price(r, n), solo = price(r, 1)
-    recordTrip({ rideId: r.id, from: r.spot_name, to: r.dest_name, people: n, paid: q.share, solo: solo.fare, saving: Math.max(0, solo.fare - q.share) })
+    const saving = Math.max(0, solo.fare - q.share)
+    recordTrip({ rideId: r.id, from: r.spot_name, to: r.dest_name, people: n, paid: q.share, solo: solo.fare, saving })
+    // 운영 통계용으로 서버에도 저장 (개인 금액은 본인만 조회 가능)
+    await saveTrip({ ride_id: r.id, user_id: me, spot_id: r.spot_id, dest_name: r.dest_name, people: n, paid: q.share, solo: solo.fare, saving })
     if (r.host_id === me && r.status !== 'done') setRideStatus(r.id, 'done')
     setMine((list) => list.filter((x) => x.id !== r.id))
-    setMsg({ text: `기록했어요. 이번에 ${won(Math.max(0, solo.fare - q.share))} 아꼈어요.` })
+    setMsg({ text: `기록했어요. 이번에 ${won(saving)} 아꼈어요.` })
+    const others = r.ride_members.filter((m) => m.user_id !== me)
+    if (others.length) setRating({ ride: r, others, scores: Object.fromEntries(others.map((m) => [m.user_id, 5])), noShow: {} })
+  }
+
+  const submitRating = async () => {
+    const rows = rating.others.map((m) => ({ ride_id: rating.ride.id, rater_id: me, ratee_id: m.user_id, score: rating.scores[m.user_id], no_show: !!rating.noShow[m.user_id] }))
+    const { error } = await rateMembers(rows)
+    setRating(null)
+    setMsg(error ? { bad: true, text: rideError(error) } : { text: '평가를 남겼어요. 다음 매칭의 신뢰 점수에 반영돼요.' })
   }
 
   const preview = form && tripQuote(zone, Number(form.dest), form.max)
@@ -80,6 +93,25 @@ export default function Together({ account, onLogin }) {
       <p className="page-sub">택시를 많이 타는 곳에서 같은 방향 사람을 모아요</p>
 
       {msg && <p className={`form-msg ${msg.bad ? 'bad' : ''}`}>{msg.text}</p>}
+
+      {rating && (
+        <div className="card mine">
+          <p className="card-title">같이 탄 분은 어땠나요?</p>
+          {rating.others.map((m) => (
+            <div key={m.user_id} className="rate-row">
+              <span>{m.nickname}</span>
+              <div className="stars">{[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} className={n <= rating.scores[m.user_id] ? 'on' : ''} onClick={() => setRating({ ...rating, scores: { ...rating.scores, [m.user_id]: n } })} aria-label={`${n}점`}>★</button>
+              ))}</div>
+              <label className="noshow"><input type="checkbox" checked={!!rating.noShow[m.user_id]} onChange={(e) => setRating({ ...rating, noShow: { ...rating.noShow, [m.user_id]: e.target.checked } })} /> 안 왔어요</label>
+            </div>
+          ))}
+          <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
+            <button className="btn ghost" onClick={() => setRating(null)}>건너뛰기</button>
+            <button className="btn" onClick={submitRating}>평가 남기기</button>
+          </div>
+        </div>
+      )}
 
       {mine.map((r) => {
         const members = [...r.ride_members].sort((a, b) => a.joined_at.localeCompare(b.joined_at))

@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { SharedTaxi, Badge } from '../components/Illust.jsx'
 import { waitingBySpot, tripQuote, zoneById, won, spots, spotZoneId } from '../data.js'
 import { supabase } from '../lib/supabase.js'
-import { listAllOpen, useRidesLive } from '../lib/rides.js'
+import { listAllOpen, useRidesLive, getStats, myTripsThisMonth } from '../lib/rides.js'
 import { useLive, nextBus, taxiDemandNow, useLastBus, lastBusState } from '../lib/live.js'
 
 const GOAL = 50000
@@ -50,7 +50,15 @@ export default function Home({ user, account, onGo }) {
   const people = top.max ?? Math.max(2, top.waiting + 1)
   const q = top.destZone ? tripQuote(top.zone, top.destZone, people) : null
   const solo = top.destZone ? tripQuote(top.zone, top.destZone, 1) : null
-  const saved = savedThisMonth()
+  const local = savedThisMonth()
+  // 로그인 상태면 서버에 쌓인 내 이용 기록으로 (다른 기기에서 탄 것도 합산)
+  const [server, setServer] = useState(null)
+  const [stats, setStats] = useState(null)
+  useEffect(() => {
+    if (live) myTripsThisMonth(account.session.user.id).then((t) => t && setServer({ won: t.reduce((a, x) => a + x.saving, 0), count: t.length }))
+    if (supabase) getStats().then(setStats)
+  }, [live])
+  const saved = server ?? local
   const { bus } = useLive(top.spot)
   const nb = nextBus(bus)
   const demand = taxiDemandNow(top.spot)
@@ -115,6 +123,19 @@ export default function Home({ user, account, onGo }) {
           <p className="sub">{top.spot.name} 시간당 약 {demand.perHour}명</p>
         </div>
       </div>
+
+      {stats && (
+        <div className="card">
+          <p className="card-title">같이타 시범 운영 현황 <small>참여자 전체</small></p>
+          <div className="stat-grid">
+            <div><b>{stats.members}</b><span>가입</span></div>
+            <div><b>{stats.rides}</b><span>모집</span></div>
+            <div><b>{stats.matched}</b><span>매칭 성공</span></div>
+            <div><b>{stats.saving >= 10000 ? `${(stats.saving / 10000).toFixed(1)}만` : stats.saving.toLocaleString()}</b><span>아낀 돈(원)</span></div>
+          </div>
+          {stats.by_spot?.length > 0 && <p className="sub" style={{ marginTop: 8 }}>모집이 가장 많은 곳: {stats.by_spot.slice(0, 3).map((x) => `${x.spot} ${x.rides}건`).join(' · ')}</p>}
+        </div>
+      )}
 
       <div className="card">
         <p className="card-title">가까운 같이타기 스팟 <small onClick={() => onGo('together')} style={{ cursor: 'pointer' }}>전체 보기 ›</small></p>

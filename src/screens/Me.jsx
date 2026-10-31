@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import ProfileForm from './ProfileForm.jsx'
 import { FIELDS, NOT_COLLECTED, RULES } from '../privacy.js'
 import { signOut, deleteProfile } from '../lib/auth.js'
+import { getMyRating, sendFeedback } from '../lib/rides.js'
 
 const AGE = { '10s': '10대', '20s': '20대', '30s': '30대', '40s': '40대', '50s+': '50대 이상' }
 const mask = (p) => p.replace(/^(\d{3})-?(\d{3,4})-?(\d{4})$/, '$1-****-$3')
@@ -33,10 +34,31 @@ function Guide() {
   )
 }
 
+function Feedback({ userId }) {
+  const [text, setText] = useState('')
+  const [msg, setMsg] = useState(null)
+  const send = async () => {
+    if (text.trim().length < 2) return setMsg({ bad: true, text: '두 글자 이상 적어 주세요.' })
+    const { error } = await sendFeedback(text.trim(), userId)
+    if (error) return setMsg({ bad: true, text: '보내지 못했어요. 잠시 후 다시 시도해 주세요.' })
+    setText(''); setMsg({ text: '고마워요! 다음 개선에 반영할게요.' })
+  }
+  return (
+    <div className="card">
+      <p className="card-title">의견 보내기 <small>시범 운영</small></p>
+      <textarea className="fb" rows={3} maxLength={1000} placeholder="불편했던 점, 있었으면 하는 기능을 적어 주세요" value={text} onChange={(e) => { setText(e.target.value); setMsg(null) }} />
+      {msg && <p className={`form-msg ${msg.bad ? 'bad' : ''}`} style={{ marginTop: 8 }}>{msg.text}</p>}
+      <button className="btn" style={{ marginTop: 8 }} onClick={send}>보내기</button>
+    </div>
+  )
+}
+
 export default function Me({ account, onLogin }) {
   const { session, profile, loading, setProfile } = account
   const [editing, setEditing] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
+  const [rate, setRate] = useState(null)
+  useEffect(() => { if (session && profile) getMyRating(session.user.id).then(setRate) }, [session, profile])
 
   if (loading) return <p className="sub">불러오는 중…</p>
 
@@ -46,6 +68,7 @@ export default function Me({ account, onLogin }) {
       <h1 className="page-title">내 정보</h1>
       <p className="page-sub">가입하면 같이타기 모집·참여를 할 수 있어요</p>
       <button className="btn" style={{ marginBottom: 12 }} onClick={onLogin}>로그인 · 회원가입</button>
+      <Feedback />
       <Guide />
     </>
   )
@@ -72,6 +95,7 @@ export default function Me({ account, onLogin }) {
           <p className="sub">{profile.gender === 'F' ? '여성' : '남성'}{profile.age_group ? ` · ${AGE[profile.age_group]}` : ''}</p>
           <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
             <span className="tag">본인확인 예정</span>
+            {rate && <span className="tag amber">★ {rate.count ? `${rate.avg} (${rate.count}회 평가)` : '아직 평가 없음'}</span>}
             {profile.org_email && <span className="tag">{profile.org_email.split('@')[1]} 인증 예정</span>}
           </div>
         </div>
@@ -92,6 +116,7 @@ export default function Me({ account, onLogin }) {
           </div>
         )}
       </div>
+      <Feedback userId={session.user.id} />
       <Guide />
     </>
   )

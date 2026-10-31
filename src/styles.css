@@ -174,3 +174,18 @@ a { color: var(--teal-dark); }
 .lastbus-banner { display: flex; flex-direction: column; gap: 2px; background: #fdecec; color: #a32d2d; border-radius: 16px; padding: 12px 16px; margin-bottom: 12px; cursor: pointer; }
 .lastbus-banner b { font-size: 15px; } .lastbus-banner span { font-size: 13px; }
 @media (prefers-color-scheme: dark) { .lastbus-banner { background: #3a1717; color: #f09595; } }
+
+/* 동승 평가 */
+.rate-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.rate-row > span { font-weight: 700; min-width: 80px; }
+.stars { display: flex; gap: 2px; }
+.stars button { border: 0; background: none; font-size: 24px; color: var(--line); padding: 0 2px; }
+.stars button.on { color: #f5b400; }
+.noshow { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 4px; }
+
+/* 운영 통계 · 의견 */
+.stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
+.stat-grid div { background: var(--bg); border-radius: 12px; padding: 10px 4px; }
+.stat-grid b { display: block; font-size: 18px; }
+.stat-grid span { font-size: 11px; color: var(--ink-2); }
+.fb { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: 15px; resize: vertical; }
