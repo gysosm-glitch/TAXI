@@ -66,3 +66,23 @@ export function lastBusState(data, now = new Date()) {
   const ended = left < 0 || cur < firstMin
   return { latest, left, ended, soon: !ended && left <= 60 }
 }
+
+// 오송역 KTX·열차 도착 (5분마다 갱신)
+export function useTrains(enabled) {
+  const [data, setData] = useState(null)
+  useEffect(() => {
+    if (!enabled) { setData(null); return }
+    let alive = true
+    const load = () => getJSON('/api/train').then((d) => { if (alive) setData(d) })
+    load()
+    const t = setInterval(load, 300000)
+    return () => { alive = false; clearInterval(t) }
+  }, [enabled])
+  return data
+}
+
+// "17:42" → 지금부터 몇 분 뒤
+export function minutesUntil(hhmm, now = new Date()) {
+  const [h, m] = hhmm.split(':').map(Number)
+  return h * 60 + m - (now.getHours() * 60 + now.getMinutes())
+}

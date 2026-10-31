@@ -6,6 +6,7 @@ import { Badge, SharedTaxi } from '../components/Illust.jsx'
 import { waitingBySpot, tripQuote, zones, won, spotZoneId } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { askNotify } from '../lib/alerts.js'
+import { useTrains, minutesUntil } from '../lib/live.js'
 import { listRides, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError } from '../lib/rides.js'
 
 const pin = (n, on) => L.divIcon({ html: `<div class="spot-pin ${on ? 'on' : ''}">${n}</div>`, className: 'map-icon', iconSize: [30, 30], iconAnchor: [15, 15] })
@@ -32,6 +33,8 @@ export default function Together({ account, onLogin }) {
   const zone = spotZoneId(spot)
   const canUse = !!(supabase && session && profile)
   const spotOf = (id) => groups.find((x) => x.spot.id === id)?.spot
+  const trains = useTrains(sel === 'osong_stn')
+  const ktx = trains?.ok ? trains.next.filter((t) => minutesUntil(t.time) >= 0 && minutesUntil(t.time) <= 90).slice(0, 3) : []
   const price = (r, n) => tripQuote(spotZoneId(spotOf(r.spot_id) ?? spot), r.dest_zone, n)
 
   useRidesLive(async () => {
@@ -165,6 +168,14 @@ export default function Together({ account, onLogin }) {
             </label>
             <div className="field"><span>언제 출발해요?</span>
               <div className="seg wrap">{LEAVE.map(([v, l]) => <button key={v} type="button" className={form.leave === v ? 'on' : ''} onClick={() => setForm({ ...form, leave: v })}>{l}</button>)}</div>
+              {ktx.length > 0 && (
+                <div className="seg wrap" style={{ marginTop: 8 }}>
+                  {ktx.map((t) => {
+                    const leave = Math.max(5, minutesUntil(t.time) + 10)   // 도착 10분 뒤 승차장에서 출발
+                    return <button key={t.no} type="button" className={form.leave === leave ? 'on' : ''} onClick={() => setForm({ ...form, leave })}>{t.grade} {t.time} 도착 맞춰</button>
+                  })}
+                </div>
+              )}
             </div>
             <div className="field"><span>몇 명이 탈까요? (나 포함)</span>
               <div className="seg">{[2, 3].map((v) => <button key={v} type="button" className={form.max === v ? 'on' : ''} onClick={() => setForm({ ...form, max: v })}>{v}명</button>)}</div>

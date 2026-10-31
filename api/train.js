@@ -25,7 +25,10 @@ let cache = null   // 역 코드는 잘 안 바뀌므로 함수 인스턴스가 
 
 async function stationIds(k) {
   if (cache) return cache
-  const cities = items((await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${k}&_type=json`)).json)
+  const c = await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${k}&_type=json`)
+  const err = c.json?.OpenAPI_ServiceResponse?.cmmMsgHeader?.errMsg
+  if (c.error || err) throw new Error(err || c.error)
+  const cities = items(c.json)
   const ids = {}
   for (const c of cities) {
     const st = items((await getJSON(`${BASE}/GetCtyAcctoTrainSttnList?serviceKey=${k}&cityCode=${c.citycode}&numOfRows=300&pageNo=1&_type=json`)).json)
@@ -65,6 +68,7 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 's-maxage=300, stale-while-revalidate=300')
     return res.status(200).json({ ok: true, station: '오송', now: nowHHMM, next: upcoming.slice(0, 12), total: upcoming.length })
   } catch (e) {
-    return res.status(200).json({ ok: false, reason: 'api_error', message: String(e) })
+    const m = String(e)
+    return res.status(200).json({ ok: false, reason: m.includes('SERVICE_KEY') ? 'key_pending' : 'api_error', message: m })
   }
 }

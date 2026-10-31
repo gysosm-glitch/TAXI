@@ -2,7 +2,7 @@ import { useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { BusStop, Badge } from '../components/Illust.jsx'
 import { spots } from '../data.js'
-import { useLive, useLastBus, lastBusState } from '../lib/live.js'
+import { useLive, useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
 import { HOUR_PROFILE } from '../lib/simulate.js'
 
 const SUM = HOUR_PROFILE.reduce((a, b) => a + b, 0)
@@ -22,6 +22,7 @@ export default function Transit() {
   const { bus, at } = useLive(spot)
   const lastData = useLastBus(spot)
   const last = lastBusState(lastData)
+  const trains = useTrains(id === 'osong_stn' || id === 'osong_bio')
   const hour = new Date().getHours()
   const busy = Math.round(spot.pickups_per_day * HOUR_PROFILE[hour] / SUM)
 
@@ -45,6 +46,19 @@ export default function Transit() {
         ))}
       </div>
 
+
+      {trains && (
+        <div className="card">
+          <p className="card-title"><span className="with-badge"><Badge tone="blue"><Icon name="train" size={16} /></Badge>오송역 열차 도착</span>
+            {trains.ok && <small>오늘 남은 {trains.total}편</small>}</p>
+          {!trains.ok && <Waiting data={trains.reason === 'key_pending' ? trains : { reason: 'no_key' }} />}
+          {trains.ok && trains.next.length === 0 && <p className="sub">오늘 남은 도착 열차가 없어요.</p>}
+          {trains.ok && trains.next.slice(0, 6).map((t) => (
+            <div key={t.no} className="row-item"><span>{t.grade} {t.no}<span className="meta">{t.from}에서 출발</span></span><span className="r">{t.time} <small className="sub">({minutesUntil(t.time)}분 후)</small></span></div>
+          ))}
+          {trains.ok && trains.next.length > 0 && <p className="sub" style={{ marginTop: 8 }}>열차가 도착하면 택시 수요가 한꺼번에 몰려요. 도착 시간에 맞춰 같이타기를 열어 보세요.</p>}
+        </div>
+      )}
 
       <div className="card">
         <p className="card-title"><span className="with-badge"><Badge tone="blue"><Icon name="bus" size={16} /></Badge>막차</span>
