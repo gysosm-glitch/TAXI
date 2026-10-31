@@ -49,6 +49,9 @@ export function authError(e) {
   if (m.includes('Email not confirmed')) return '메일함에서 가입 확인 링크를 먼저 눌러 주세요.'
   if (m.includes('already registered')) return '이미 가입된 이메일이에요. 로그인해 주세요.'
   if (m.includes('Password should be')) return '비밀번호는 6자 이상이어야 해요.'
+  if (m.includes('not authorized') || m.includes('sending confirmation') || m.includes('sending')) return '가입 확인 메일을 보내지 못했어요. 관리자가 Supabase에서 이메일 확인(Confirm email)을 꺼야 해요.'
+  if (m.includes('rate limit')) return '잠시 가입 요청이 많았어요. 몇 분 뒤 다시 시도해 주세요.'
+  if (m.includes('invalid') && m.toLowerCase().includes('email')) return '이메일 주소 형식을 확인해 주세요.'
   if (m.includes('relation') && m.includes('profiles')) return '서버에 회원 테이블이 아직 없어요. 관리자에게 알려 주세요.'
   return m || '잠시 후 다시 시도해 주세요.'
 }
