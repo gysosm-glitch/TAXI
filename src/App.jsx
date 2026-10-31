@@ -42,8 +42,8 @@ export default function App() {
   return (
     <div className="shell">
       <main className="content">
-        {tab === 'home' && <Home user={profile ? { name: profile.nickname } : null} onGo={setTab} />}
-        {tab === 'together' && <Together />}
+        {tab === 'home' && <Home user={profile ? { name: profile.nickname } : null} account={account} onGo={setTab} />}
+        {tab === 'together' && <Together account={account} onLogin={() => setBrowsing(false)} />}
         {tab === 'transit' && <Transit />}
         {tab === 'me' && <Me account={account} onLogin={() => setBrowsing(false)} />}
       </main>

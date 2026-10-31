@@ -1,7 +1,9 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { SharedTaxi, Badge } from '../components/Illust.jsx'
-import { waitingBySpot, tripQuote, zoneById, won } from '../data.js'
+import { waitingBySpot, tripQuote, zoneById, won, spots, spotZoneId } from '../data.js'
+import { supabase } from '../lib/supabase.js'
+import { listAllOpen, useRidesLive } from '../lib/rides.js'
 import { useLive, nextBus, taxiDemandNow } from '../lib/live.js'
 
 const GOAL = 50000
@@ -28,11 +30,24 @@ function Ring({ ratio }) {
   )
 }
 
-export default function Home({ user, onGo }) {
+export default function Home({ user, account, onGo }) {
   const now = new Date()
-  const groups = useMemo(() => waitingBySpot(now), [now.getHours()])
-  const top = groups[0]
-  const people = Math.max(2, top.waiting + 1)
+  const sample = useMemo(() => waitingBySpot(now), [now.getHours()])
+  // 로그인 상태면 실제 모집(Supabase)으로, 아니면 시범 데이터로 보여 준다
+  const live = !!(supabase && account?.session && account?.profile)
+  const [real, setReal] = useState([])
+  useRidesLive(async () => { if (live) setReal(await listAllOpen()) }, [live])
+  const openRides = real.filter((r) => r.status === 'open')
+  const groups = live
+    ? sample.map((g) => ({ ...g, waiting: openRides.filter((r) => r.spot_id === g.spot.id).reduce((a, r) => a + r.ride_members.length, 0) }))
+      .sort((a, b) => b.waiting - a.waiting || b.spot.pickups_per_day - a.spot.pickups_per_day)
+    : sample
+  const ride = live && openRides[0]
+  const rideSpot = ride && spots.find((s) => s.id === ride.spot_id)
+  const top = ride && rideSpot
+    ? { spot: rideSpot, zone: spotZoneId(rideSpot), waiting: ride.ride_members.length, destZone: ride.dest_zone, max: ride.max_people }
+    : groups[0]
+  const people = top.max ?? Math.max(2, top.waiting + 1)
   const q = top.destZone ? tripQuote(top.zone, top.destZone, people) : null
   const solo = top.destZone ? tripQuote(top.zone, top.destZone, 1) : null
   const saved = savedThisMonth()
@@ -64,7 +79,7 @@ export default function Home({ user, onGo }) {
           <div className="hero-art"><SharedTaxi /></div>
           <p className="label">지금 같이 타기</p>
           <h2>{top.spot.name} → {zoneById[top.destZone].name}</h2>
-          <p className="sub">{top.waiting ? `${top.waiting}명 모집 중 · 10분 안에 출발` : '아직 모집이 없어요 · 2명이 모이면 출발'}</p>
+          <p className="sub">{top.max ? `${top.waiting}/${top.max}명 모집 중 · ${new Date(ride.depart_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 출발` : top.waiting ? `${top.waiting}명 모집 중 · 10분 안에 출발` : '아직 모집이 없어요 · 2명이 모이면 출발'}</p>
           <div className="row">
             <div>
               <p className="sub">1인 예상</p>

@@ -139,3 +139,19 @@ a { color: var(--teal-dark); }
 .with-badge .ibadge { width: 30px; height: 30px; border-radius: 10px; margin: 0; }
 .empty { text-align: center; padding: 6px 0 2px; }
 .empty p { margin: 6px 0 0; }
+
+/* 같이타기 모집·참여 */
+.card.mine { border: 2px solid var(--teal); }
+.seat { display: flex; justify-content: space-between; padding: 4px 0; }
+.ride-item { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ride-item:last-of-type { border-bottom: 0; }
+.ride-item b { font-size: 16px; }
+.ride-item .meta { display: block; font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+.pill-btn.small { background: var(--teal); color: #fff; padding: 8px 16px; flex: none; }
+.pill-btn:disabled { opacity: .45; }
+.new-ride { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.field select { width: 100%; padding: 13px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: 16px; }
+.safety-row { display: flex; gap: 8px; margin-top: 8px; }
+.safety-row a { flex: 1; text-align: center; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; text-decoration: none; }
+.safety-row .sos { background: var(--red-soft); color: var(--red); }
+.safety-row .ghost-link { background: var(--bg); color: var(--ink-2); }
