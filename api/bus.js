@@ -24,12 +24,15 @@ export default async function handler(req, res) {
       .filter((s) => (seen.has(s.nodenm) ? false : seen.add(s.nodenm)))
       .slice(0, 4)
     const result = await Promise.all(stations.map(async (s) => {
-      const arr = await fetch(`${BASE}/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?serviceKey=${k}&cityCode=${s.citycode}&nodeId=${s.nodeid}&numOfRows=30&pageNo=1&_type=json`)
-        .then((r) => r.json()).catch(() => null)
+      // 키 미승인 등 오류는 JSON이 아닌 XML로 오므로 원문 앞부분을 상태로 남긴다
+      const raw = await fetch(`${BASE}/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?serviceKey=${k}&cityCode=${s.citycode}&nodeId=${s.nodeid}&numOfRows=30&pageNo=1&_type=json`)
+        .then((r) => r.text()).catch((e) => `요청 실패: ${e}`)
+      let arr = null
+      try { arr = JSON.parse(raw) } catch { /* XML 오류 응답 */ }
       const h = header(arr)
       return {
         name: s.nodenm, id: s.nodeid, city: s.citycode, lat: Number(s.gpslati), lon: Number(s.gpslong),
-        status: h ? `${h.resultCode} ${h.resultMsg}` : '응답 없음',
+        status: h ? `${h.resultCode} ${h.resultMsg}` : raw.replace(/\s+/g, ' ').slice(0, 160),
         arrivals: items(arr).map((a) => ({ route: String(a.routeno), min: Math.round(Number(a.arrtime) / 60), stops: Number(a.arrprevstationcnt) }))
           .sort((a, b) => a.min - b.min).slice(0, 6),
       }
