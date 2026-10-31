@@ -43,7 +43,7 @@ export default async function handler(req, res) {
   try {
     if (req.query.debug === 'cities') {
       const c = await getJSON(`${BASE}/getCtyCodeList?serviceKey=${k}&_type=json`)
-      return res.status(200).json(c.error ? { ok: false, error: c.error } : { ok: true, cities: items(c.json) })
+      return res.status(200).json(c.error ? { ok: false, error: c.error } : { ok: true, raw: c.json })
     }
     const ids = await stationIds(k)
     if (!ids[TARGET]) return res.status(200).json({ ok: false, reason: 'no_station', ids })
