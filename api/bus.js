@@ -1,6 +1,7 @@
 // Vercel 서버 함수: 스팟 주변 버스 정류장의 실시간 도착 정보 (국토교통부 TAGO)
-// 환경변수 TAGO_API_KEY = 공공데이터포털 일반 인증키(Decoding)
-// 활용신청: 버스정류소정보 15098534, 버스도착정보 15098530
+// 환경변수 (공공데이터포털 일반 인증키 Decoding)
+//   TAGO_API_KEY          버스정류소정보 15098534
+//   TAGO_ARRIVAL_API_KEY  버스도착정보 15098530 (없으면 TAGO_API_KEY를 같이 씀)
 const BASE = 'https://apis.data.go.kr/1613000'
 
 const items = (json) => {
@@ -15,6 +16,7 @@ export default async function handler(req, res) {
   const { lat, lon } = req.query
   if (!lat || !lon) return res.status(400).json({ ok: false, reason: 'lat, lon 필요' })
   const k = encodeURIComponent(key)
+  const ka = encodeURIComponent(process.env.TAGO_ARRIVAL_API_KEY || key)
   try {
     const near = await fetch(`${BASE}/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=${k}&gpsLati=${lat}&gpsLong=${lon}&numOfRows=12&pageNo=1&_type=json`).then((r) => r.json())
     // 같은 이름 정류장이 시 경계(청주·세종)에 겹치므로 청주(CJB) 정류장을 먼저, 같은 이름은 하나만
@@ -25,7 +27,7 @@ export default async function handler(req, res) {
       .slice(0, 4)
     const result = await Promise.all(stations.map(async (s) => {
       // 키 미승인 등 오류는 JSON이 아닌 XML로 오므로 원문 앞부분을 상태로 남긴다
-      const raw = await fetch(`${BASE}/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?serviceKey=${k}&cityCode=${s.citycode}&nodeId=${s.nodeid}&numOfRows=30&pageNo=1&_type=json`)
+      const raw = await fetch(`${BASE}/ArvlInfoInqireService/getSttnAcctoArvlPrearngeInfoList?serviceKey=${ka}&cityCode=${s.citycode}&nodeId=${s.nodeid}&numOfRows=30&pageNo=1&_type=json`)
         .then((r) => r.text()).catch((e) => `요청 실패: ${e}`)
       let arr = null
       try { arr = JSON.parse(raw) } catch { /* XML 오류 응답 */ }
