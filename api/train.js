@@ -1,7 +1,7 @@
 // Vercel 서버 함수: 오송역에 곧 도착하는 열차 (국토교통부 TAGO 열차정보 15098552)
 // 환경변수 TAGO_TRAIN_API_KEY (없으면 TAGO_API_KEY)
 import { trainKey } from './_keys.js'
-const BASE = 'https://apis.data.go.kr/1613000/TrainInfoService'
+const BASE = 'https://apis.data.go.kr/1613000/TrainInfo'   // 2026 기준 주소 (구 TrainInfoService 폐기)
 
 const items = (json) => {
   const it = json?.response?.body?.items?.item
@@ -25,10 +25,10 @@ let cache = null   // 역 코드는 잘 안 바뀌므로 함수 인스턴스가 
 
 async function stationIds(k) {
   if (cache) return cache
-  const cities = items((await getJSON(`${BASE}/getCtyCodeList?serviceKey=${k}&_type=json`)).json)
+  const cities = items((await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${k}&_type=json`)).json)
   const ids = {}
   for (const c of cities) {
-    const st = items((await getJSON(`${BASE}/getCtyAcctoTrainSttnList?serviceKey=${k}&cityCode=${c.citycode}&numOfRows=300&pageNo=1&_type=json`)).json)
+    const st = items((await getJSON(`${BASE}/GetCtyAcctoTrainSttnList?serviceKey=${k}&cityCode=${c.citycode}&numOfRows=300&pageNo=1&_type=json`)).json)
     for (const s of st) if ([TARGET, ...ORIGINS].includes(s.nodename) && !ids[s.nodename]) ids[s.nodename] = s.nodeid
     if (Object.keys(ids).length === ORIGINS.length + 1) break
   }
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
   const k = encodeURIComponent(key)
   try {
     if (req.query.debug === 'cities') {
-      const c = await getJSON(`${BASE}/getCtyCodeList?serviceKey=${k}&_type=json`)
+      const c = await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${k}&_type=json`)
       return res.status(200).json(c.error ? { ok: false, error: c.error } : { ok: true, raw: c.json })
     }
     const ids = await stationIds(k)
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     const trains = []
     let status = null
     await Promise.all(ORIGINS.filter((o) => ids[o]).map(async (o) => {
-      const r = await getJSON(`${BASE}/getStrtpntAlocFndTrainInfo?serviceKey=${k}&depPlaceId=${ids[o]}&arrPlaceId=${ids[TARGET]}&depPlandTime=${ymd(now)}&numOfRows=200&pageNo=1&_type=json`)
+      const r = await getJSON(`${BASE}/GetStrtpntAlocFndTrainInfo?serviceKey=${k}&depPlaceId=${ids[o]}&arrPlaceId=${ids[TARGET]}&depPlandTime=${ymd(now)}&numOfRows=200&pageNo=1&_type=json`)
       if (r.error) { status = r.error; return }
       for (const t of items(r.json)) trains.push({ time: toHHMM(t.arrplandtime), from: o, grade: t.traingradename, no: String(t.trainno) })
     }))
