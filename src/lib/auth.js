@@ -8,18 +8,23 @@ export function useAccount() {
   const [loading, setLoading] = useState(!!supabase)
 
   const loadProfile = async (s) => {
-    if (!s) { setProfile(null); return }
+    if (!s) { setProfile(null); setLoading(false); return }
     const { data } = await supabase.from('profiles').select('*').eq('id', s.user.id).maybeSingle()
     setProfile(data ?? null)
+    setLoading(false)
   }
 
   useEffect(() => {
     if (!supabase) return
-    supabase.auth.getSession().then(async ({ data }) => {
-      setSession(data.session); await loadProfile(data.session); setLoading(false)
+    // 주의: onAuthStateChange 콜백 안에서 바로 Supabase를 호출하면 인증 잠금 때문에 멈춘다.
+    // setTimeout으로 콜백이 끝난 뒤에 프로필을 불러온다. (처음 열 때도 INITIAL_SESSION 이벤트로 들어옴)
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      setSession(s)
+      setTimeout(() => loadProfile(s), 0)
     })
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => { setSession(s); loadProfile(s) })
-    return () => sub.subscription.unsubscribe()
+    // 네트워크가 막혀도 '불러오는 중'에 갇히지 않게
+    const guard = setTimeout(() => setLoading(false), 8000)
+    return () => { sub.subscription.unsubscribe(); clearTimeout(guard) }
   }, [])
 
   return { session, profile, loading, reload: () => loadProfile(session), setProfile }
