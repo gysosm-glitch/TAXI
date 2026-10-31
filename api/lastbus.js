@@ -1,5 +1,6 @@
 // Vercel 서버 함수: 스팟 주변 정류장을 지나는 버스 노선의 첫차·막차 시간 (국토교통부 TAGO)
 // 환경변수: TAGO_API_KEY(정류소정보 15098534), TAGO_ROUTE_API_KEY(버스노선정보 15098529, 없으면 TAGO_API_KEY)
+import { tagoKey, routeKey } from './_keys.js'
 const BASE = 'https://apis.data.go.kr/1613000'
 
 const items = (json) => {
@@ -15,12 +16,12 @@ const hhmm = (v) => { const s = String(v ?? '').padStart(4, '0'); return /^\d{4}
 const order = (v) => { const n = Number(v); return n < 400 ? n + 2400 : n }
 
 export default async function handler(req, res) {
-  const key = process.env.TAGO_API_KEY
+  const key = tagoKey()
   if (!key) return res.status(200).json({ ok: false, reason: 'no_key' })
   const { lat, lon } = req.query
   if (!lat || !lon) return res.status(400).json({ ok: false, reason: 'lat, lon 필요' })
   const k = encodeURIComponent(key)
-  const kr = encodeURIComponent(process.env.TAGO_ROUTE_API_KEY || key)
+  const kr = encodeURIComponent(routeKey())
   try {
     const near = await getJSON(`${BASE}/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=${k}&gpsLati=${lat}&gpsLong=${lon}&numOfRows=8&pageNo=1&_type=json`)
     const stations = items(near.json).filter((s) => String(s.nodeid).startsWith('CJB')).slice(0, 2)

@@ -42,3 +42,27 @@ export function taxiDemandNow(spot, hour = new Date().getHours()) {
   const avg = spot.pickups_per_day / 24
   return { perHour, level: perHour >= avg * 1.15 ? '많음' : perHour >= avg * 0.7 ? '보통' : '적음' }
 }
+
+// 막차: 스팟 주변 노선의 막차 시간 (시간표라 한 번만 불러온다)
+export function useLastBus(spot) {
+  const [data, setData] = useState(null)
+  useEffect(() => {
+    let alive = true
+    setData(null)
+    getJSON(`/api/lastbus?lat=${spot.lat}&lon=${spot.lon}`).then((d) => { if (alive) setData(d) })
+    return () => { alive = false }
+  }, [spot.id])
+  return data
+}
+
+// 지금 기준 막차 상태: 가장 늦은 막차까지 남은 분, 끝났는지
+export function lastBusState(data, now = new Date()) {
+  if (!data?.ok || !data.routes.length) return null
+  const toMin = (t) => { const [h, m] = t.split(':').map(Number); return (h < 4 ? h + 24 : h) * 60 + m }
+  const cur = (now.getHours() < 4 ? now.getHours() + 24 : now.getHours()) * 60 + now.getMinutes()
+  const latest = data.routes.reduce((a, r) => (toMin(r.last) > toMin(a.last) ? r : a), data.routes[0])
+  const left = toMin(latest.last) - cur
+  const firstMin = Math.min(...data.routes.map((r) => toMin(r.first)))
+  const ended = left < 0 || cur < firstMin
+  return { latest, left, ended, soon: !ended && left <= 60 }
+}

@@ -169,3 +169,8 @@ a { color: var(--teal-dark); }
   background: #1c1c1e; color: #fff; box-shadow: 0 8px 24px rgba(0,0,0,.25); animation: drop .25s ease-out; }
 .toast b { font-size: 14px; color: #9fe1cb; } .toast span { font-size: 14px; }
 @keyframes drop { from { transform: translate(-50%, -20px); opacity: 0 } to { transform: translate(-50%, 0); opacity: 1 } }
+
+/* 막차 안내 띠 */
+.lastbus-banner { display: flex; flex-direction: column; gap: 2px; background: #fdecec; color: #a32d2d; border-radius: 16px; padding: 12px 16px; margin-bottom: 12px; cursor: pointer; }
+.lastbus-banner b { font-size: 15px; } .lastbus-banner span { font-size: 13px; }
+@media (prefers-color-scheme: dark) { .lastbus-banner { background: #3a1717; color: #f09595; } }

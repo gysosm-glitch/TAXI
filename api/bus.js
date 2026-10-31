@@ -2,6 +2,7 @@
 // 환경변수 (공공데이터포털 일반 인증키 Decoding)
 //   TAGO_API_KEY          버스정류소정보 15098534
 //   TAGO_ARRIVAL_API_KEY  버스도착정보 15098530 (없으면 TAGO_API_KEY를 같이 씀)
+import { tagoKey, arrivalKey } from './_keys.js'
 const BASE = 'https://apis.data.go.kr/1613000'
 
 const items = (json) => {
@@ -11,12 +12,12 @@ const items = (json) => {
 const header = (json) => json?.response?.header ?? null
 
 export default async function handler(req, res) {
-  const key = process.env.TAGO_API_KEY
+  const key = tagoKey()
   if (!key) return res.status(200).json({ ok: false, reason: 'no_key' })
   const { lat, lon } = req.query
   if (!lat || !lon) return res.status(400).json({ ok: false, reason: 'lat, lon 필요' })
   const k = encodeURIComponent(key)
-  const ka = encodeURIComponent(process.env.TAGO_ARRIVAL_API_KEY || key)
+  const ka = encodeURIComponent(arrivalKey())
   try {
     const near = await fetch(`${BASE}/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=${k}&gpsLati=${lat}&gpsLong=${lon}&numOfRows=12&pageNo=1&_type=json`).then((r) => r.json())
     // 같은 이름 정류장이 시 경계(청주·세종)에 겹치므로 청주(CJB) 정류장을 먼저, 같은 이름은 하나만

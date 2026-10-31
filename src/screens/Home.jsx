@@ -4,7 +4,7 @@ import { SharedTaxi, Badge } from '../components/Illust.jsx'
 import { waitingBySpot, tripQuote, zoneById, won, spots, spotZoneId } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { listAllOpen, useRidesLive } from '../lib/rides.js'
-import { useLive, nextBus, taxiDemandNow } from '../lib/live.js'
+import { useLive, nextBus, taxiDemandNow, useLastBus, lastBusState } from '../lib/live.js'
 
 const GOAL = 50000
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -54,6 +54,7 @@ export default function Home({ user, account, onGo }) {
   const { bus } = useLive(top.spot)
   const nb = nextBus(bus)
   const demand = taxiDemandNow(top.spot)
+  const last = lastBusState(useLastBus(top.spot))
 
   return (
     <>
@@ -73,6 +74,13 @@ export default function Home({ user, account, onGo }) {
           <p className="sub">{saved.count ? `같이 탄 횟수 ${saved.count}회 · 목표 ${won(GOAL)}` : '같이 타면 할증 붙는 요금도 n분의 1이에요'}</p>
         </div>
       </div>
+
+      {last && (last.ended || last.soon) && (
+        <div className="lastbus-banner" onClick={() => onGo('together')}>
+          <b>{last.ended ? `${top.spot.name} 버스가 끊겼어요` : `${top.spot.name} 막차까지 ${last.left}분`}</b>
+          <span>{last.ended ? '같은 방향 사람과 택시를 나눠 타세요 ›' : `막차 ${last.latest.last} · 놓치면 같이타기로 ›`}</span>
+        </div>
+      )}
 
       {q && (
         <div className="hero">
@@ -96,7 +104,9 @@ export default function Home({ user, account, onGo }) {
           <Badge tone="blue"><Icon name="bus" size={18} /></Badge>
           <p className="label">다음 버스</p>
           {nb ? <><p className="mid">{nb.min}분</p><p className="sub">{nb.route}번 · {nb.station}</p></>
-            : <><p className="mid" style={{ color: 'var(--muted)' }}>–</p><p className="sub">{bus ? '실시간 연결 준비 중' : '불러오는 중'}</p></>}
+            : last?.ended ? <><p className="mid bad">끝남</p><p className="sub">오늘 버스 운행이 끝났어요</p></>
+            : <><p className="mid" style={{ color: 'var(--muted)' }}>–</p><p className="sub">{bus ? '도착 예정 버스 없음' : '불러오는 중'}</p></>}
+          {last && !last.ended && <p className="sub" style={{ marginTop: 2 }}>막차 {last.latest.last} ({last.latest.route}번)</p>}
         </div>
         <div className="card">
           <Badge tone="amber"><Icon name="users" size={18} /></Badge>
