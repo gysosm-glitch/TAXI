@@ -40,30 +40,14 @@ async function stationIds(k) {
 }
 
 export default async function handler(req, res) {
-  const key = trainKey()
-  if (!key) return res.status(200).json({ ok: false, reason: 'no_key' })
-  const k = encodeURIComponent(key)
+  if (!trainKey()) return res.status(200).json({ ok: false, reason: 'no_key' })
+  // 열차 키가 인증에 실패하면(잘못 붙여넣은 경우 등) 같은 계정의 TAGO 키로 대신 호출한다
+  let k = encodeURIComponent(trainKey())
+  if (trainKey() !== tagoKey() && tagoKey()) {
+    const probe = await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${k}&_type=json`)
+    if (probe.json?.OpenAPI_ServiceResponse || probe.error) k = encodeURIComponent(tagoKey())
+  }
   try {
-    if (req.query.debug === 'keys') {
-      // 키 값은 내보내지 않고, 같은지 여부와 각 키의 응답 결과만 확인한다
-      const probe = async (kk) => {
-        const c = await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${encodeURIComponent(kk)}&_type=json`)
-        return c.error ? c.error.slice(0, 80) : (c.json?.OpenAPI_ServiceResponse?.cmmMsgHeader?.errMsg ?? `OK 도시 ${items(c.json).length}개`)
-      }
-      return res.status(200).json({
-        trainKeySet: !!process.env.TAGO_TRAIN_API_KEY,
-        sameAsTagoKey: process.env.TAGO_TRAIN_API_KEY === process.env.TAGO_API_KEY,
-        trainKeyLength: (process.env.TAGO_TRAIN_API_KEY || '').length,
-        trainKeyTrimmedLength: (trainKey() || '').length,
-        tagoKeyLength: (process.env.TAGO_API_KEY || '').length,
-        withTrainKey: await probe(trainKey()),
-        withTagoKey: await probe(tagoKey()),
-      })
-    }
-    if (req.query.debug === 'cities') {
-      const c = await getJSON(`${BASE}/GetCtyCodeList?serviceKey=${k}&_type=json`)
-      return res.status(200).json(c.error ? { ok: false, error: c.error } : { ok: true, raw: c.json })
-    }
     const ids = await stationIds(k)
     if (!ids[TARGET]) return res.status(200).json({ ok: false, reason: 'no_station', ids })
     const now = kst()
