@@ -1,10 +1,10 @@
 {
-  "name": "청주 복합할증 개선 · 택시 매칭 스팟",
-  "short_name": "매칭 스팟",
+  "name": "같이타 청주",
+  "short_name": "같이타",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "theme_color": "#1d9e75",
   "lang": "ko",
   "icons": [
     { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }

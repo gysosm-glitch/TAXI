@@ -34,6 +34,28 @@ export const places = [
   ...zones.map((z) => ({ id: `zone:${z.zone_id}`, name: z.name, sub: `${z.gu} · ${z.type_ko}`, lat: z.centroid_lat, lon: z.centroid_lon, zone: z.zone_id })),
 ]
 
+// 스팟별 지금 같이 타기 대기 현황 (시범: 합성 요청 중 현재 시각 ±1시간 출발분)
+import synthetic from '../data/web/05_matching/synthetic_ride_requests.json'
+export const spotZoneId = (s) => zoneByName[s.zone]?.zone_id ?? nearestZone(s.lat, s.lon).zone_id
+export function waitingBySpot(now = new Date()) {
+  const h = now.getHours()
+  const near = synthetic.filter((r) => {
+    const rh = Number(r.depart_at.slice(11, 13))
+    return Math.min(Math.abs(rh - h), 24 - Math.abs(rh - h)) <= 1
+  })
+  return spots.map((s) => {
+    const z = spotZoneId(s)
+    const list = near.filter((r) => r.origin_zone === z)
+    const dests = {}
+    for (const r of list) dests[r.dest_zone] = (dests[r.dest_zone] || 0) + 1
+    const top = Object.entries(dests).sort((a, b) => b[1] - a[1])[0]
+    // 대기자가 없으면 이 스팟에서 할증 붙는 이동 중 가장 많은 목적지를 대표로 보여 준다
+    const usual = pairs.filter((p) => p.o === z && p.d !== z && p.cat !== 'dong_to_dong').sort((a, b) => b.taxi - a.taxi)[0]
+      ?? pairs.filter((p) => p.o === z && p.d !== z).sort((a, b) => b.taxi - a.taxi)[0]
+    return { spot: s, zone: z, waiting: Math.min(list.length, 3), destZone: top ? Number(top[0]) : usual?.d ?? null }
+  }).sort((a, b) => b.waiting - a.waiting || b.spot.pickups_per_day - a.spot.pickups_per_day)
+}
+
 export function estKm(o, d) {
   const p = pairs.find((x) => x.o === o && x.d === d)
   return p ? p.km : 5
