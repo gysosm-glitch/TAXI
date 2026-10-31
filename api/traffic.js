@@ -31,6 +31,7 @@ export default async function handler(req, res) {
     res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate=60')
     return res.status(200).json({ ok: true, at: list[0]?.createdDate ?? new Date().toISOString(), roads })
   } catch (e) {
-    return res.status(200).json({ ok: false, reason: 'api_error', message: String(e) })
+    const cause = e?.cause ? `${e.cause.code ?? ''} ${e.cause.message ?? ''}`.trim() : ''
+    return res.status(200).json({ ok: false, reason: 'api_error', message: String(e), cause })
   }
 }
