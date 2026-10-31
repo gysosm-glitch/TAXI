@@ -54,6 +54,7 @@ export default async function handler(req, res) {
         trainKeySet: !!process.env.TAGO_TRAIN_API_KEY,
         sameAsTagoKey: process.env.TAGO_TRAIN_API_KEY === process.env.TAGO_API_KEY,
         trainKeyLength: (process.env.TAGO_TRAIN_API_KEY || '').length,
+        trainKeyTrimmedLength: (trainKey() || '').length,
         tagoKeyLength: (process.env.TAGO_API_KEY || '').length,
         withTrainKey: await probe(trainKey()),
         withTagoKey: await probe(tagoKey()),

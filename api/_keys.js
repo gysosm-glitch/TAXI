@@ -1,7 +1,9 @@
 // 서버 함수 공용: 환경변수에서 API 키 찾기 (이름이 조금 달라도 찾는다). '_'로 시작해 API 주소로 노출되지 않는다.
+// 붙여넣을 때 섞여 들어간 앞뒤 공백·줄바꿈은 지운다 (열차 키가 65자로 들어가 인증에 실패했던 사례)
+const clean = (v) => (typeof v === 'string' ? v.trim() : v) || undefined
 const find = (exact, pattern) =>
-  exact.map((n) => process.env[n]).find(Boolean) ??
-  process.env[Object.keys(process.env).find((n) => pattern.test(n) && !/^VITE_/.test(n))]
+  exact.map((n) => clean(process.env[n])).find(Boolean) ??
+  clean(process.env[Object.keys(process.env).find((n) => pattern.test(n) && !/^VITE_/.test(n))])
 
 export const tagoKey = () => find(['TAGO_API_KEY'], /^TAGO.*KEY$/i)
 export const arrivalKey = () => find(['TAGO_ARRIVAL_API_KEY'], /ARRIV/i) ?? tagoKey()
