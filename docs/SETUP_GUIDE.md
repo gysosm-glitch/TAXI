@@ -13,7 +13,7 @@ npm run dev
 
 브라우저에서 http://localhost:5173 을 연다.
 
-- 실시간 교통 화면의 버스·도로 정보는 Vercel 서버 함수라 **로컬 `npm run dev`에서는 동작하지 않는다.** 배포 주소에서 확인하거나 `npx vercel dev`로 실행한다.
+- 실시간 버스 정보는 Vercel 서버 함수라 **로컬 `npm run dev`에서는 동작하지 않는다.** 배포 주소에서 확인하거나 `npx vercel dev`로 실행한다.
 - 테스트: `npm test`
 - 빌드 확인: `npm run build`
 
@@ -29,7 +29,6 @@ npm run dev
 |---|---|---|---|
 | `TAGO_API_KEY` | 공공데이터포털 일반 인증키(Decoding) | 15098534 버스정류소정보 | 안 됨 (서버 함수 전용) |
 | `TAGO_ARRIVAL_API_KEY` | 공공데이터포털 일반 인증키(Decoding) | 15098530 버스도착정보 (없으면 위 키 사용) | 안 됨 (서버 함수 전용) |
-| `ITS_API_KEY` | 국가교통정보센터 인증키 | https://www.its.go.kr/opendata/ | 안 됨 (서버 함수 전용) |
 | `VITE_SUPABASE_URL` | Supabase Project URL | Supabase › Project Settings › API | 됨 (공개용) |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon public 키 | 위와 같음 | 됨 (RLS로 보호) |
 

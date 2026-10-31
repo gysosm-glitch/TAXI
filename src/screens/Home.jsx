@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import Icon from '../components/Icon.jsx'
 import { SharedTaxi, Badge } from '../components/Illust.jsx'
 import { waitingBySpot, tripQuote, zoneById, won } from '../data.js'
-import { useLive, nextBus, mainRoad } from '../lib/live.js'
+import { useLive, nextBus, taxiDemandNow } from '../lib/live.js'
 
 const GOAL = 50000
 const DAYS = ['일', '월', '화', '수', '목', '금', '토']
@@ -36,9 +36,9 @@ export default function Home({ user, onGo }) {
   const q = top.destZone ? tripQuote(top.zone, top.destZone, people) : null
   const solo = top.destZone ? tripQuote(top.zone, top.destZone, 1) : null
   const saved = savedThisMonth()
-  const { bus, road } = useLive(top.spot)
+  const { bus } = useLive(top.spot)
   const nb = nextBus(bus)
-  const rd = mainRoad(road)
+  const demand = taxiDemandNow(top.spot)
 
   return (
     <>
@@ -84,10 +84,10 @@ export default function Home({ user, onGo }) {
             : <><p className="mid" style={{ color: 'var(--muted)' }}>–</p><p className="sub">{bus ? '실시간 연결 준비 중' : '불러오는 중'}</p></>}
         </div>
         <div className="card">
-          <Badge tone="amber"><Icon name="road" size={18} /></Badge>
-          <p className="label">도로</p>
-          {rd ? <><p className={`mid ${rd.level === '원활' ? 'ok' : rd.level === '서행' ? 'warn' : 'bad'}`}>{rd.level}</p><p className="sub">{rd.road} {rd.speed}km/h</p></>
-            : <><p className="mid" style={{ color: 'var(--muted)' }}>–</p><p className="sub">{road ? '실시간 연결 준비 중' : '불러오는 중'}</p></>}
+          <Badge tone="amber"><Icon name="users" size={18} /></Badge>
+          <p className="label">지금 택시 수요</p>
+          <p className={`mid ${demand.level === '많음' ? 'warn' : ''}`}>{demand.level}</p>
+          <p className="sub">{top.spot.name} 시간당 약 {demand.perHour}명</p>
         </div>
       </div>
 

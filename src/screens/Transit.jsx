@@ -6,7 +6,6 @@ import { useLive } from '../lib/live.js'
 import { HOUR_PROFILE } from '../lib/simulate.js'
 
 const SUM = HOUR_PROFILE.reduce((a, b) => a + b, 0)
-const levelCls = { 원활: 'ok', 서행: 'warn', 정체: 'bad' }
 
 function Waiting({ data }) {
   if (!data) return <p className="sub">불러오는 중…</p>
@@ -20,7 +19,7 @@ function Waiting({ data }) {
 export default function Transit() {
   const [id, setId] = useState('osong_stn')
   const spot = spots.find((s) => s.id === id)
-  const { bus, road, at } = useLive(spot)
+  const { bus, at } = useLive(spot)
   const hour = new Date().getHours()
   const busy = Math.round(spot.pickups_per_day * HOUR_PROFILE[hour] / SUM)
 
@@ -44,14 +43,6 @@ export default function Transit() {
         ))}
       </div>
 
-      <div className="card">
-        <p className="card-title"><span className="with-badge"><Badge tone="amber"><Icon name="road" size={16} /></Badge>도로 상황</span></p>
-        <Waiting data={road} />
-        {road?.ok && road.roads.length === 0 && <p className="sub">이 주변은 도로 정보가 수집되지 않아요.</p>}
-        {road?.ok && road.roads.map((r) => (
-          <div key={r.road} className="row-item"><span>{r.road}</span><span className={`r ${levelCls[r.level]}`}>{r.level} · {r.speed}km/h</span></div>
-        ))}
-      </div>
 
       <div className="card">
         <p className="card-title">지금 이곳 택시 수요 <small>시간당 약 {busy}명</small></p>
@@ -59,7 +50,7 @@ export default function Transit() {
           {HOUR_PROFILE.map((v, h) => <div key={h} className={h === hour ? 'now' : ''} style={{ height: `${(v / Math.max(...HOUR_PROFILE)) * 100}%` }} />)}
         </div>
         <div className="axis"><span>0시</span><span>6시</span><span>12시</span><span>18시</span><span>23시</span></div>
-        <p className="sub" style={{ marginTop: 8 }}>버스가 뜸하거나 길이 막히는 시간에 같이타기 수요가 늘어요.</p>
+        <p className="sub" style={{ marginTop: 8 }}>버스가 뜸한 시간에 같이타기 수요가 늘어요.</p>
       </div>
     </>
   )
