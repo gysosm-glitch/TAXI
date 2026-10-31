@@ -36,10 +36,11 @@ npm run dev
 - `VITE_`로 시작하는 값은 화면 코드에 그대로 들어가므로 **비밀 키를 넣으면 안 된다.** Supabase `service_role` 키는 절대 쓰지 않는다.
 - 로컬에서 Supabase를 쓰려면 `.env.example`을 `.env`로 복사해 값을 채운다 (`.env`는 GitHub에 올라가지 않음).
 
-## 4. Supabase (과제 #7 매칭 신청을 할 때만)
+## 4. Supabase
 
-1. Supabase › SQL Editor에서 `supabase/schema.sql` 실행 → `supabase/seed.sql` 실행
-2. 무료 플랜은 1주일 접속이 없으면 일시정지된다. 발표 전날 대시보드에서 Restore.
+1. Supabase › SQL Editor에서 `supabase/schema.sql` → `supabase/seed.sql` → `supabase/profiles.sql` 순서로 실행
+2. Authentication › URL Configuration: Site URL과 Redirect URLs에 배포 주소, Redirect URLs에 `http://localhost:5173` 추가
+3. 무료 플랜은 1주일 접속이 없으면 일시정지된다. 발표 전날 대시보드에서 Restore.
 
 ## 5. 휴대폰에서 보기
 

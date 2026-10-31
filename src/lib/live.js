@@ -17,7 +17,9 @@ export function useLive(spot) {
     let alive = true
     const load = async () => {
       const q = `lat=${spot.lat}&lon=${spot.lon}`
-      const [b, r] = await Promise.all([getJSON(`/api/bus?${q}`), getJSON(`/api/traffic?${q}`)])
+      let [b, r] = await Promise.all([getJSON(`/api/bus?${q}`), getJSON(`/api/traffic?${q}`)])
+      // 도착정보 API 키가 아직 승인 전이면 '버스 없음'이 아니라 '준비 중'으로 보여 준다
+      if (b?.ok && b.stations.length && b.stations.every((s) => String(s.status).includes('SERVICE_KEY'))) b = { ok: false, reason: 'key_pending' }
       if (alive) { setBus(b); setRoad(r); setAt(new Date()) }
     }
     setBus(null); setRoad(null); load()

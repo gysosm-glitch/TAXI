@@ -10,6 +10,7 @@ const levelCls = { 원활: 'ok', 서행: 'warn', 정체: 'bad' }
 function Waiting({ data }) {
   if (!data) return <p className="sub">불러오는 중…</p>
   if (data.reason === 'no_key' || data.reason === 'no_server') return <p className="sub">실시간 연결을 준비하고 있어요.</p>
+  if (data.reason === 'key_pending') return <p className="sub">실시간 도착 정보 승인을 기다리고 있어요.</p>
   if (data.reason === 'api_error') return <p className="sub">잠시 정보를 가져오지 못했어요.</p>
   return null
 }
