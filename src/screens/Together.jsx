@@ -3,7 +3,7 @@ import L from 'leaflet'
 import MapView, { Marker, Tooltip } from '../components/MapView.jsx'
 import Icon from '../components/Icon.jsx'
 import { Badge, SharedTaxi } from '../components/Illust.jsx'
-import { waitingBySpot, tripQuote, zones, won, spotZoneId } from '../data.js'
+import { waitingBySpot, tripQuote, zones, won, spotZoneId, placeFromId, nearestZoneId, pairs } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { askNotify } from '../lib/alerts.js'
 import { useTrains, minutesUntil } from '../lib/live.js'
@@ -29,11 +29,25 @@ export default function Together({ account, onLogin }) {
 
   const { session, profile } = account
   const me = session?.user?.id
+  const [picking, setPicking] = useState(false)   // '다른 곳에서 출발' 선택 줄
+  const [locMsg, setLocMsg] = useState(null)
   const g = groups.find((x) => x.spot.id === sel)
-  const spot = g.spot
+  const spot = placeFromId(sel)                       // 추천 스팟 또는 직접 고른 읍면동
   const zone = spotZoneId(spot)
   const canUse = !!(supabase && session && profile)
-  const spotOf = (id) => groups.find((x) => x.spot.id === id)?.spot
+  const spotOf = (id) => placeFromId(id)
+  // 직접 고른 곳의 기본 목적지: 그곳에서 택시로 가장 많이 가는 다른 지역
+  const usualDest = g?.destZone ?? pairs.filter((p) => p.o === zone && p.d !== zone).sort((a, b) => b.taxi - a.taxi)[0]?.d
+  const choose = (id) => { setSel(id); setForm(null); setMore(false); setMsg(null) }
+  const useMyLocation = () => {
+    if (!navigator.geolocation) return setLocMsg('이 기기에서는 위치를 쓸 수 없어요.')
+    setLocMsg('위치를 찾는 중…')
+    navigator.geolocation.getCurrentPosition(
+      (p) => { choose(nearestZoneId(p.coords.latitude, p.coords.longitude)); setLocMsg(null); setPicking(false) },
+      () => setLocMsg('위치 권한을 허용하거나 목록에서 골라 주세요.'),
+      { timeout: 8000 },
+    )
+  }
   const trains = useTrains(sel === 'osong_stn')
   const ktx = trains?.ok ? trains.next.filter((t) => minutesUntil(t.time) >= 0 && minutesUntil(t.time) <= 90).slice(0, 3) : []
   const price = (r, n) => tripQuote(spotZoneId(spotOf(r.spot_id) ?? spot), r.dest_zone, n)
@@ -44,7 +58,7 @@ export default function Together({ account, onLogin }) {
     setRides(data); setMine(m.filter((r) => !(r.status === 'done' && tripRecorded(r.id))))
   }, [sel, canUse, me])
 
-  const openForm = () => setForm({ dest: g.destZone ?? zones[0].zone_id, leave: 15, max: 3 })
+  const openForm = () => setForm({ dest: usualDest ?? zones[0].zone_id, leave: 15, max: 3, meet: '' })
   const act = async (fn, ok) => {
     askNotify()                     // 모집·참여할 때 알림 허용을 물어본다
     setBusy(true); setMsg(null)
@@ -56,7 +70,7 @@ export default function Together({ account, onLogin }) {
   const submitNew = () => act(async () => {
     const dest = zones.find((z) => z.zone_id === Number(form.dest))
     const r = await createRide({
-      host_id: me, spot_id: spot.id, spot_name: spot.name, dest_zone: dest.zone_id, dest_name: dest.name,
+      host_id: me, spot_id: spot.id, spot_name: form.meet.trim() ? `${spot.name} · ${form.meet.trim().slice(0, 30)}` : spot.name, dest_zone: dest.zone_id, dest_name: dest.name,
       depart_at: new Date(Date.now() + form.leave * 60000).toISOString(), max_people: form.max, gender: profile.gender,
     })
     if (!r.error) setForm(null)
@@ -146,20 +160,35 @@ export default function Together({ account, onLogin }) {
         <div className="map-box">
           <MapView center={[spot.lat, spot.lon]} zoom={11}>
             {groups.map((x, i) => (
-              <Marker key={x.spot.id} position={[x.spot.lat, x.spot.lon]} icon={pin(i + 1, x.spot.id === sel)} eventHandlers={{ click: () => { setSel(x.spot.id); setForm(null) } }}>
+              <Marker key={x.spot.id} position={[x.spot.lat, x.spot.lon]} icon={pin(i + 1, x.spot.id === sel)} eventHandlers={{ click: () => choose(x.spot.id) }}>
                 <Tooltip direction="top" offset={[0, -14]}>{x.spot.name}</Tooltip>
               </Marker>
             ))}
+            {spot.custom && <Marker position={[spot.lat, spot.lon]} icon={pin('●', true)}><Tooltip direction="top" offset={[0, -14]} permanent>{spot.name}</Tooltip></Marker>}
           </MapView>
         </div>
       </div>
 
+      <p className="label" style={{ margin: '0 0 6px' }}>어디서 출발하세요? <span className="sub">추천 스팟은 택시를 많이 타는 곳이에요</span></p>
       <div className="chips">
-        {groups.map((x) => <button key={x.spot.id} className={`chip ${x.spot.id === sel ? 'on' : ''}`} onClick={() => { setSel(x.spot.id); setForm(null); setMore(false); setMsg(null) }}>{x.spot.name}</button>)}
+        <button className={`chip ${picking || spot.custom ? 'on' : ''}`} onClick={() => setPicking(!picking)}>📍 {spot.custom ? spot.name : '다른 곳에서 출발'}</button>
+        {groups.map((x) => <button key={x.spot.id} className={`chip ${x.spot.id === sel ? 'on' : ''}`} onClick={() => { choose(x.spot.id); setPicking(false) }}>{x.spot.name}</button>)}
       </div>
+      {picking && (
+        <div className="card picker">
+          <button className="btn ghost" onClick={useMyLocation}>📍 현재 위치로 찾기</button>
+          {locMsg && <p className="sub" style={{ marginTop: 6 }}>{locMsg}</p>}
+          <label className="field" style={{ marginTop: 10, marginBottom: 0 }}><span>또는 청주 읍면동에서 고르기</span>
+            <select value={spot.custom ? spot.id : ''} onChange={(e) => { if (e.target.value) { choose(e.target.value); setPicking(false) } }}>
+              <option value="">선택하세요</option>
+              {zones.map((z) => <option key={z.zone_id} value={`zone:${z.zone_id}`}>{z.name} ({z.gu})</option>)}
+            </select>
+          </label>
+        </div>
+      )}
 
       <div className="card">
-        <p className="card-title">{spot.name} 모집 <small>{canUse ? `${rides.length}건` : ''}</small></p>
+        <p className="card-title">{spot.name} 출발 모집 <small>{canUse ? `${rides.length}건` : ''}</small></p>
 
         {!canUse && (
           <div className="empty">
@@ -193,6 +222,9 @@ export default function Together({ account, onLogin }) {
 
         {canUse && form && (
           <div className="new-ride">
+            <label className="field"><span>어디서 만날까요? <small className="hint">선택</small></span>
+              <input value={form.meet} maxLength={30} placeholder={spot.custom ? '예: 오창 호수공원 정문' : `예: ${spot.name} 택시 승차장`} onChange={(e) => setForm({ ...form, meet: e.target.value })} />
+            </label>
             <label className="field"><span>어디로 가세요?</span>
               <select value={form.dest} onChange={(e) => setForm({ ...form, dest: Number(e.target.value) })}>
                 {zones.filter((z) => z.zone_id !== zone).map((z) => <option key={z.zone_id} value={z.zone_id}>{z.name}</option>)}
@@ -225,10 +257,11 @@ export default function Together({ account, onLogin }) {
       </div>
 
       <div className="card">
-        <p className="card-title">이 스팟은요</p>
+        <p className="card-title">{spot.custom ? `${spot.name}은요` : '이 스팟은요'}</p>
         <div className="row-item"><span>하루 택시 이용</span><span className="r">{spot.pickups_per_day.toLocaleString()}명</span></div>
-        <div className="row-item"><span>할증 붙는 이동</span><span className="r">하루 {spot.surcharge_trips_per_day.toLocaleString()}명</span></div>
-        <button className="more" onClick={() => setMore(!more)}>{more ? '접기' : '이 스팟을 고른 이유 자세히'}</button>
+        {!spot.custom && <div className="row-item"><span>할증 붙는 이동</span><span className="r">하루 {spot.surcharge_trips_per_day.toLocaleString()}명</span></div>}
+        {spot.custom && <p className="sub" style={{ marginTop: 8 }}>근처에 추천 스팟이 있으면 그곳에서 모이는 게 매칭이 더 잘 돼요.</p>}
+        {!spot.custom && <button className="more" onClick={() => setMore(!more)}>{more ? '접기' : '이 스팟을 고른 이유 자세히'}</button>}
         {more && (
           <div className="detail">
             {spot.why}. 하루 택시 승차 {spot.pickups_per_day.toLocaleString()}건 중 약 {Math.round(spot.surcharge_trip_ratio * 100)}%가 할증 구간 이동이고, 평균 요금은 {won(spot.avg_fare)}이에요. 반경 500m 버스 정류장 {spot.bus_stops_500m}개.

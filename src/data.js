@@ -67,3 +67,22 @@ export function tripQuote(originZone, destZone, people = 1, km) {
   const share = splitFare(q.fare, Array(people).fill(1))[0]
   return { ...q, km: km ?? estKm(originZone, destZone), share, saving: q.fare - share }
 }
+
+// 출발지: 추천 스팟 또는 직접 고른 읍면동 ('zone:143' 형식)을 같은 모양으로
+export function placeFromId(id) {
+  const s = spots.find((x) => x.id === id)
+  if (s) return s
+  const zid = Number(String(id).replace('zone:', ''))
+  const z = zoneById[zid]
+  if (!z) return null
+  const t = tims.zones.find((x) => x.zone_id === zid)
+  return {
+    id: `zone:${zid}`, name: z.name, zone: z.name, lat: z.centroid_lat, lon: z.centroid_lon, custom: true,
+    pickups_per_day: Math.round(t?.rides_per_day ?? 0), avg_fare: t?.avg_fare ?? 0,
+    surcharge_trip_ratio: 0, surcharge_trips_per_day: 0, bus_stops_500m: 0, tier: '직접 선택',
+    why: `${z.gu} ${z.name}에서 직접 고른 출발지`,
+  }
+}
+
+// 현재 위치(위도·경도) → 가장 가까운 읍면동 id
+export const nearestZoneId = (lat, lon) => `zone:${nearestZone(lat, lon).zone_id}`

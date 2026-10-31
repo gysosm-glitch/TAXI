@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { SharedTaxi, Badge } from '../components/Illust.jsx'
-import { waitingBySpot, tripQuote, zoneById, won, spots, spotZoneId } from '../data.js'
+import { waitingBySpot, tripQuote, zoneById, won, spotZoneId, placeFromId } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { listAllOpen, useRidesLive, getStats, myTripsThisMonth } from '../lib/rides.js'
 import { useLive, nextBus, taxiDemandNow, useLastBus, lastBusState } from '../lib/live.js'
@@ -43,7 +43,7 @@ export default function Home({ user, account, onGo }) {
       .sort((a, b) => b.waiting - a.waiting || b.spot.pickups_per_day - a.spot.pickups_per_day)
     : sample
   const ride = live && openRides[0]
-  const rideSpot = ride && spots.find((s) => s.id === ride.spot_id)
+  const rideSpot = ride && placeFromId(ride.spot_id)   // 추천 스팟 또는 직접 고른 읍면동
   const top = ride && rideSpot
     ? { spot: rideSpot, zone: spotZoneId(rideSpot), waiting: ride.ride_members.length, destZone: ride.dest_zone, max: ride.max_people }
     : groups[0]
@@ -94,7 +94,7 @@ export default function Home({ user, account, onGo }) {
         <div className="hero">
           <div className="hero-art"><SharedTaxi /></div>
           <p className="label">지금 같이 타기</p>
-          <h2>{top.spot.name} → {zoneById[top.destZone].name}</h2>
+          <h2>{ride ? ride.spot_name.split(' · ')[0] : top.spot.name} → {zoneById[top.destZone].name}</h2>
           <p className="sub">{top.max ? `${top.waiting}/${top.max}명 모집 중 · ${new Date(ride.depart_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 출발` : top.waiting ? `${top.waiting}명 모집 중 · 10분 안에 출발` : '아직 모집이 없어요 · 2명이 모이면 출발'}</p>
           <div className="row">
             <div>
