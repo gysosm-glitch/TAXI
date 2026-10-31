@@ -17,7 +17,8 @@ export default async function handler(req, res) {
     // 도로명별 평균 속도로 묶어 보여 준다
     const byRoad = {}
     for (const it of list) {
-      const name = it.roadName || '이름 없는 도로'
+      const name = it.roadName && it.roadName !== '-' ? it.roadName : null
+      if (!name) continue                     // 이름 없는 구간('-')은 화면에 보여 주지 않는다
       const v = Number(it.speed)
       if (!Number.isFinite(v)) continue
       byRoad[name] ??= { road: name, sum: 0, n: 0 }
