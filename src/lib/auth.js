@@ -39,7 +39,15 @@ export const signUpWithEmail = (email, password) =>
 export const signInWithEmail = (email, password) =>
   supabase.auth.signInWithPassword({ email, password })
 
-export const signOut = () => supabase.auth.signOut()
+// 로그아웃: 서버 응답이 실패하거나 인증 잠금에 걸려도 이 기기의 로그인 정보를 확실히 지우고 첫 화면으로
+export async function signOut() {
+  const done = supabase.auth.signOut({ scope: 'local' }).catch(() => {})
+  await Promise.race([done, new Promise((r) => setTimeout(r, 1500))])
+  try {
+    for (const k of Object.keys(localStorage)) if (k.startsWith('sb-') && k.endsWith('-auth-token')) localStorage.removeItem(k)
+  } catch {}
+  window.location.replace('/')
+}
 
 export async function saveProfile(userId, form) {
   const row = { id: userId, ...form, updated_at: new Date().toISOString() }
