@@ -27,7 +27,7 @@ export const RULES = [
 // 가입 시 동의 항목 (profiles 테이블의 agree_* 컬럼과 같은 이름)
 export const CONSENTS = [
   { id: 'agree_terms', label: '서비스 이용약관', required: true,
-    detail: '같이타는 등록 운송플랫폼 제휴를 전제로 한 시범 서비스예요. 요금은 미터기(청주시 고시 요율)로만 부과되고, 앱은 나눌 금액을 안내해요.' },
+    detail: '쉐어택은 등록 운송플랫폼 제휴를 전제로 한 시범 서비스예요. 요금은 미터기(청주시 고시 요율)로만 부과되고, 앱은 나눌 금액을 안내해요.' },
   { id: 'agree_privacy', label: '개인정보 수집·이용', required: true,
     detail: '닉네임·성별·휴대폰 번호·탑승 스팟·목적지(읍면동)·출발 시각을 같이타기 매칭과 안전 안내에만 써요. 탈퇴하면 바로 지워요.' },
   { id: 'agree_location', label: '위치정보 이용', required: true,

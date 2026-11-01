@@ -3,7 +3,9 @@ import Icon from '../components/Icon.jsx'
 import ProfileForm from './ProfileForm.jsx'
 import { FIELDS, NOT_COLLECTED, RULES } from '../privacy.js'
 import { signOut, deleteProfile } from '../lib/auth.js'
-import { getMyRating, sendFeedback } from '../lib/rides.js'
+import { getMyRating, sendFeedback, getStats, myTripsThisMonth } from '../lib/rides.js'
+import { supabase } from '../lib/supabase.js'
+import { won } from '../data.js'
 
 const AGE = { '10s': '10대', '20s': '20대', '30s': '30대', '40s': '40대', '50s+': '50대 이상' }
 const mask = (p) => p.replace(/^(\d{3})-?(\d{3,4})-?(\d{4})$/, '$1-****-$3')
@@ -30,6 +32,61 @@ function Guide() {
         <p className="card-title"><span><Icon name="shield" size={18} /> 받지 않는 정보</span></p>
         {NOT_COLLECTED.map((x) => <div key={x} className="row-item"><span>{x}</span></div>)}
       </div>
+    </>
+  )
+}
+
+const GOAL = 50000
+function savedLocal() {
+  try {
+    const m = new Date().toISOString().slice(0, 7)
+    const mine = (JSON.parse(localStorage.getItem('history_v1')) ?? []).filter((h) => h.at?.startsWith(m))
+    return { won: mine.reduce((a, h) => a + (h.saving || 0), 0), count: mine.length }
+  } catch { return { won: 0, count: 0 } }
+}
+
+function Ring({ ratio }) {
+  const c = 2 * Math.PI * 31
+  return (
+    <svg width="78" height="78" viewBox="0 0 76 76" aria-hidden="true">
+      <circle cx="38" cy="38" r="31" fill="none" stroke="var(--teal-soft)" strokeWidth="9" />
+      <circle cx="38" cy="38" r="31" fill="none" stroke="var(--teal)" strokeWidth="9" strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(1, ratio))} transform="rotate(-90 38 38)" />
+      <text x="38" y="43" textAnchor="middle" fontSize="15" fontWeight="700" fill="var(--teal)">{Math.round(ratio * 100)}%</text>
+    </svg>
+  )
+}
+
+// 이번 달 아낀 돈 + 시범 운영 현황
+function Savings({ userId }) {
+  const [server, setServer] = useState(null)
+  const [stats, setStats] = useState(null)
+  useEffect(() => {
+    if (userId) myTripsThisMonth(userId).then((t) => t && setServer({ won: t.reduce((a, x) => a + x.saving, 0), count: t.length }))
+    if (supabase) getStats().then(setStats)
+  }, [userId])
+  const saved = server ?? savedLocal()
+  return (
+    <>
+      <div className="card ring-card">
+        <Ring ratio={saved.won / GOAL} />
+        <div>
+          <p className="label">이번 달 아낀 돈</p>
+          <p className="big">{won(saved.won)}</p>
+          <p className="sub">{saved.count ? `같이 탄 횟수 ${saved.count}회 · 목표 ${won(GOAL)}` : '같이 타면 할증 붙는 요금도 나눠 내요'}</p>
+        </div>
+      </div>
+      {stats && (
+        <div className="card">
+          <p className="card-title">쉐어택 시범 운영 현황 <small>참여자 전체</small></p>
+          <div className="stat-grid">
+            <div><b>{stats.members}</b><span>가입</span></div>
+            <div><b>{stats.rides}</b><span>모집</span></div>
+            <div><b>{stats.matched}</b><span>매칭 성공</span></div>
+            <div><b>{stats.saving >= 10000 ? `${(stats.saving / 10000).toFixed(1)}만` : stats.saving.toLocaleString()}</b><span>아낀 돈(원)</span></div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -66,8 +123,9 @@ export default function Me({ account, onLogin }) {
   if (!session) return (
     <>
       <h1 className="page-title">내 정보</h1>
-      <p className="page-sub">가입하면 같이타기 모집·참여를 할 수 있어요</p>
+      <p className="page-sub">가입하면 모집을 열거나 참여할 수 있어요</p>
       <button className="btn" style={{ marginBottom: 12 }} onClick={onLogin}>로그인 · 회원가입</button>
+      <Savings />
       <Feedback />
       <Guide />
     </>
@@ -77,7 +135,7 @@ export default function Me({ account, onLogin }) {
   if (!profile || editing) return (
     <>
       <h1 className="page-title">{profile ? '정보 수정' : '가입 정보 입력'}</h1>
-      <p className="page-sub">안전한 같이타기를 위해 꼭 필요한 정보만 받아요</p>
+      <p className="page-sub">안전하게 같이 타기 위해 꼭 필요한 정보만 받아요</p>
       <ProfileForm session={session} profile={profile} onSaved={(p) => { setProfile(p); setEditing(false) }} onCancel={profile ? () => setEditing(false) : null} />
       {!profile && <button className="more" style={{ width: '100%' }} onClick={signOut}>다른 계정으로 로그인</button>}
     </>
@@ -100,6 +158,7 @@ export default function Me({ account, onLogin }) {
           </div>
         </div>
       </div>
+      <Savings userId={session.user.id} />
       <div className="card">
         <div className="row-item"><span>휴대폰</span><span className="r off">{mask(profile.phone)}</span></div>
         <div className="row-item"><span>혜택 알림</span><span className="r off">{profile.agree_marketing ? '받음' : '받지 않음'}</span></div>

@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { Badge } from '../components/Illust.jsx'
-import { spots, zones, zoneById, tripQuote, won, spotZoneId, placeFromId, isReturnRoute, cityDest } from '../data.js'
+import { spots, zones, zoneById, tripQuote, won, spotZoneId, placeFromId, isReturnRoute, cityDest, locate } from '../data.js'
+import { useMyPosition } from '../lib/geo.js'
 import { supabase } from '../lib/supabase.js'
 import { listAllOpen, useRidesLive } from '../lib/rides.js'
 import { HOUR_PROFILE } from '../lib/hours.js'
@@ -29,6 +30,16 @@ export default function Driver({ account, onLogin }) {
   const live = !!(supabase && account?.session && account?.profile)
   useRidesLive(async () => { if (live) setOpen(await listAllOpen()) }, [live])
   const trains = useTrains(sel === 'osong_stn' || sel === 'osong_bio')
+  // 내 위치(GPS): 읍·면 안이면 그곳을 하차 지점으로
+  const gps = useMyPosition()
+  const [gpsMsg, setGpsMsg] = useState(null)
+  const fromGps = () => {
+    if (!gps.pos) { gps.start(); return setGpsMsg('위치를 찾는 중이에요. 잠시 뒤 다시 눌러 주세요.') }
+    const p = locate(gps.pos.lat, gps.pos.lon)
+    if (!p) return setGpsMsg('지금 위치가 청주 밖이에요.')
+    if (!zoneById[p.zoneId].is_eupmyeon) return setGpsMsg(`지금은 ${zoneById[p.zoneId].name}(시내)이에요. 읍·면에 손님을 내려준 뒤 써 보세요.`)
+    setSel(emSpots.some((s) => s.id === p.id) ? p.id : `zone:${p.zoneId}`); setGpsMsg(null)
+  }
 
   // 지금 이 지역에서 시내로 가려고 모인 손님 (귀로 손님)
   const waiting = useMemo(() => open.filter((r) => {
@@ -56,6 +67,7 @@ export default function Driver({ account, onLogin }) {
 
       <p className="label" style={{ margin: '0 0 6px' }}>방금 손님을 내려준 곳</p>
       <div className="chips">
+        <button className="chip" onClick={fromGps}>📍 내 위치</button>
         {emSpots.map((s) => <button key={s.id} className={`chip ${s.id === sel ? 'on' : ''}`} onClick={() => setSel(s.id)}>{s.name}</button>)}
         <select className="chip-select" value={sel.startsWith('zone:') ? sel : ''} onChange={(e) => e.target.value && setSel(e.target.value)}>
           <option value="">다른 읍·면</option>
@@ -63,6 +75,7 @@ export default function Driver({ account, onLogin }) {
         </select>
       </div>
 
+      {gpsMsg && <p className="form-msg">{gpsMsg}</p>}
       <div className="hero driver-hero">
         <p className="label">지금 {place.name}에서 시내 방향</p>
         <h2>{live ? `귀로 손님 ${people}명 대기 중` : '귀로 손님 대기 현황'}</h2>

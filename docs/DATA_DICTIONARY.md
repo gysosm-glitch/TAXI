@@ -34,6 +34,7 @@ KTDB 여객 OD는 이용 조건상 재배포할 수 없어 저장소에 올리�
 | 폴더 | 파일 | 내용 | 상태 |
 |---|---|---|---|
 | `01_zones` | `zones.json`, `zones.csv`, `zones.geojson` | 존 번호·이름·동/읍/면·중심 좌표·경계 | ✅ |
+| | `zone_shapes.json` | 앱용 가벼운 경계(소수 3자리). GPS 위치 → 읍면동 판정 | ✅ |
 | `02_fare_rules` | `fare_rules.json` | 동·읍면 요율, 9/28 개편 할증 규칙 (보도 기준) | ✅ |
 | `03_demand` | `zone_top_dest.json` | 존별 자주 가는 목적지 상위 3곳 (OD 순위만) | ✅ |
 | `10_tims` | `tims_app.json` | 청주 승차 요약·격자·시간대 보정 (앱용 묶음) | ✅ |
@@ -53,6 +54,7 @@ KTDB 여객 OD는 이용 조건상 재배포할 수 없어 저장소에 올리�
 ```bash
 python scripts/build_web_data.py data/raw data/web      # 🔒 존·요율·OD 가공
 python scripts/build_top_dest.py .                       # 🔒 존별 상위 목적지
+node scripts/build_zone_shapes.mjs                       # 앱용 가벼운 경계
 python scripts/select_spots.py .                         # 추천 스팟
 python scripts/empty_risk_index.py .                     # 공차 위험 지수 + 민감도
 node scripts/precompute_agents.mjs                       # 🔒 시나리오 시뮬레이션

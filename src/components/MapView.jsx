@@ -1,38 +1,65 @@
-import { useEffect } from 'react'
-import { MapContainer, TileLayer, Marker, CircleMarker, Polyline, Tooltip, useMap } from 'react-leaflet'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+// 벡터 지도 (OpenFreeMap, 키 없음). 지명은 한글로, 스팟·출발지·내 위치를 표시한다
+import { useEffect, useRef } from 'react'
+import maplibregl from 'maplibre-gl'
+import 'maplibre-gl/dist/maplibre-gl.css'
 import { CHEONGJU_CENTER } from '../data.js'
 
-const icon = (html, size = 36) => L.divIcon({ html, className: 'map-icon', iconSize: [size, size], iconAnchor: [size / 2, size / 2] })
+const STYLE = 'https://tiles.openfreemap.org/styles/positron'
+const KO_NAME = ['coalesce', ['get', 'name:ko'], ['get', 'name']]
 
-export const taxiIcon = (heading = 0, mine = false) =>
-  icon(`<div class="taxi-pin ${mine ? 'mine' : ''}" style="transform:rotate(${heading}deg)">🚕</div>`, mine ? 44 : 30)
-export const spotIcon = (tier, label) =>
-  L.divIcon({ html: `<div class="spot-pin t${tier}"><span>${label}</span></div>`, className: 'map-icon', iconSize: [0, 0], iconAnchor: [0, 0] })
-export const dotIcon = (cls) => icon(`<div class="dot ${cls}"></div>`, 18)
+function el(html, className, onClick) {
+  const d = document.createElement('div')
+  d.className = className
+  d.innerHTML = html
+  if (onClick) d.addEventListener('click', (e) => { e.stopPropagation(); onClick() })
+  return d
+}
 
-function FitTo({ bounds, center, zoom }) {
-  const map = useMap()
+// markers: [{ id, lat, lon, label, kind: 'spot'|'origin', on }]  me: { lat, lon, acc }
+export default function MapView({ center = CHEONGJU_CENTER, zoom = 12, markers = [], me, onPick, onTap, className = '' }) {
+  const box = useRef(null)
+  const map = useRef(null)
+  const pins = useRef([])
+  const meMarker = useRef(null)
+
   useEffect(() => {
-    if (bounds && bounds.length > 1) map.fitBounds(bounds, { padding: [60, 60], maxZoom: 15 })
-    else if (center) map.setView(center, zoom ?? map.getZoom())
-  }, [JSON.stringify(bounds), JSON.stringify(center), zoom])
-  return null
-}
+    const m = new maplibregl.Map({
+      container: box.current, style: STYLE, center: [center[1], center[0]], zoom,
+      attributionControl: { compact: true }, dragRotate: false, pitchWithRotate: false,
+    })
+    m.touchZoomRotate.disableRotation()
+    // 지명은 한글만 (기본은 "Osong 오송"처럼 영문 병기)
+    m.on('styledata', () => {
+      for (const l of m.getStyle().layers) {
+        if (l.layout?.['text-field'] && l.id !== 'highway-shield') m.setLayoutProperty(l.id, 'text-field', KO_NAME)
+      }
+    })
+    if (onTap) m.on('click', (e) => onTap({ lat: e.lngLat.lat, lon: e.lngLat.lng }))
+    map.current = m
+    return () => m.remove()
+  }, [])
 
-export default function MapView({ center = CHEONGJU_CENTER, zoom = 12, bounds, children, className = '' }) {
-  return (
-    <MapContainer center={center} zoom={zoom} zoomControl={false} attributionControl className={`map ${className}`}>
-      <TileLayer
-        url="https://tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-        maxZoom={19}
-      />
-      <FitTo bounds={bounds} center={bounds ? null : center} zoom={zoom} />
-      {children}
-    </MapContainer>
-  )
-}
+  // 중심 이동
+  useEffect(() => { map.current?.easeTo({ center: [center[1], center[0]], zoom, duration: 600 }) }, [center[0], center[1], zoom])
 
-export { Marker, CircleMarker, Polyline, Tooltip }
+  // 스팟·출발지 핀
+  useEffect(() => {
+    pins.current.forEach((p) => p.remove())
+    pins.current = markers.map((k) => {
+      const html = k.kind === 'origin'
+        ? `<span class="pin-dot"></span><b>${k.label}</b>`
+        : `<b>${k.label}</b>`
+      const node = el(html, `mpin ${k.kind} ${k.on ? 'on' : ''}`, onPick ? () => onPick(k.id) : null)
+      return new maplibregl.Marker({ element: node, anchor: 'bottom' }).setLngLat([k.lon, k.lat]).addTo(map.current)
+    })
+  }, [JSON.stringify(markers)])
+
+  // 내 위치 (파란 점)
+  useEffect(() => {
+    if (!me) { meMarker.current?.remove(); meMarker.current = null; return }
+    if (!meMarker.current) meMarker.current = new maplibregl.Marker({ element: el('<span></span>', 'me-dot') }).setLngLat([me.lon, me.lat]).addTo(map.current)
+    else meMarker.current.setLngLat([me.lon, me.lat])
+  }, [me?.lat, me?.lon])
+
+  return <div ref={box} className={`map ${className}`} />
+}

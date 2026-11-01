@@ -9,6 +9,9 @@ const PATHS = {
   train: 'M6 4h12a2 2 0 0 1 2 2v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6a2 2 0 0 1 2-2zM4 11h16M8 15h.01M16 15h.01M8 18l-2 3M16 18l2 3',
   car: 'M5 17h14M5 17a2 2 0 1 0 4 0M15 17a2 2 0 1 0 4 0M3 17v-5l2-5h14l2 5v5M3 12h18M7 7l-1 5M17 7l1 5',
   shield: 'M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z',
+  locate: 'M12 19a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM12 2v3M12 19v3M2 12h3M19 12h3',
+  taxi: 'M7 4h10M9 4l-.5 3M15 4l.5 3M4 17v-5l2-5h12l2 5v5M4 12h16M4 17h16v2h-3v-2M7 17v2H4v-2M7.5 14.5h.01M16.5 14.5h.01',
+  spark: 'M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6',
 }
 
 export default function Icon({ name, size = 22 }) {

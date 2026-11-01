@@ -42,15 +42,15 @@ export function useRideAlerts(userId) {
           const old = before[id]
           const r = cur.r
           if (!old) continue
-          for (const [uid, nick] of cur.members) if (uid !== userId && !old.members.has(uid)) say('같이타 · 새 동승자', `${nick}님이 참여했어요 (${cur.members.size}/${r.max_people}명)`)
-          for (const [uid, nick] of old.members) if (!cur.members.has(uid)) say('같이타 · 동승자 변경', `${nick}님이 나갔어요 (${cur.members.size}/${r.max_people}명)`)
-          if (old.status !== 'full' && cur.status === 'full') say('같이타 · 모집 완료', `${r.spot_name} 택시 승차장에서 만나요. ${r.dest_name}행`)
+          for (const [uid, nick] of cur.members) if (uid !== userId && !old.members.has(uid)) say('쉐어택 · 새 동승자', `${nick}님이 참여했어요 (${cur.members.size}/${r.max_people}명)`)
+          for (const [uid, nick] of old.members) if (!cur.members.has(uid)) say('쉐어택 · 동승자 변경', `${nick}님이 나갔어요 (${cur.members.size}/${r.max_people}명)`)
+          if (old.status !== 'full' && cur.status === 'full') say('쉐어택 · 모집 완료', `${r.spot_name} 택시 승차장에서 만나요. ${r.dest_name}행`)
         }
         for (const [id, old] of Object.entries(before)) {
           if (now[id] || old.r.host_id === userId) continue
           // 목록에서 사라진 이유가 '취소'일 때만 알린다 (내가 나간 경우는 제외)
           const { data } = await supabase.from('rides').select('status').eq('id', id).maybeSingle()
-          if (data?.status === 'cancelled') say('같이타 · 모집 취소', `${old.r.spot_name} → ${old.r.dest_name} 모집이 취소됐어요`)
+          if (data?.status === 'cancelled') say('쉐어택 · 모집 취소', `${old.r.spot_name} → ${old.r.dest_name} 모집이 취소됐어요`)
         }
       }
       // 출발 10분 전
@@ -58,7 +58,7 @@ export function useRideAlerts(userId) {
         const left = (new Date(r.depart_at) - Date.now()) / 60000
         if (left <= 10 && left > -5 && !sent.current.has(r.id)) {
           sent.current.add(r.id)
-          say('같이타 · 곧 출발', `${Math.max(0, Math.round(left))}분 뒤 ${r.spot_name}에서 출발해요`)
+          say('쉐어택 · 곧 출발', `${Math.max(0, Math.round(left))}분 뒤 ${r.spot_name}에서 출발해요`)
         }
       }
       prev.current = now

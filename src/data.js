@@ -1,6 +1,7 @@
 // 앱 전체에서 쓰는 데이터와 공용 계산
 import fareRules from '../data/web/02_fare_rules/fare_rules.json'
 import zoneList from '../data/web/01_zones/zones.json'
+import shapes from '../data/web/01_zones/zone_shapes.json'
 import topDest from '../data/web/03_demand/zone_top_dest.json'
 import tims from '../data/web/10_tims/tims_app.json'
 import spots from '../data/web/13_spots/spots.json'
@@ -79,8 +80,33 @@ export function placeFromId(id) {
   }
 }
 
-// 현재 위치(위도·경도) → 가장 가까운 읍면동 id
-export const nearestZoneId = (lat, lon) => `zone:${nearestZone(lat, lon).zone_id}`
+// 좌표가 들어 있는 읍면동 (경계 다각형 판정). 청주 밖이면 null
+function inRing(x, y, ring) {
+  let inside = false
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const [xi, yi] = ring[i], [xj, yj] = ring[j]
+    if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside
+  }
+  return inside
+}
+export function zoneAt(lat, lon) {
+  for (const [id, rings] of Object.entries(shapes)) if (rings.some((r) => inRing(lon, lat, r))) return Number(id)
+  return null
+}
+
+// 좌표 → 출발지: 추천 스팟이 걸어갈 거리(800m) 안이면 그 스팟, 아니면 그 읍면동
+export const WALK_M = 800
+export function locate(lat, lon) {
+  const zoneId = zoneAt(lat, lon)
+  if (!zoneId) return null
+  const near = spots.map((s) => ({ s, d: haversineM(lon, lat, s.lon, s.lat) })).sort((a, b) => a.d - b.d)[0]
+  return { zoneId, id: near.d <= WALK_M ? near.s.id : `zone:${zoneId}`, nearSpot: near.s, nearM: Math.round(near.d) }
+}
+export const walkMin = (m) => Math.max(1, Math.round(m / 70))
+
+// 그 지역에서 기본으로 보여 줄 목적지: 읍·면이면 시내(귀로), 동이면 가장 많이 가는 곳
+export const defaultDest = (zoneId) => (zoneById[zoneId]?.is_eupmyeon && cityDest(zoneId)) || usualDest(zoneId)
+export const destChoices = (zoneId) => [...new Set([defaultDest(zoneId), ...(topDest[zoneId] ?? [])])].filter((d) => d && d !== zoneId)
 
 // 귀로 매칭 대상: 읍·면에서 출발해 시내(동)로 가는 이동 = 읍·면에 손님을 내려준 택시가 돌아가는 방향
 export const isReturnRoute = (originZoneId, destZoneId) =>

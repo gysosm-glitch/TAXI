@@ -1,13 +1,13 @@
 {
-  "name": "같이타 청주",
-  "short_name": "같이타",
-  "description": "같은 방향이면 택시도 같이 타요. 할증 구간 요금을 n분의 1로.",
+  "name": "쉐어택 · 청주 귀로 매칭",
+  "short_name": "쉐어택",
+  "description": "빈 차로 돌아가는 택시와 시내 가는 손님을 잇는 청주 귀로 매칭. 오송·오창 할증 구간을 더 싸게.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1d9e75",
-  "theme_color": "#1d9e75",
+  "background_color": "#0F2A22",
+  "theme_color": "#0F2A22",
   "lang": "ko",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
