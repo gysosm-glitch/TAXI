@@ -53,6 +53,9 @@ export const DEFAULT_PARAMS = {
   exemptRatio: 1,             // 귀로 매칭 운행의 할증 면제율 (0~1)
   returnFeeWon: 0,            // 귀로 매칭 1건당 기사에게 가는 매칭 수수료
   feePayer: 'city',           // 수수료를 내는 쪽: 'city'(시 보전) | 'passenger'
+  driverAppShare: null,       // 기사 앱 이용 비율 (없으면 appShare)
+  appZones: null,             // 거점 집중: 이 존에서 출발하는 승객만 앱을 씀 (예: [131] 오송)
+  appZoneShare: 0.5,          // 거점 출발 승객의 앱 이용 비율
   seed: 20261030,
 }
 
@@ -96,7 +99,7 @@ export function runDay(pairs, zones, pickupsByZone, params = {}) {
           o: p.o, d: p.d, cat: p.cat, t: h * 60 + Math.floor(rand() * 60),
           gender: randAttr() < 0.5 ? 'F' : 'M',
           share: randAttr() < (P.sharing ? (P.spotZones.includes(p.o) ? P.spotParticipation : P.shareParticipation) : 0),
-          app: randApp() < P.appShare,
+          app: randApp() < (P.appZones ? (P.appZones.includes(p.o) ? P.appZoneShare : 0) : P.appShare),
         })
       }
     }
@@ -112,13 +115,13 @@ export function runDay(pairs, zones, pickupsByZone, params = {}) {
     let r = randFleet() * wsum, k = 0
     while (r > weights[k]) { r -= weights[k]; k++ }
     taxis.push({ id: i, zone: zones[k].zone_id, state: 'off', until: 0, idleSince: 0, arrivedLoaded: false,
-      busyKm: 0, emptyKm: 0, revenue: 0, trips: 0, onMin: 0, app: randFleet() < P.appShare })
+      busyKm: 0, emptyKm: 0, revenue: 0, trips: 0, onMin: 0, app: randFleet() < (P.driverAppShare ?? P.appShare) })
   }
   const activeTarget = (h) => Math.round((fleetTotal * SHIFT_HOURS / 24) * (HOUR_PROFILE[h] / (profileSum / 24)))
 
   // ---------------------------------------------------------------- 집계
   const M = { requests: 0, served: 0, abandoned: 0, waitSum: 0, paid: 0, surchargePaid: 0, riders: 0,
-    sharedRiders: 0, soloSum: 0, returnMatched: 0, returnFee: 0, cityCost: 0, emToDong: 0, returnByZone: {}, sharedByZone: {}, exemptedWon: 0, corridor: { requests: 0, served: 0, paid: 0, shared: 0, solo: 0 } }
+    sharedRiders: 0, soloSum: 0, returnMatched: 0, returnFee: 0, cityCost: 0, emToDong: 0, emToDongByZone: {}, returnByZone: {}, sharedByZone: {}, exemptedWon: 0, corridor: { requests: 0, served: 0, paid: 0, shared: 0, solo: 0 } }
   const waiting = []                  // 배차 대기 중인 파티
   let ri = 0
 
@@ -179,7 +182,7 @@ export function runDay(pairs, zones, pickupsByZone, params = {}) {
         const exempt = isReturn && P.returnExempt && surcharged
         const fare = surcharged ? (exempt ? Math.round(fp.fd + (fp.fe - fp.fd) * (1 - P.exemptRatio)) : fp.fe) : fp.fd
         const fee = isReturn ? P.returnFeeWon : 0
-        if (isEM(party.o) && !isEM(party.d)) M.emToDong++
+        if (isEM(party.o) && !isEM(party.d)) { M.emToDong++; M.emToDongByZone[party.o] = (M.emToDongByZone[party.o] || 0) + 1 }
         const n = party.members.length
         best.emptyKm += party.o === best.zone ? 0.3 : bestKm
         best.busyKm += fp.km
@@ -236,6 +239,12 @@ export function runDay(pairs, zones, pickupsByZone, params = {}) {
   const revenue = taxis.reduce((a, x) => a + x.revenue, 0)
   const onHours = taxis.reduce((a, x) => a + x.onMin, 0) / 60
   const trips = taxis.reduce((a, x) => a + x.trips, 0)
+  // 앱을 쓰는 기사와 안 쓰는 기사를 나눠 본 수입 (참여 기사 효과)
+  const group = (app) => {
+    const g = taxis.filter((x) => x.app === app && x.onMin > 0)
+    const rev = g.reduce((a, x) => a + x.revenue, 0), h = g.reduce((a, x) => a + x.onMin, 0) / 60
+    return { vehicles: g.length, revenuePerVehicleDay: g.length ? rev / g.length : 0, revenuePerHour: h ? rev / h : 0 }
+  }
   return {
     params: P,
     requestsPerDay: Math.round(M.requests * up),
@@ -258,6 +267,9 @@ export function runDay(pairs, zones, pickupsByZone, params = {}) {
     returnFeePerDay: M.returnFee * up,
     cityCostPerDay: M.cityCost * up,
     returnMatchShare: M.emToDong ? M.returnMatched / M.emToDong : 0,   // 읍·면→시내 운행 중 귀로 매칭 비율
+    returnShareByZone: Object.fromEntries(Object.entries(M.emToDongByZone).map(([k, v]) => [k, (M.returnByZone[k] || 0) / v])),
+    appDrivers: group(true),
+    otherDrivers: group(false),
     corridor: {
       requestsPerDay: Math.round(M.corridor.requests * up),
       servedRate: M.corridor.requests ? M.corridor.served / M.corridor.requests : 0,

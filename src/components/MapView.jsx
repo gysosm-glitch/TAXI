@@ -21,6 +21,8 @@ export default function MapView({ center = CHEONGJU_CENTER, zoom = 12, markers =
   const map = useRef(null)
   const pins = useRef([])
   const meMarker = useRef(null)
+  const tapRef = useRef(onTap)   // 지도 클릭 처리는 항상 최신 함수로
+  tapRef.current = onTap
 
   useEffect(() => {
     const m = new maplibregl.Map({
@@ -34,7 +36,7 @@ export default function MapView({ center = CHEONGJU_CENTER, zoom = 12, markers =
         if (l.layout?.['text-field'] && l.id !== 'highway-shield') m.setLayoutProperty(l.id, 'text-field', KO_NAME)
       }
     })
-    if (onTap) m.on('click', (e) => onTap({ lat: e.lngLat.lat, lon: e.lngLat.lng }))
+    m.on('click', (e) => tapRef.current?.({ lat: e.lngLat.lat, lon: e.lngLat.lng }))
     map.current = m
     return () => m.remove()
   }, [])
@@ -46,9 +48,7 @@ export default function MapView({ center = CHEONGJU_CENTER, zoom = 12, markers =
   useEffect(() => {
     pins.current.forEach((p) => p.remove())
     pins.current = markers.map((k) => {
-      const html = k.kind === 'origin'
-        ? `<span class="pin-dot"></span><b>${k.label}</b>`
-        : `<b>${k.label}</b>`
+      const html = k.kind === 'origin' || k.kind === 'dest' ? `<span class="pin-dot"></span><b>${k.label}</b>` : `<b>${k.label}</b>`
       const node = el(html, `mpin ${k.kind} ${k.on ? 'on' : ''}`, onPick ? () => onPick(k.id) : null)
       return new maplibregl.Marker({ element: node, anchor: 'bottom' }).setLngLat([k.lon, k.lat]).addTo(map.current)
     })

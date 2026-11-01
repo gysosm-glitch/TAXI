@@ -1,13 +1,14 @@
-// 타기: 지도(내 위치·추천 스팟) + 아래 시트(목적지 → 요금 비교 → 모집 열기·참여 → 버스·막차·KTX)
-import { useEffect, useMemo, useState } from 'react'
+// 타기: 지도 + 출발·도착(검색·GPS·지도 누르기) → 요금 비교 → 주변 모집 참여·모집 열기 → 버스·막차·KTX
+import { useEffect, useState } from 'react'
 import MapView from '../components/MapView.jsx'
 import Icon from '../components/Icon.jsx'
-import { spots, zones, zoneById, tripQuote, won, spotZoneId, placeFromId, isReturnRoute, locate, walkMin, defaultDest, destChoices } from '../data.js'
+import { spots, zoneById, won, spotZoneId, placeFromId, isReturnRoute, placeAt, originId, quoteBetween, tripQuote, distM, defaultDest, destChoices } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { askNotify } from '../lib/alerts.js'
 import { useMyPosition } from '../lib/geo.js'
+import { searchPlaces } from '../lib/search.js'
 import { useLive, nextBus, useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
-import { listRides, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError, saveTrip, rateMembers } from '../lib/rides.js'
+import { listAllOpen, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError, saveTrip, rateMembers } from '../lib/rides.js'
 
 const SEATS = ['조수석', '뒷좌석 오른쪽', '뒷좌석 왼쪽']
 const hhmm = (iso) => new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
@@ -15,6 +16,53 @@ const minsLeft = (iso) => Math.round((new Date(iso) - Date.now()) / 60000)
 const when = (iso) => { const m = minsLeft(iso); return m > 0 ? `${m}분 후` : m > -15 ? '출발 시간' : '지남' }
 const LEAVE = [[5, '지금'], [15, '15분 후'], [30, '30분 후'], [60, '1시간 후']]
 const round100 = (n) => Math.ceil(n / 100) * 100
+const NEAR_M = 1500   // 이 거리 안의 모집을 '내 주변 모집'으로
+const OSONG = spots.find((s) => s.id === 'osong_stn')
+const fromSpot = (s) => placeAt(s.lat, s.lon, s.name)
+const zonePlace = (z) => placeAt(zoneById[z].centroid_lat, zoneById[z].centroid_lon, zoneById[z].name) ?? { lat: zoneById[z].centroid_lat, lon: zoneById[z].centroid_lon, zoneId: z, name: zoneById[z].name }
+
+// 탑승 사실을 지인에게 알리기 (공유 시트, 안 되면 문자)
+function shareTrip(r, me) {
+  const text = `[쉐어택 탑승 알림] ${r.spot_name} → ${r.dest_name}, ${hhmm(r.depart_at)} 출발, 동승 ${r.ride_members.length}명 (${r.ride_members.map((m) => m.nickname).join(', ')}). 내 닉네임: ${me}`
+  if (navigator.share) navigator.share({ title: '쉐어택 탑승 알림', text }).catch(() => {})
+  else location.href = `sms:?&body=${encodeURIComponent(text)}`
+}
+
+function PlaceSheet({ title, near, onPick, onHere, onMap, onClose, gpsState }) {
+  const [q, setQ] = useState('')
+  const [res, setRes] = useState(null)
+  useEffect(() => {
+    if (q.trim().length < 2) { setRes(null); return }
+    const t = setTimeout(async () => setRes(await searchPlaces(q.trim(), near) ?? 'error'), 350)
+    return () => clearTimeout(t)
+  }, [q])
+  return (
+    <div className="modal" onClick={onClose}>
+      <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="grabber" />
+        <h2 className="sheet-title">{title}</h2>
+        <input className="search-input" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="장소·건물·주소 검색 (예: 충북대학교, 오송역)" />
+        {res === 'error' && <p className="sub" style={{ marginTop: 8 }}>검색이 잠시 안 돼요. 지도에서 골라 주세요.</p>}
+        {Array.isArray(res) && res.length === 0 && <p className="sub" style={{ marginTop: 8 }}>청주 안에서 찾지 못했어요.</p>}
+        {Array.isArray(res) && res.map((p, i) => (
+          <button key={i} className="pick-row" onClick={() => onPick(p)}>
+            <Icon name="pin" size={18} /><span><b>{p.name}</b><small>{zoneById[p.zoneId].name}{p.sub ? ` · ${p.sub}` : ''}</small></span>
+          </button>
+        ))}
+        {!res && (
+          <>
+            <div className="grid2" style={{ marginTop: 12 }}>
+              {onHere && <button className="pick-tile" onClick={onHere}><Icon name="locate" size={20} /><b>현재 위치</b><small>{gpsState === 'finding' ? '찾는 중…' : 'GPS'}</small></button>}
+              <button className="pick-tile" onClick={onMap}><Icon name="pin" size={20} /><b>지도에서 고르기</b><small>지도를 누르세요</small></button>
+            </div>
+            <p className="label" style={{ margin: '14px 0 4px' }}>자주 찾는 곳</p>
+            <div className="chips wrap">{spots.slice(0, 6).map((s) => <button key={s.id} className="chip" onClick={() => onPick(fromSpot(s))}>{s.name}</button>)}</div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
 
 export default function Ride({ account, onLogin }) {
   const { session, profile } = account
@@ -22,12 +70,13 @@ export default function Ride({ account, onLogin }) {
   const canUse = !!(supabase && session && profile)
   const gps = useMyPosition()
 
-  const [sel, setSel] = useState('osong_stn')     // 출발지: 추천 스팟 id 또는 'zone:번호'
-  const [point, setPoint] = useState(null)        // 지도를 눌러 고른 정확한 지점
-  const [dest, setDest] = useState(null)
-  const [picker, setPicker] = useState(false)
+  const [from, setFrom] = useState(() => fromSpot(OSONG))
+  const [to, setTo] = useState(null)
+  const [sheet, setSheet] = useState(null)        // 'from' | 'to'
+  const [mapPick, setMapPick] = useState(null)    // 지도 누르기로 고르는 중인 칸
+  const [wantHere, setWantHere] = useState(false)
   const [people, setPeople] = useState(3)
-  const [rides, setRides] = useState([])
+  const [open, setOpen] = useState([])
   const [mine, setMine] = useState([])
   const [form, setForm] = useState(null)
   const [msg, setMsg] = useState(null)
@@ -35,43 +84,48 @@ export default function Ride({ account, onLogin }) {
   const [rating, setRating] = useState(null)
   const [busOpen, setBusOpen] = useState(false)
 
-  const place = placeFromId(sel)
-  const zone = spotZoneId(place)
-  const to = dest && dest !== zone ? dest : defaultDest(zone)
-  const here = gps.pos && locate(gps.pos.lat, gps.pos.lon)   // 내 위치가 청주 안이면 출발지 후보
+  const dest = to ?? (defaultDest(from.zoneId) ? zonePlace(defaultDest(from.zoneId)) : null)
+  const setFromPlace = (p) => { setFrom(p); setTo(null); setForm(null); setMsg(null); setSheet(null) }
+  const setToPlace = (p) => { setTo(p); setForm(null); setSheet(null) }
 
-  const choose = (id, pt = null) => { setSel(id); setPoint(pt); setDest(null); setForm(null); setMsg(null); setPicker(false) }
-  const [wantHere, setWantHere] = useState(false)   // 위치를 찾는 대로 출발지로 쓰기
   const useHere = () => {
     if (!gps.pos) { setWantHere(true); return gps.start() }
     setWantHere(false)
-    if (!here) return setMsg({ bad: true, text: '지금 위치가 청주 밖이에요. 출발지를 직접 골라 주세요.' })
-    choose(here.id, here.id.startsWith('zone:') ? gps.pos : null)
+    const p = placeAt(gps.pos.lat, gps.pos.lon, '현재 위치')
+    if (!p) return setMsg({ bad: true, text: '지금 위치가 청주 밖이에요. 출발지를 검색해 주세요.' })
+    setFromPlace(p)
   }
   useEffect(() => { if (wantHere && gps.pos) useHere() }, [wantHere, gps.pos?.lat])
+
   const tapMap = ({ lat, lon }) => {
-    const p = locate(lat, lon)
-    if (p) choose(p.id, p.id.startsWith('zone:') ? { lat, lon } : null)
+    const p = placeAt(lat, lon)
+    if (!p) return setMsg({ bad: true, text: '청주 안을 눌러 주세요.' })
+    if (mapPick === 'to') setToPlace(p); else setFromPlace(p)
+    setMapPick(null)
   }
 
   // 버스·막차·KTX (출발지 기준)
-  const { bus } = useLive(place)
+  const busSpot = { id: `${from.lat.toFixed(3)},${from.lon.toFixed(3)}`, lat: from.lat, lon: from.lon }
+  const { bus } = useLive(busSpot)
   const nb = nextBus(bus)
-  const last = lastBusState(useLastBus(place))
-  const trains = useTrains(sel === 'osong_stn' || sel === 'osong_bio')
+  const last = lastBusState(useLastBus(busSpot))
+  const trains = useTrains(distM(from, OSONG) < 3000)
   const ktx = trains?.ok ? trains.next.filter((t) => minutesUntil(t.time) >= 0 && minutesUntil(t.time) <= 90).slice(0, 3) : []
 
-  // 요금
-  const solo = to ? tripQuote(zone, to, 1) : null
-  const shared = to ? tripQuote(zone, to, people) : null
-  const ret = to && isReturnRoute(zone, to)
-  const price = (r, n) => tripQuote(spotZoneId(placeFromId(r.spot_id) ?? place), r.dest_zone, n)
+  // 요금 (실제 두 지점 거리)
+  const solo = dest ? quoteBetween(from, dest, 1) : null
+  const shared = dest ? quoteBetween(from, dest, people) : null
+  const ret = dest && isReturnRoute(from.zoneId, dest.zoneId)
+  const price = (r, n) => tripQuote(spotZoneId(placeFromId(r.spot_id) ?? from), r.dest_zone, n)
 
+  // 내 주변(1.5km) 모집
   useRidesLive(async () => {
     if (!canUse) return
-    const [{ data }, m] = await Promise.all([listRides(sel), myRides(me)])
-    setRides(data); setMine(m.filter((r) => !(r.status === 'done' && tripRecorded(r.id))))
-  }, [sel, canUse, me])
+    const [all, m] = await Promise.all([listAllOpen(), myRides(me)])
+    setOpen(all); setMine(m.filter((r) => !(r.status === 'done' && tripRecorded(r.id))))
+  }, [canUse, me])
+  const nearby = open.filter((r) => { const o = placeFromId(r.spot_id); return o && distM(o, from) <= NEAR_M && !mine.some((x) => x.id === r.id) })
+    .sort((a, b) => (b.dest_zone === dest?.zoneId) - (a.dest_zone === dest?.zoneId))
 
   const act = async (fn, ok) => {
     askNotify()
@@ -81,11 +135,10 @@ export default function Ride({ account, onLogin }) {
     if (error) setMsg({ bad: true, text: rideError(error) }); else if (ok) setMsg({ text: ok })
   }
   const submitNew = () => act(async () => {
-    const d = zoneById[to]
-    const meet = form.meet.trim() || (point ? '지도에서 고른 위치' : '')
+    const meet = form.meet.trim()
     const r = await createRide({
-      host_id: me, spot_id: place.id, spot_name: meet ? `${place.name} · ${meet.slice(0, 30)}` : place.name, dest_zone: d.zone_id, dest_name: d.name,
-      depart_at: new Date(Date.now() + form.leave * 60000).toISOString(), max_people: people, gender: profile.gender,
+      host_id: me, spot_id: originId(from), spot_name: meet ? `${from.name} · ${meet.slice(0, 30)}` : from.name,
+      dest_zone: dest.zoneId, dest_name: dest.name, depart_at: new Date(Date.now() + form.leave * 60000).toISOString(), max_people: people, gender: profile.gender,
     })
     if (!r.error) setForm(null)
     return r
@@ -110,14 +163,12 @@ export default function Ride({ account, onLogin }) {
     setMsg(error ? { bad: true, text: rideError(error) } : { text: '평가를 남겼어요. 다음 매칭의 신뢰 점수에 반영돼요.' })
   }
 
-  // 지도 표시
-  const markers = useMemo(() => [
-    ...spots.map((s) => ({ id: s.id, lat: s.lat, lon: s.lon, label: s.name, kind: 'spot', on: s.id === sel })),
-    ...(place.custom ? [{ id: place.id, lat: (point ?? place).lat, lon: (point ?? place).lon, label: point ? '여기서 출발' : place.name, kind: 'origin', on: true }] : []),
-  ], [sel, point?.lat])
-  const center = point ? [point.lat, point.lon] : [place.lat, place.lon]
+  const markers = [
+    { id: 'from', lat: from.lat, lon: from.lon, label: '출발', kind: 'origin', on: true },
+    ...(dest ? [{ id: 'to', lat: dest.lat, lon: dest.lon, label: '도착', kind: 'dest' }] : []),
+    ...nearby.slice(0, 5).map((r) => { const o = placeFromId(r.spot_id); return { id: r.id, lat: o.lat, lon: o.lon, label: `${r.ride_members.length}/${r.max_people} ${r.dest_name}`, kind: 'ride' } }),
+  ]
 
-  // 지금 상황 안내 (가장 중요한 것 하나)
   const banner = last?.ended ? { tone: 'red', title: '버스가 끊긴 시간이에요', body: '같은 방향 손님과 택시를 나눠 타세요.' }
     : ktx[0] ? { tone: 'blue', title: `KTX ${ktx[0].time} 도착 (${minutesUntil(ktx[0].time)}분 후)`, body: '도착 시각에 맞춰 모집을 열면 같이 탈 사람이 가장 많아요.' }
     : last?.soon ? { tone: 'amber', title: `막차까지 ${last.left}분`, body: `${last.latest.route}번 ${last.latest.last} · 놓치면 같이 타기로` }
@@ -126,25 +177,18 @@ export default function Ride({ account, onLogin }) {
   return (
     <div className="ride">
       <div className="map-wrap">
-        <MapView center={center} zoom={sel.startsWith('zone:') ? 12.5 : 13} markers={markers} me={gps.pos} onPick={(id) => choose(id)} onTap={tapMap} />
-        <button className="search-bar" onClick={() => setPicker(true)}>
-          <span className="dot-from" />
-          <span className="sb-text"><small>출발</small><b>{point ? `${place.name} · 고른 위치` : place.name}</b></span>
-          <span className="sb-change">바꾸기</span>
-        </button>
+        <MapView center={to ? [(from.lat + to.lat) / 2, (from.lon + to.lon) / 2] : [from.lat, from.lon]} zoom={to ? (distM(from, to) > 8000 ? 10.5 : 11.5) : 13} markers={markers} me={gps.pos} onTap={tapMap} />
+        <div className="route-box">
+          <button className="route-row" onClick={() => setSheet('from')}><span className="dot-from" /><span className="sb-text"><small>출발</small><b>{from.name}</b></span></button>
+          <button className="route-row" onClick={() => setSheet('to')}><span className="dot-to" /><span className="sb-text"><small>도착</small><b>{dest ? dest.name : '어디로 가세요?'}</b></span></button>
+        </div>
+        {mapPick && <div className="map-hint">지도를 눌러 {mapPick === 'to' ? '도착지' : '출발지'}를 고르세요 <button onClick={() => setMapPick(null)}>취소</button></div>}
         <button className={`locate-btn ${gps.state === 'on' ? 'on' : ''}`} onClick={useHere} aria-label="내 위치에서 출발"><Icon name="locate" size={22} /></button>
       </div>
 
       <div className="sheet">
         <div className="grabber" />
-        {gps.state === 'denied' && <p className="form-msg bad">위치 권한이 꺼져 있어요. 지도를 누르거나 출발지를 직접 골라 주세요.</p>}
-        {here && sel !== here.id && (
-          <button className="here-row" onClick={useHere}>
-            <Icon name="locate" size={18} />
-            <span>내 위치 · {zoneById[here.zoneId].name}{here.nearM <= 3000 ? ` · ${here.nearSpot.name}까지 걸어서 ${walkMin(here.nearM)}분` : ''}</span>
-            <b>여기서 출발</b>
-          </button>
-        )}
+        {gps.state === 'denied' && <p className="form-msg bad">위치 권한이 꺼져 있어요. 출발지를 검색하거나 지도를 눌러 주세요.</p>}
         {msg && <p className={`form-msg ${msg.bad ? 'bad' : ''}`}>{msg.text}</p>}
 
         {rating && (
@@ -168,13 +212,12 @@ export default function Ride({ account, onLogin }) {
 
         {mine.map((r) => {
           const members = [...r.ride_members].sort((a, b) => a.joined_at.localeCompare(b.joined_at))
-          const q = price(r, members.length)
           return (
             <section key={r.id} className="card mine">
               <p className="card-title"><span>내 모집</span>
                 <span className={`tag ${r.status === 'open' ? 'amber' : ''}`}>{r.status === 'open' ? `${members.length}/${r.max_people}명 모집 중` : r.status === 'full' ? '모집 완료' : '도착'}</span></p>
               <p className="trip-line">{r.spot_name} <span>→</span> {r.dest_name}</p>
-              <p className="sub">{hhmm(r.depart_at)} 출발 ({when(r.depart_at)}) · 1인 약 {won(q.share)}</p>
+              <p className="sub">{hhmm(r.depart_at)} 출발 ({when(r.depart_at)}) · 1인 약 {won(price(r, members.length).share)}</p>
               <div className="detail">
                 <b>탑승 전 안내</b>
                 {members.map((m, i) => <div key={m.user_id} className="seat"><span>{m.nickname}{m.user_id === me ? ' (나)' : ''}{m.user_id === r.host_id ? ' · 모집자' : ''}</span><span>{SEATS[i] ?? '뒷좌석'}</span></div>)}
@@ -188,35 +231,33 @@ export default function Ride({ account, onLogin }) {
               </div>
               <div className="safety-row">
                 <a href="tel:112" className="sos">112 신고</a>
+                <button className="ghost-link" onClick={() => shareTrip(r, profile.nickname)}>지인에게 탑승 알리기</button>
                 <a href="kakaot://" className="ghost-link">택시 부르기</a>
               </div>
             </section>
           )
         })}
 
-        {banner && (
-          <div className={`banner ${banner.tone}`}>
-            <b>{banner.title}</b><span>{banner.body}</span>
-          </div>
-        )}
+        {banner && <div className={`banner ${banner.tone}`}><b>{banner.title}</b><span>{banner.body}</span></div>}
 
-        <h2 className="sheet-title">어디로 가세요?</h2>
-        <div className="chips">
-          {destChoices(zone).slice(0, 4).map((d) => (
-            <button key={d} className={`chip ${d === to ? 'on' : ''}`} onClick={() => setDest(d)}>
-              {zoneById[d].name}{isReturnRoute(zone, d) && <i className="chip-dot" />}
-            </button>
-          ))}
-          <select className="chip-select" value="" onChange={(e) => e.target.value && setDest(Number(e.target.value))}>
-            <option value="">다른 곳</option>
-            {zones.filter((z) => z.zone_id !== zone).map((z) => <option key={z.zone_id} value={z.zone_id}>{z.name}</option>)}
-          </select>
-        </div>
+        {!to && (
+          <>
+            <h2 className="sheet-title">어디로 가세요?</h2>
+            <div className="chips">
+              {destChoices(from.zoneId).slice(0, 3).map((d) => (
+                <button key={d} className={`chip ${d === dest?.zoneId ? 'on' : ''}`} onClick={() => setToPlace(zonePlace(d))}>
+                  {zoneById[d].name}{isReturnRoute(from.zoneId, d) && <i className="chip-dot" />}
+                </button>
+              ))}
+              <button className="chip" onClick={() => setSheet('to')}>🔍 검색</button>
+            </div>
+          </>
+        )}
 
         {solo && (
           <section className="card fare">
             <div className="fare-head">
-              <p className="trip-line">{place.name} <span>→</span> {zoneById[to].name}</p>
+              <p className="trip-line">{solo.km.toFixed(1)}km</p>
               {ret ? <span className="tag">귀로 매칭 구간</span> : solo.surcharged ? <span className="tag amber">할증 구간</span> : null}
             </div>
             <div className="fare-rows">
@@ -225,34 +266,34 @@ export default function Ride({ account, onLogin }) {
               {ret && <div className="fare-row policy"><span>귀로 할증 면제 시 1인</span><b>{won(round100(solo.fareDongRate / people))}</b><small>정책 제안</small></div>}
             </div>
             <div className="seg small">{[2, 3].map((v) => <button key={v} className={people === v ? 'on' : ''} onClick={() => setPeople(v)}>{v}명</button>)}</div>
-            {ret && <p className="sub" style={{ marginTop: 10 }}>이 방향은 이 지역에 손님을 내려 준 택시가 빈 차로 돌아가는 길이에요. 모집이 열리면 기사님 화면에 귀로 손님으로 보여요.</p>}
+            {ret && <p className="sub" style={{ marginTop: 10 }}>이 방향은 이 지역에 손님을 내려 준 택시가 빈 차로 돌아가는 길이에요. 모집을 열면 기사님 화면에 귀로 손님으로 보여요.</p>}
           </section>
         )}
 
         <section className="card">
-          <p className="card-title">{place.name}에서 출발하는 모집 <small>{canUse ? `${rides.length}건` : ''}</small></p>
+          <p className="card-title">내 주변 모집 <small>{canUse ? `반경 1.5km · ${nearby.length}건` : ''}</small></p>
           {!canUse && (
             <div className="empty">
               <p className="sub">{session ? '가입 정보를 먼저 입력해 주세요.' : '로그인하면 모집을 열거나 참여할 수 있어요.'}</p>
               {!session && <button className="btn" style={{ marginTop: 10 }} onClick={onLogin}>로그인 · 체험 계정</button>}
             </div>
           )}
-          {canUse && rides.length === 0 && !form && <p className="sub">아직 열린 모집이 없어요. 첫 모집을 열어 보세요.</p>}
-          {canUse && rides.map((r) => {
+          {canUse && nearby.length === 0 && !form && <p className="sub">주변에 열린 모집이 없어요. 첫 모집을 열어 보세요.</p>}
+          {canUse && nearby.map((r) => {
             const joined = r.ride_members.some((m) => m.user_id === me)
-            const full = r.status !== 'open'
+            const o = placeFromId(r.spot_id)
             return (
               <div key={r.id} className="ride-item">
                 <div>
-                  <b>→ {r.dest_name}</b> {isReturnRoute(spotZoneId(placeFromId(r.spot_id) ?? place), r.dest_zone) && <span className="tag">귀로</span>}
-                  <span className="meta">{hhmm(r.depart_at)} 출발 · {when(r.depart_at)} · {r.ride_members.length}/{r.max_people}명 · 1인 약 {won(price(r, r.max_people).share)}</span>
+                  <b>→ {r.dest_name}</b> {r.dest_zone === dest?.zoneId && <span className="tag">같은 방향</span>}
+                  <span className="meta">{r.spot_name.split(' · ')[0]}에서 · 걸어서 {Math.max(1, Math.round(distM(o, from) / 70))}분 · {hhmm(r.depart_at)} 출발 · {r.ride_members.length}/{r.max_people}명</span>
                 </div>
                 {joined ? <span className="tag">참여 중</span>
-                  : <button className="pill-btn small" disabled={busy || full} onClick={() => act(() => joinRide(r.id, me, profile.nickname), '참여했어요. 탑승 전 안내를 확인해 주세요.')}>{full ? '마감' : '참여'}</button>}
+                  : <button className="pill-btn small" disabled={busy || r.status !== 'open'} onClick={() => act(() => joinRide(r.id, me, profile.nickname), '참여했어요. 탑승 전 안내를 확인해 주세요.')}>{r.status !== 'open' ? '마감' : '참여'}</button>}
               </div>
             )
           })}
-          {canUse && !form && <button className="btn" style={{ marginTop: 12 }} disabled={!to} onClick={() => setForm({ leave: ktx[0] ? Math.max(5, minutesUntil(ktx[0].time) + 10) : 15, meet: '' })}>{to ? `${zoneById[to].name}행 모집 열기` : '목적지를 골라 주세요'}</button>}
+          {canUse && !form && <button className="btn" style={{ marginTop: 12 }} disabled={!dest} onClick={() => setForm({ leave: ktx[0] ? Math.max(5, minutesUntil(ktx[0].time) + 10) : 15, meet: '' })}>{dest ? `${dest.name}행 모집 열기` : '도착지를 골라 주세요'}</button>}
           {canUse && form && (
             <div className="new-ride">
               <div className="field"><span>언제 출발해요?</span>
@@ -262,9 +303,9 @@ export default function Ride({ account, onLogin }) {
                 </div>
               </div>
               <label className="field"><span>어디서 만날까요? <small className="hint">선택</small></span>
-                <input value={form.meet} maxLength={30} placeholder={place.custom ? '예: 호수공원 정문' : `예: ${place.name} 택시 승차장`} onChange={(e) => setForm({ ...form, meet: e.target.value })} />
+                <input value={form.meet} maxLength={30} placeholder="예: 택시 승차장, 정문 앞" onChange={(e) => setForm({ ...form, meet: e.target.value })} />
               </label>
-              <p className="sub">{people}명 · {zoneById[to].name}행 · {profile.gender === 'F' ? '여성' : '남성'} 회원에게만 보여요 (합승은 같은 성별끼리만 가능)</p>
+              <p className="sub">{from.name} → {dest.name} · {people}명 · {profile.gender === 'F' ? '여성' : '남성'} 회원에게만 보여요 (합승은 같은 성별끼리만 가능)</p>
               <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
                 <button className="btn ghost" onClick={() => setForm(null)}>취소</button>
                 <button className="btn" disabled={busy} onClick={submitNew}>모집 열기</button>
@@ -288,33 +329,18 @@ export default function Ride({ account, onLogin }) {
           )}
         </section>
 
-        <p className="foot">자료: 국토교통부 택시운행정보(TIMS) 2025 · 청주시 요금(보도 기준) · 요금은 거리 추정치예요</p>
+        <p className="foot">요금은 직선거리 × 1.3으로 추정 · 자료: TIMS 2025, 청주시 요금(보도 기준) · 장소 검색 © OpenStreetMap</p>
       </div>
 
-      {picker && (
-        <div className="modal" onClick={() => setPicker(false)}>
-          <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="grabber" />
-            <h2 className="sheet-title">어디서 출발하세요?</h2>
-            <button className="pick-row primary" onClick={useHere}>
-              <Icon name="locate" size={20} /><span><b>현재 위치</b><small>{gps.state === 'finding' ? '위치를 찾는 중…' : here ? `${zoneById[here.zoneId].name}${here.id.startsWith('zone:') ? '' : ` · ${here.nearSpot.name} 근처`}` : 'GPS로 가장 가까운 승차 지점을 찾아요'}</small></span>
-            </button>
-            <p className="label" style={{ margin: '14px 0 6px' }}>택시를 많이 타는 곳 <small className="hint">여기서 모이면 매칭이 잘 돼요</small></p>
-            {spots.map((s) => (
-              <button key={s.id} className={`pick-row ${s.id === sel ? 'on' : ''}`} onClick={() => choose(s.id)}>
-                <Icon name="pin" size={18} /><span><b>{s.name}</b><small>{s.zone} · 하루 택시 {s.pickups_per_day.toLocaleString()}건</small></span>
-                {gps.pos && <em>{(Math.hypot(s.lat - gps.pos.lat, (s.lon - gps.pos.lon) * 0.8) * 111).toFixed(1)}km</em>}
-              </button>
-            ))}
-            <label className="field" style={{ marginTop: 12 }}><span>또는 읍면동에서 고르기</span>
-              <select value={place.custom ? place.id : ''} onChange={(e) => e.target.value && choose(e.target.value)}>
-                <option value="">선택하세요</option>
-                {zones.map((z) => <option key={z.zone_id} value={`zone:${z.zone_id}`}>{z.name} ({z.gu})</option>)}
-              </select>
-            </label>
-            <p className="sub">지도를 직접 눌러서 출발 위치를 고를 수도 있어요.</p>
-          </div>
-        </div>
+      {sheet && (
+        <PlaceSheet
+          title={sheet === 'from' ? '어디서 출발하세요?' : '어디로 가세요?'}
+          near={from} gpsState={gps.state}
+          onPick={sheet === 'from' ? setFromPlace : setToPlace}
+          onHere={sheet === 'from' ? () => { setSheet(null); useHere() } : null}
+          onMap={() => { setMapPick(sheet); setSheet(null) }}
+          onClose={() => setSheet(null)}
+        />
       )}
     </div>
   )

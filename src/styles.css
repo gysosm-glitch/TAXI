@@ -271,3 +271,27 @@ a { color: var(--teal-dark); }
   .banner.red { background: #3a1717; color: #f09595; } .banner.amber { background: #3a2a12; color: #f2c27b; }
   .logo b { color: #fff; }
 }
+
+/* 출발·도착 상자, 장소 검색 */
+.route-box { position: absolute; top: calc(12px + env(safe-area-inset-top)); left: 12px; right: 12px; z-index: 5; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15,42,34,.18); overflow: hidden; }
+.route-row { width: 100%; display: flex; align-items: center; gap: 12px; border: 0; background: none; padding: 10px 14px; text-align: left; color: #1c1c1e; }
+.route-row + .route-row { border-top: 1px solid #ececf0; }
+.dot-to { width: 12px; height: 12px; border-radius: 3px; background: var(--sun); box-shadow: 0 0 0 4px #fdf0d8; flex: none; }
+.map-hint { position: absolute; left: 12px; right: 12px; bottom: 32px; z-index: 5; display: flex; justify-content: space-between; align-items: center; background: var(--brand); color: #fff; border-radius: 14px; padding: 10px 14px; font-size: 14px; }
+.map-hint button { border: 0; background: rgba(255,255,255,.15); color: #fff; border-radius: 999px; padding: 6px 12px; font-weight: 700; }
+.mpin.dest { background: var(--sun); color: #0f2a22; border-color: var(--sun); }
+.mpin.dest::after { border-top-color: var(--sun); }
+.mpin.dest .pin-dot { background: #0f2a22; }
+.mpin.ride { background: #e8f0fe; color: #1a56c4; border-color: #e8f0fe; font-size: 11px; }
+.mpin.ride::after { border-top-color: #e8f0fe; }
+.search-input { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--teal); background: var(--bg); color: var(--ink); font: inherit; font-size: 16px; outline: none; margin-bottom: 6px; }
+.pick-tile { border: 0; border-radius: 14px; background: var(--bg); padding: 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; color: var(--teal-dark); }
+.pick-tile b { font-size: 15px; color: var(--ink); } .pick-tile small { font-size: 12px; color: var(--ink-2); }
+.chips.wrap { flex-wrap: wrap; }
+.safety-row button.ghost-link { flex: 1; border: 0; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; background: var(--teal-soft); color: var(--teal-ink); }
+.section-label.dark { color: var(--ink); margin-top: 4px; }
+.diff { background: var(--card); border-radius: var(--r-card); padding: 4px 14px; margin-bottom: 12px; }
+.diff-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; align-items: center; }
+.diff-row:last-child { border-bottom: 0; }
+.diff-row span { color: var(--muted); text-decoration: line-through; }
+.diff-row b { color: var(--teal-dark); }

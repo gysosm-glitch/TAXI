@@ -111,7 +111,6 @@ for path in sorted(glob.glob(os.path.join(STATS_DIR, "*.csv"))):
 stats = pd.concat(srows)
 stats["empty_km_ratio"] = (stats.empty_km / stats.drive_km).round(4)
 stats["empty_time_ratio"] = (stats.empty_s / stats.drive_s).round(4)
-stats.to_csv(OUT / "tims_region_stats_2022_2025.csv", index=False, encoding="utf-8-sig")
 
 pv = stats[(stats.kind == "per_vehicle_day") & (stats.year == 2025)]
 comp = (pv.groupby("region")[["trips", "drive_km", "busy_km", "empty_km", "empty_km_ratio", "empty_time_ratio"]].mean().round(3)

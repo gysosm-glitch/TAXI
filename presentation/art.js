@@ -127,8 +127,11 @@ async function png(svg, file) { await sharp(Buffer.from(svg), { density: 144 }).
   await png(mapDark(1400, 1200), 'map_dark.png')
   await png(mapRisk(1000, 900), 'map_risk.png')
   await png(taxi(C.amber), 'taxi_amber.png')
-  await png(taxi(C.teal), 'taxi_teal.png')
-  await png(train(), 'ktx.png')
-  for (const n of Object.keys(ICONS)) for (const [k, col] of [['t', C.teal], ['a', C.amber], ['d', C.dark]]) await png(icon(n, col), `i_${n}_${k}.png`)
+  // 발표에 쓰는 아이콘만 (이름_색: t 초록, a 호박, d 진초록)
+  const COL = { t: C.teal, a: C.amber, d: C.dark }
+  for (const id of ['taxi_t', 'taxi_a', 'people_t', 'train_a', 'route_d', 'route_a', 'check_t', 'check_d', 'won_d', 'phone_a', 'law_t']) {
+    const [n, k] = id.split('_')
+    await png(icon(n, COL[k]), `i_${id}.png`)
+  }
   console.log('done', fs.readdirSync(OUT).length)
 })()

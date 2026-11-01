@@ -23,9 +23,7 @@ KTDB 여객 OD는 이용 조건상 재배포할 수 없어 저장소에 올리�
 |---|---|---|
 | `ktdb/청주시_주수단OD_2024_평일.csv` | 43존×43존 수단별 평일 통행 | KTDB `2025-OD-PSN-MOD-14` (2024 평일) |
 | `ktdb/청주시_목적OD_2024_평일.csv` | 같은 존, 목적별 통행 | KTDB `2025-OD-PSN-OBJ-04` (2024 평일) |
-| `ktdb/청주시_읍면별_시내연결_요약_2024.csv` | 13개 읍·면 요약 | 위 OD에서 팀 집계 |
 | `derived/taxi_od_pairs.csv` / `.min.json` | 존 쌍별 택시 통행·할증 여부·거리·요금 | 위 OD 가공 (시뮬레이션 입력) |
-| `derived/surcharge_demand_summary.csv`, `eupmyeon_city_link_summary.csv` | 할증 구분별 통행 요약 | 위 OD 가공 |
 
 팀원이 분석을 다시 돌리려면 이 폴더를 따로 받아야 한다(카톡·드라이브, GitHub 아님).
 
@@ -39,10 +37,11 @@ KTDB 여객 OD는 이용 조건상 재배포할 수 없어 저장소에 올리�
 | `03_demand` | `zone_top_dest.json` | 존별 자주 가는 목적지 상위 3곳 (OD 순위만) | ✅ |
 | `10_tims` | `tims_app.json` | 청주 승차 요약·격자·시간대 보정 (앱용 묶음) | ✅ |
 | | `tims_pickups_by_zone_2025.csv`, `tims_pickups_by_cell_2025.csv` | 존별·500m 격자별 2025 승차 | 📊 |
-| | `tims_region_compare_2025.csv`, `tims_region_stats_2022_2025.csv`, `tims_cheongju_yearly.csv` | 지자체 공차율 비교, 청주 연도별(공차 46.5%) | 📊 |
+| | `tims_region_compare_2025.csv`, `tims_cheongju_yearly.csv` | 지자체 공차율 비교, 청주 연도별(공차 46.5%) | 📊 |
 | | `bus_stops_by_zone.csv` | 존별 정류장 수 (공차 위험 지수 입력) | 📊 |
 | `12_simulation` | `agent_results.json` | 행위자 시뮬레이션: 현행·합승·귀로·면제 시나리오 비교 | ✅ |
 | | `return_matching.json` | **귀로 매칭 손익분기**: 앱 이용률 × 면제율, 최대 면제율, 수요 증가 가정 | ✅ |
+| | `adoption.json` | **보급 전략**: 참여 기사 수입 변화, 오송 거점 집중 vs 전체 분산 | ✅ |
 | `13_spots` | `spots.json` | 추천 스팟 8곳 점수·순위 | ✅ |
 | `14_risk` | `empty_risk.json` | 13개 읍·면 빈 차 귀로 위험 지수 | 📊 |
 | | `empty_risk_sensitivity.json` | 가중치 6조합 민감도(순위 상관, 저위험 득표) | 📊 |
@@ -59,6 +58,7 @@ python scripts/select_spots.py .                         # 추천 스팟
 python scripts/empty_risk_index.py .                     # 공차 위험 지수 + 민감도
 node scripts/precompute_agents.mjs                       # 🔒 시나리오 시뮬레이션
 node scripts/return_matching_analysis.mjs                # 🔒 손익분기 (약 6분)
+node scripts/adoption_analysis.mjs                       # 🔒 참여 기사·거점 집중 (약 3분)
 ```
 
 TIMS 분석(`10_tims`)은 TIMS 압축 2개를 풀어서 폴더를 지정한다.

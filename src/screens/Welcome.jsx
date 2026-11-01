@@ -13,6 +13,14 @@ const MOMENTS = [
   ['users', '오창·오송 출퇴근', '산단·바이오단지에서 시내까지, 매일 같은 시간 같은 방향끼리'],
 ]
 
+// 호출 앱: 가까운 빈 차를 부른다 / 쉐어택: 빈 차의 방향과 손님의 방향을 맞춘다
+const DIFF = [
+  ['가까운 빈 차를 부른다', '돌아가는 빈 차와 방향을 맞춘다'],
+  ['할증은 그대로 낸다', '귀로 운행은 할증 면제(시 정책 연동)'],
+  ['기사가 호출 수수료를 낸다', '기사가 귀로 수입을 번다'],
+  ['혼자 부른다', 'KTX 도착·막차에 맞춰 같은 방향끼리 모인다'],
+]
+
 export default function Welcome({ onBrowse, onDemo }) {
   const [busy, setBusy] = useState(null)
   const [err, setErr] = useState(null)
@@ -48,6 +56,11 @@ export default function Welcome({ onBrowse, onDemo }) {
             <span className="ibadge amber"><Icon name="car" size={18} /></span>
             <div><b>기사님이라면</b><span>읍·면에 손님을 내린 뒤, 시내로 가는 귀로 손님을 바로 확인하세요 ›</span></div>
           </button>
+        </div>
+
+        <p className="label section-label dark">택시 호출 앱과 다른 점</p>
+        <div className="diff">
+          {DIFF.map(([a, b]) => <div key={a} className="diff-row"><span>{a}</span><b>{b}</b></div>)}
         </div>
 
         {supabase && (

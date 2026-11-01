@@ -68,6 +68,11 @@ export function tripQuote(originZone, destZone, people = 1, km) {
 export function placeFromId(id) {
   const s = spots.find((x) => x.id === id)
   if (s) return s
+  if (String(id).startsWith('pt:')) {   // 직접 고른 지점 'pt:위도,경도'
+    const [lat, lon] = id.slice(3).split(',').map(Number)
+    const z = zoneById[zoneAt(lat, lon) ?? nearestZone(lat, lon).zone_id]
+    return { id, name: z.name, zone: z.name, lat, lon, custom: true, pickups_per_day: 0, surcharge_trip_ratio: 0, surcharge_trips_per_day: 0 }
+  }
   const zid = Number(String(id).replace('zone:', ''))
   const z = zoneById[zid]
   if (!z) return null
@@ -103,6 +108,21 @@ export function locate(lat, lon) {
   return { zoneId, id: near.d <= WALK_M ? near.s.id : `zone:${zoneId}`, nearSpot: near.s, nearM: Math.round(near.d) }
 }
 export const walkMin = (m) => Math.max(1, Math.round(m / 70))
+export const distM = (a, b) => haversineM(a.lon, a.lat, b.lon, b.lat)
+
+// 좌표 → 앱에서 쓰는 장소 { lat, lon, name, zoneId }
+export function placeAt(lat, lon, name) {
+  const zoneId = zoneAt(lat, lon)
+  if (!zoneId) return null
+  return { lat, lon, zoneId, name: name || `${zoneById[zoneId].name} 지정 위치` }
+}
+// 모집에 저장할 출발지 id: 추천 스팟 300m 안이면 그 스팟, 아니면 좌표 그대로
+export function originId(p) {
+  const s = spots.find((x) => distM(p, x) <= 300)
+  return s ? s.id : `pt:${p.lat.toFixed(5)},${p.lon.toFixed(5)}`
+}
+// 두 지점 사이 요금 (도로 우회 1.3배 가정)
+export const quoteBetween = (a, b, n = 1) => tripQuote(a.zoneId, b.zoneId, n, Math.max(1, Math.round(distM(a, b) * 1.3 / 100) / 10))
 
 // 그 지역에서 기본으로 보여 줄 목적지: 읍·면이면 시내(귀로), 동이면 가장 많이 가는 곳
 export const defaultDest = (zoneId) => (zoneById[zoneId]?.is_eupmyeon && cityDest(zoneId)) || usualDest(zoneId)

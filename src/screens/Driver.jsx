@@ -8,6 +8,7 @@ import { listAllOpen, useRidesLive } from '../lib/rides.js'
 import { HOUR_PROFILE } from '../lib/hours.js'
 import { useTrains, minutesUntil } from '../lib/live.js'
 import analysis from '../../data/web/12_simulation/return_matching.json'
+import adoption from '../../data/web/12_simulation/adoption.json'
 
 const SUM = HOUR_PROFILE.reduce((a, b) => a + b, 0)
 const FUEL_WON_PER_KM = 130   // LPG 택시 km당 연료비 (가정)
@@ -20,6 +21,7 @@ const pick = (a, e) => analysis.grid.find((g) => g.appShare === a && g.exemptRat
 const full30 = pick(0.3, 1)
 const noExempt30 = pick(0.3, 0)
 const maxEx30 = analysis.maxExempt.find((m) => m.appShare === 0.3)
+const joined30 = adoption.drivers.find((d) => d.appShare === 0.3)   // 앱을 쓰는 기사만 본 수입 변화
 
 export default function Driver({ account, onLogin }) {
   const [sel, setSel] = useState(emSpots.find((s) => s.id === 'osong_stn')?.id ?? `zone:${emZones[0].zone_id}`)
@@ -122,7 +124,7 @@ export default function Driver({ account, onLogin }) {
 
       <div className="card">
         <p className="card-title">귀로 매칭이 할증을 바꾸는 방법 <small>시뮬레이션</small></p>
-        <div className="row-item"><span>할증 면제 없이 귀로 매칭만<span className="meta">앱 이용 30% 기준</span></span><span className="r">기사 수입 {noExempt30.revChangePct >= 0 ? '+' : ''}{noExempt30.revChangePct}%</span></div>
+        <div className="row-item"><span>쉐어택 참여 기사 하루 수입<span className="meta">앱 이용 30% · 할증 그대로 · 전체 평균 {noExempt30.revChangePct >= 0 ? '+' : ''}{noExempt30.revChangePct}%</span></span><span className="r">+{won(joined30.appDriverWonPerDay)} (+{joined30.appDriverRevChangePct}%)</span></div>
         <div className="row-item"><span>귀로 매칭 운행 할증 전액 면제<span className="meta">보전 없을 때</span></span><span className="r off">기사 수입 {full30.revChangePct}%</span></div>
         <div className="row-item"><span>손해 없이 면제할 수 있는 폭<span className="meta">보전 0원</span></span><span className="r">할증의 {Math.round(maxEx30.maxExemptRatio * 100)}%까지</span></div>
         <div className="row-item"><span>전액 면제 + 귀로 1건당 보전<span className="meta">기사 수입 현행 유지에 필요한 금액</span></span><span className="r">{won(full30.breakEvenFeePerTrip)}</span></div>

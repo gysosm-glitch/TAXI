@@ -1,0 +1,37 @@
+{
+ "generatedAt": "2026-11-01T08:19:03.464Z",
+ "seeds": [
+  20261030,
+  20261101
+ ],
+ "drivers": [
+  {
+   "appShare": 0.1,
+   "appDriverRevChangePct": 0.94,
+   "otherDriverRevChangePct": -0.04,
+   "appDriverWonPerDay": 3117
+  },
+  {
+   "appShare": 0.3,
+   "appDriverRevChangePct": 1.86,
+   "otherDriverRevChangePct": -0.55,
+   "appDriverWonPerDay": 5774
+  }
+ ],
+ "strategy": {
+  "spread": {
+   "osongReturnPerDay": 6,
+   "osongReturnSharePct": 0.8,
+   "cityReturnPerDay": 53
+  },
+  "focus": {
+   "osongReturnPerDay": 36,
+   "osongReturnSharePct": 5.4,
+   "cityReturnPerDay": 36
+  }
+ },
+ "notes": [
+  "참여 기사: 앱을 쓰는 기사 집단의 차량당 하루 수입을 귀로 매칭 전후로 비교 (할증 그대로)",
+  "거점 집중: 기사 앱 이용 10%는 같고, 승객 앱 이용을 청주 전체 10% 대신 오송읍 출발 승객 50%에만 둔 경우"
+ ]
+}

@@ -171,10 +171,5 @@ def summarize(df, label):
 summary = summarize(pairs, "all")
 oo = pairs[pairs.origin_name.isin(["오송읍", "오창읍"]) | pairs.dest_name.isin(["오송읍", "오창읍"])]
 summary = pd.concat([summary, summarize(oo, "touches_osong_or_ochang")])
-save_csv(PRIV / "derived/surcharge_demand_summary.csv", summary)
-
-
-emsum = pd.read_csv(PRIV / "ktdb/청주시_읍면별_시내연결_요약_2024.csv", encoding=ENC)
-save_csv(PRIV / "derived/eupmyeon_city_link_summary.csv", emsum)
 
 print(summary.to_string())
