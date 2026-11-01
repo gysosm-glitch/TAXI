@@ -173,32 +173,8 @@ oo = pairs[pairs.origin_name.isin(["오송읍", "오창읍"]) | pairs.dest_name.
 summary = pd.concat([summary, summarize(oo, "touches_osong_or_ochang")])
 save_csv(PRIV / "derived/surcharge_demand_summary.csv", summary)
 
-link = pd.read_csv(RAW / "청주시_노드링크별_평균택시통행량_읍면동_2025.csv", encoding=ENC)
-lz = (link.dropna(subset=["읍면동"]).groupby(["구", "읍면동", "구분"])
-      .agg(link_count=("링크아이디", "size"), total_link_km=("링크길이(m)", lambda s: round(s.sum() / 1000, 2)),
-           mean_daily_taxi_volume=("일평균택시통행량(대)", "mean"), max_daily_taxi_volume=("일평균택시통행량(대)", "max"))
-      .round(1).reset_index().sort_values("mean_daily_taxi_volume", ascending=False))
-save_csv(OUT / "03_demand/taxi_link_volume_by_zone.csv", lz)
-top = link.sort_values("일평균택시통행량(대)", ascending=False).head(50)[
-    ["구", "읍면동", "구분", "링크아이디", "도로명", "링크길이(m)", "일평균택시통행량(대)"]]
-save_csv(OUT / "03_demand/top50_taxi_links.csv", top)
+
 emsum = pd.read_csv(PRIV / "ktdb/청주시_읍면별_시내연결_요약_2024.csv", encoding=ENC)
 save_csv(PRIV / "derived/eupmyeon_city_link_summary.csv", emsum)
-
-# ---------------------------------------------------------------- 05 matching
-MATCH = {
-    "basis": "반반택시 운영 규칙(경로 1km 이내 유사, 동승 70%+, 추가시간 15분 이하)을 데모용으로 단순화",
-    "origin_radius_m": 500, "dest_radius_m": 1000, "route_buffer_m": 500,
-    "depart_window_min": 15, "max_extra_time_min": 15, "min_shared_ratio": 0.7,
-    "max_party_size": 4,
-    "same_gender_required_for": ["경형", "소형", "중형"],
-    "fare_split": {"same_destination": "equal", "sequential_dropoff": "proportional_to_solo_fare"},
-    "legal_notice": "본 데모는 합승 중개 서비스가 아닌 정책·서비스 시뮬레이션입니다. 사업화 시 등록 플랫폼 제휴 또는 ICT 규제샌드박스를 거칩니다.",
-    "required_safety_ui": ["본인확인(목업)", "동승자 탑승 시각·위치 사전 고지", "좌석 안내", "112 긴급신고 버튼", "신고·차단", "위치·개인정보 동의 모달"],
-    "sources": ["seoul_banban_rules", "maeil_20220614", "smarttoday_safety"],
-}
-save_json(OUT / "05_matching/matching_rules.json", MATCH)
-
-
 
 print(summary.to_string())

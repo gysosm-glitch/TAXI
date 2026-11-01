@@ -13,7 +13,6 @@ read = lambda n: pd.read_csv(D / n, encoding="utf-8-sig")
 
 zones = read("tims_pickups_by_zone_2025.csv")
 cells = read("tims_pickups_by_cell_2025.csv")
-land = read("tims_landmarks_2025.csv")
 comp = read("tims_region_compare_2025.csv")
 yearly = read("tims_cheongju_yearly.csv")
 bus = read("bus_stops_by_zone.csv")
@@ -40,7 +39,6 @@ out = {
          "avg_fare": int(r.avg_fare), "avg_km": r.avg_km, "share_pct": r.share_pct}
         for r in zones.itertuples()
     ],
-    "landmarks": land.to_dict(orient="records"),
     "cells": [[round(r.lat, 4), round(r.lon, 4), int(r.rides)] for r in cells[cells.rides >= 2000].itertuples()],
     "bus_stops_by_zone": dict(zip(bus.zone, bus.bus_stops.astype(int))),
     "peers": comp[comp.region.str.contains("청주|천안|세종|대전|창원|전주|원주|김해|충주")][

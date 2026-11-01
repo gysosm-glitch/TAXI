@@ -3,7 +3,7 @@ import L from 'leaflet'
 import MapView, { Marker, Tooltip } from '../components/MapView.jsx'
 import Icon from '../components/Icon.jsx'
 import { Badge, SharedTaxi } from '../components/Illust.jsx'
-import { waitingBySpot, tripQuote, zones, won, spotZoneId, placeFromId, nearestZoneId, usualDest as topDestOf } from '../data.js'
+import { waitingBySpot, tripQuote, zones, won, spotZoneId, placeFromId, nearestZoneId, usualDest as topDestOf, cityDest, zoneById, isReturnRoute } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { askNotify } from '../lib/alerts.js'
 import { useTrains, minutesUntil } from '../lib/live.js'
@@ -37,7 +37,8 @@ export default function Together({ account, onLogin }) {
   const canUse = !!(supabase && session && profile)
   const spotOf = (id) => placeFromId(id)
   // 직접 고른 곳의 기본 목적지: 그곳에서 택시로 가장 많이 가는 다른 지역
-  const usualDest = g?.destZone ?? topDestOf(zone)
+  // 읍·면 출발이면 시내행(귀로)을 기본 목적지로
+  const usualDest = (zoneById[zone]?.is_eupmyeon && cityDest(zone)) || (g?.destZone ?? topDestOf(zone))
   const choose = (id) => { setSel(id); setForm(null); setMore(false); setMsg(null) }
   const useMyLocation = () => {
     if (!navigator.geolocation) return setLocMsg('이 기기에서는 위치를 쓸 수 없어요.')
@@ -104,7 +105,7 @@ export default function Together({ account, onLogin }) {
   return (
     <>
       <h1 className="page-title">같이타기</h1>
-      <p className="page-sub">택시를 많이 타는 곳에서 같은 방향 사람을 모아요</p>
+      <p className="page-sub">시내 방향 모집은 돌아가는 택시(귀로)와 이어져요</p>
 
       {msg && <p className={`form-msg ${msg.bad ? 'bad' : ''}`}>{msg.text}</p>}
 
@@ -208,7 +209,7 @@ export default function Together({ account, onLogin }) {
           return (
             <div key={r.id} className="ride-item">
               <div>
-                <b>→ {r.dest_name}</b>
+                <b>→ {r.dest_name}</b> {isReturnRoute(spotZoneId(spotOf(r.spot_id) ?? spot), r.dest_zone) && <span className="tag">귀로 매칭</span>}
                 <span className="meta">{hhmm(r.depart_at)} 출발 · {when(r.depart_at)} · {n}/{r.max_people}명</span>
                 <span className="meta">다 차면 1인 약 {won(q.share)}</span>
               </div>
@@ -246,6 +247,7 @@ export default function Together({ account, onLogin }) {
             </div>
             <div className="detail">
               다 모이면 1인 <b>{won(preview.share)}</b> · 혼자 타면 {won(previewSolo.fare)}{previewSolo.surcharged ? ' (할증 포함)' : ''}
+              {isReturnRoute(zone, Number(form.dest)) && <><br /><b>귀로 매칭 대상</b>이에요. 이 지역에 손님을 내려준 택시가 빈 차 대신 태워 가요. 정책안(귀로 할증 면제)이 시행되면 1인 약 <b>{won(Math.ceil(previewSolo.fareDongRate / form.max / 100) * 100)}</b>.</>}
               <br />{profile.gender === 'F' ? '여성' : '남성'} 회원에게만 보여요 (택시 합승은 같은 성별끼리만 가능).
             </div>
             <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>

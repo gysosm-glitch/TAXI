@@ -1,7 +1,7 @@
 """매칭 스팟 선정: TIMS 500m 격자 승차량 + OD 할증 통행 비중 + 버스정류장 밀도로 후보 지점을 점수화한다.
 
 Usage: python select_spots.py <repo_root>
-출력: data/web/13_spots/spots.json, bus_stops.json
+출력: data/web/13_spots/spots.json
 """
 import json, sys, math
 from pathlib import Path
@@ -57,6 +57,4 @@ df["rank"] = range(1, len(df) + 1)
 df["tier"] = ["1차 거점" if r <= 3 else "2차 확장" if r <= 6 else "후보" for r in df["rank"]]
 out = W / "13_spots"; out.mkdir(exist_ok=True)
 (out / "spots.json").write_text(df.to_json(orient="records", force_ascii=False), encoding="utf-8")
-bus_out = bus.assign(lat=bus.lat.round(5), lon=bus.lon.round(5))[["stop_id", "name", "lat", "lon"]]
-(out / "bus_stops.json").write_text(bus_out.to_json(orient="values", force_ascii=False), encoding="utf-8")
 print(df[["rank", "tier", "name", "zone", "pickups_per_day", "avg_fare", "surcharge_trip_ratio", "surcharge_trips_per_day", "bus_stops_500m", "score"]].to_string(index=False))

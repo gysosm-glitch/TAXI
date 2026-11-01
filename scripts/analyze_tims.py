@@ -87,22 +87,10 @@ by_zone["share_pct"] = (100 * by_zone.rides_2025 / by_zone.rides_2025.sum()).rou
 by_zone = by_zone.sort_values("rides_2025", ascending=False)
 by_zone.round(1).to_csv(OUT / "tims_pickups_by_zone_2025.csv", index=False, encoding="utf-8-sig")
 
-monthly = cj.assign(is_em=cj.type != "동").groupby(["month", "is_em"]).rides.sum().unstack().rename(columns={False: "dong", True: "eupmyeon"})
-monthly.to_csv(OUT / "tims_pickups_monthly_2025.csv", encoding="utf-8-sig")
 
 cell_tot = (cj.groupby(["grid", "zone", "type", "lon", "lat"]).agg(rides=("rides", "sum"), revenue=("revenue", "sum"))
             .reset_index().sort_values("rides", ascending=False))
 cell_tot.to_csv(OUT / "tims_pickups_by_cell_2025.csv", index=False, encoding="utf-8-sig")
-
-# 랜드마크 격자 (500m 셀 중심이 가장 가까운 셀)
-LANDMARKS = {"오송역": (127.3270, 36.6203), "충북대": (127.4560, 36.6283), "청주공항": (127.4990, 36.7220),
-             "시외버스터미널": (127.4310, 36.6260), "오창 호수공원": (127.4310, 36.7160), "성안길": (127.4880, 36.6350)}
-rows = []
-for name, (lo, la) in LANDMARKS.items():
-    c = cell_tot.assign(d=(cell_tot.lon - lo) ** 2 + (cell_tot.lat - la) ** 2).nsmallest(4, "d")
-    rows.append({"place": name, "cells": len(c), "rides_2025": int(c.rides.sum()), "rides_per_day": round(c.rides.sum() / 365, 1),
-                 "avg_fare": round(c.revenue.sum() / c.rides.sum())})
-pd.DataFrame(rows).to_csv(OUT / "tims_landmarks_2025.csv", index=False, encoding="utf-8-sig")
 
 # ---------------------------------------------------------------- 2) 지자체별 영업통계 (공차율)
 # 파일 두 종류: "1대당 1일평균"(10열), "합계"(영업대수 포함 11열). 연월 표기가 Jan-22 / 22-Jan으로 섞여 있어 파일명 연도 + 영문 월로 정규화
@@ -148,5 +136,3 @@ bz.to_csv(OUT / "bus_stops_by_zone.csv", index=False, encoding="utf-8-sig")
 print("정류장:", len(bus), "청주 내 매칭:", bus.zone.notna().sum())
 
 print(by_zone.head(15).to_string())
-print(pd.DataFrame(rows).to_string())
-print(monthly.to_string())

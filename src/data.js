@@ -4,10 +4,9 @@ import zoneList from '../data/web/01_zones/zones.json'
 import topDest from '../data/web/03_demand/zone_top_dest.json'
 import tims from '../data/web/10_tims/tims_app.json'
 import spots from '../data/web/13_spots/spots.json'
-import matching from '../data/web/05_matching/matching_rules.json'
 import { quote, splitFare, haversineM } from './lib/fare.js'
 
-export { tims, spots, matching }
+export { tims, spots }
 export const rules = fareRules.regions.cheongju
 export const zones = [...zoneList].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 export const zoneById = Object.fromEntries(zones.map((z) => [z.zone_id, z]))
@@ -37,6 +36,8 @@ export const places = [
 export const spotZoneId = (s) => zoneByName[s.zone]?.zone_id ?? nearestZone(s.lat, s.lon).zone_id
 // 그 지역에서 택시로 가장 많이 가는 다른 지역 (할증 구간 우선, 순위만 공개)
 export const usualDest = (zoneId) => topDest[zoneId]?.[0] ?? null
+// 귀로 목적지: 상위 목적지 중 첫 번째 동(시내)
+export const cityDest = (zoneId) => topDest[zoneId]?.find((d) => !zoneById[d]?.is_eupmyeon) ?? null
 
 // 추천 스팟 목록 (실제 대기 인원은 로그인 시 서버 모집으로 채운다)
 export function waitingBySpot() {
@@ -80,3 +81,7 @@ export function placeFromId(id) {
 
 // 현재 위치(위도·경도) → 가장 가까운 읍면동 id
 export const nearestZoneId = (lat, lon) => `zone:${nearestZone(lat, lon).zone_id}`
+
+// 귀로 매칭 대상: 읍·면에서 출발해 시내(동)로 가는 이동 = 읍·면에 손님을 내려준 택시가 돌아가는 방향
+export const isReturnRoute = (originZoneId, destZoneId) =>
+  !!(zoneById[originZoneId]?.is_eupmyeon && zoneById[destZoneId] && !zoneById[destZoneId].is_eupmyeon)

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { SharedTaxi, Badge } from '../components/Illust.jsx'
-import { waitingBySpot, tripQuote, zoneById, won, spotZoneId, placeFromId } from '../data.js'
+import { waitingBySpot, tripQuote, zoneById, won, spotZoneId, placeFromId, isReturnRoute } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { listAllOpen, useRidesLive, getStats, myTripsThisMonth } from '../lib/rides.js'
 import { useLive, nextBus, taxiDemandNow, useLastBus, lastBusState } from '../lib/live.js'
@@ -93,7 +93,7 @@ export default function Home({ user, account, onGo }) {
       {q && (
         <div className="hero">
           <div className="hero-art"><SharedTaxi /></div>
-          <p className="label">지금 같이 타기</p>
+          <p className="label">지금 같이 타기{isReturnRoute(top.zone, top.destZone) ? ' · 귀로 매칭' : ''}</p>
           <h2>{ride ? ride.spot_name.split(' · ')[0] : top.spot.name} → {zoneById[top.destZone].name}</h2>
           <p className="sub">{top.max ? `${top.waiting}/${top.max}명 모집 중 · ${new Date(ride.depart_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 출발` : top.waiting ? `${top.waiting}명 모집 중 · 10분 안에 출발` : '아직 모집이 없어요 · 2명이 모이면 출발'}</p>
           <div className="row">

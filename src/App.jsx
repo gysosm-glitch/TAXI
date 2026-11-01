@@ -5,6 +5,7 @@ import ProfileForm from './screens/ProfileForm.jsx'
 import Home from './screens/Home.jsx'
 import Together from './screens/Together.jsx'
 import Transit from './screens/Transit.jsx'
+import Driver from './screens/Driver.jsx'
 import Me from './screens/Me.jsx'
 import { useAccount, signOut } from './lib/auth.js'
 import { useRideAlerts } from './lib/alerts.js'
@@ -12,6 +13,7 @@ import { useRideAlerts } from './lib/alerts.js'
 const TABS = [
   ['home', 'home', '홈'],
   ['together', 'users', '같이타기'],
+  ['driver', 'car', '기사'],
   ['transit', 'pin', '교통'],
   ['me', 'user', '내 정보'],
 ]
@@ -53,6 +55,7 @@ export default function App() {
       <main className="content">
         {tab === 'home' && <Home user={profile ? { name: profile.nickname } : null} account={account} onGo={setTab} />}
         {tab === 'together' && <Together account={account} onLogin={() => setBrowsing(false)} />}
+        {tab === 'driver' && <Driver account={account} onLogin={() => setBrowsing(false)} />}
         {tab === 'transit' && <Transit />}
         {tab === 'me' && <Me account={account} onLogin={() => setBrowsing(false)} />}
       </main>

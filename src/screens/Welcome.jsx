@@ -24,8 +24,8 @@ export default function Welcome({ onBrowse, onDemo }) {
     <div className="welcome">
       <div className="welcome-top">
         <div className="logo">같이타</div>
-        <h1>같은 방향이면,<br />택시도 같이 타요</h1>
-        <p>오송·오창 할증 구간 요금, 함께 타면 n분의 1</p>
+        <h1>빈 차로 돌아가는 택시,<br />시내 가는 손님과 이어요</h1>
+        <p>오송·오창의 할증은 빈 차 귀로 때문이에요. 귀로를 채우면 할증의 이유가 사라져요.</p>
         <div className="scene"><CityScene /></div>
       </div>
       <div className="welcome-body">

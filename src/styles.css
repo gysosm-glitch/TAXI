@@ -189,3 +189,14 @@ a { color: var(--teal-dark); }
 .stat-grid b { display: block; font-size: 18px; }
 .stat-grid span { font-size: 11px; color: var(--ink-2); }
 .fb { width: 100%; padding: 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; font-size: 15px; resize: vertical; }
+
+/* 기사 화면 */
+.chip-select { flex: none; border: 0; border-radius: 999px; padding: 8px 12px; font-size: 14px; font-weight: 600; background: var(--card); color: var(--ink-2); }
+.driver-hero h2 { max-width: 100%; }
+.compare { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.compare .opt { border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; }
+.compare .opt span { font-size: 12px; color: var(--ink-2); }
+.compare .opt b { font-size: 20px; }
+.compare .opt small { font-size: 11px; color: var(--ink-2); }
+.compare .bad-opt { background: var(--bg); }
+.compare .good-opt { background: var(--teal-soft); } .compare .good-opt b { color: var(--teal-dark); }
