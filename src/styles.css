@@ -73,7 +73,7 @@ a { color: var(--teal-dark); }
 .notice ol { margin: 6px 0 0; padding-left: 18px; }
 
 /* 지도 (MapLibre) */
-.map { position: absolute; inset: 0; }
+.map-wrap .map { position: absolute; inset: 0; }   /* 지도 라이브러리 CSS(.maplibregl-map)가 나중에 로드돼도 이기도록 */
 .mpin { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; background: #fff; color: #0f2a22; font-size: 12px; white-space: nowrap;
   box-shadow: 0 2px 8px rgba(15,42,34,.22); border: 1.5px solid #fff; cursor: pointer; margin-bottom: 8px; }
 .mpin::after { content: ''; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom: 0; border-top-color: #fff; }
@@ -295,3 +295,5 @@ a { color: var(--teal-dark); }
 .diff-row:last-child { border-bottom: 0; }
 .diff-row span { color: var(--muted); text-decoration: line-through; }
 .diff-row b { color: var(--teal-dark); }
+.swap-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #ececf0; background: #fff; color: #0f6e56; font-size: 18px; font-weight: 700; }
+.map-loading { background: #eef0ec; }

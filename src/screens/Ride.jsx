@@ -1,6 +1,6 @@
 // 타기: 지도 + 출발·도착(검색·GPS·지도 누르기) → 요금 비교 → 주변 모집 참여·모집 열기 → 버스·막차·KTX
-import { useEffect, useState } from 'react'
-import MapView from '../components/MapView.jsx'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+const MapView = lazy(() => import('../components/MapView.jsx'))   // 지도 라이브러리는 첫 화면 뒤에 불러온다
 import Icon from '../components/Icon.jsx'
 import { spots, zoneById, won, spotZoneId, placeFromId, isReturnRoute, placeAt, originId, quoteBetween, tripQuote, distM, defaultDest, destChoices } from '../data.js'
 import { supabase } from '../lib/supabase.js'
@@ -26,6 +26,13 @@ function shareTrip(r, me) {
   const text = `[쉐어택 탑승 알림] ${r.spot_name} → ${r.dest_name}, ${hhmm(r.depart_at)} 출발, 동승 ${r.ride_members.length}명 (${r.ride_members.map((m) => m.nickname).join(', ')}). 내 닉네임: ${me}`
   if (navigator.share) navigator.share({ title: '쉐어택 탑승 알림', text }).catch(() => {})
   else location.href = `sms:?&body=${encodeURIComponent(text)}`
+}
+
+// 최근 고른 곳 (이 기기에만 저장)
+const RECENT = 'recent_places_v1'
+const loadRecent = () => { try { return JSON.parse(localStorage.getItem(RECENT)) ?? [] } catch { return [] } }
+function saveRecent(p) {
+  try { localStorage.setItem(RECENT, JSON.stringify([p, ...loadRecent().filter((x) => x.name !== p.name)].slice(0, 5))) } catch {}
 }
 
 function PlaceSheet({ title, near, onPick, onHere, onMap, onClose, gpsState }) {
@@ -55,6 +62,10 @@ function PlaceSheet({ title, near, onPick, onHere, onMap, onClose, gpsState }) {
               {onHere && <button className="pick-tile" onClick={onHere}><Icon name="locate" size={20} /><b>현재 위치</b><small>{gpsState === 'finding' ? '찾는 중…' : 'GPS'}</small></button>}
               <button className="pick-tile" onClick={onMap}><Icon name="pin" size={20} /><b>지도에서 고르기</b><small>지도를 누르세요</small></button>
             </div>
+            {loadRecent().length > 0 && <p className="label" style={{ margin: '14px 0 2px' }}>최근</p>}
+            {loadRecent().map((p, i) => (
+              <button key={i} className="pick-row" onClick={() => onPick(p)}><Icon name="pin" size={18} /><span><b>{p.name}</b><small>{zoneById[p.zoneId]?.name}</small></span></button>
+            ))}
             <p className="label" style={{ margin: '14px 0 4px' }}>자주 찾는 곳</p>
             <div className="chips wrap">{spots.slice(0, 6).map((s) => <button key={s.id} className="chip" onClick={() => onPick(fromSpot(s))}>{s.name}</button>)}</div>
           </>
@@ -85,8 +96,9 @@ export default function Ride({ account, onLogin }) {
   const [busOpen, setBusOpen] = useState(false)
 
   const dest = to ?? (defaultDest(from.zoneId) ? zonePlace(defaultDest(from.zoneId)) : null)
-  const setFromPlace = (p) => { setFrom(p); setTo(null); setForm(null); setMsg(null); setSheet(null) }
-  const setToPlace = (p) => { setTo(p); setForm(null); setSheet(null) }
+  const setFromPlace = (p) => { setFrom(p); setTo(null); setForm(null); setMsg(null); setSheet(null); if (p.name !== '현재 위치') saveRecent(p) }
+  const setToPlace = (p) => { setTo(p); setForm(null); setSheet(null); saveRecent(p) }
+  const swap = () => { if (!dest) return; setFrom(dest); setTo(from); setForm(null) }
 
   const useHere = () => {
     if (!gps.pos) { setWantHere(true); return gps.start() }
@@ -96,6 +108,13 @@ export default function Ride({ account, onLogin }) {
     setFromPlace(p)
   }
   useEffect(() => { if (wantHere && gps.pos) useHere() }, [wantHere, gps.pos?.lat])
+  const autoHere = useRef(true)
+  useEffect(() => {
+    if (!autoHere.current || !gps.pos) return
+    autoHere.current = false
+    const p = placeAt(gps.pos.lat, gps.pos.lon, '현재 위치')
+    if (p) setFrom(p)
+  }, [gps.pos?.lat])
 
   const tapMap = ({ lat, lon }) => {
     const p = placeAt(lat, lon)
@@ -177,9 +196,10 @@ export default function Ride({ account, onLogin }) {
   return (
     <div className="ride">
       <div className="map-wrap">
-        <MapView center={to ? [(from.lat + to.lat) / 2, (from.lon + to.lon) / 2] : [from.lat, from.lon]} zoom={to ? (distM(from, to) > 8000 ? 10.5 : 11.5) : 13} markers={markers} me={gps.pos} onTap={tapMap} />
+        <Suspense fallback={<div className="map map-loading" />}><MapView center={to ? [(from.lat + to.lat) / 2, (from.lon + to.lon) / 2] : [from.lat, from.lon]} zoom={to ? (distM(from, to) > 8000 ? 10.5 : 11.5) : 13} markers={markers} me={gps.pos} onTap={tapMap} /></Suspense>
         <div className="route-box">
           <button className="route-row" onClick={() => setSheet('from')}><span className="dot-from" /><span className="sb-text"><small>출발</small><b>{from.name}</b></span></button>
+          {dest && <button className="swap-btn" onClick={swap} aria-label="출발과 도착 바꾸기">⇅</button>}
           <button className="route-row" onClick={() => setSheet('to')}><span className="dot-to" /><span className="sb-text"><small>도착</small><b>{dest ? dest.name : '어디로 가세요?'}</b></span></button>
         </div>
         {mapPick && <div className="map-hint">지도를 눌러 {mapPick === 'to' ? '도착지' : '출발지'}를 고르세요 <button onClick={() => setMapPick(null)}>취소</button></div>}

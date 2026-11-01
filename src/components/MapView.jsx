@@ -37,8 +37,11 @@ export default function MapView({ center = CHEONGJU_CENTER, zoom = 12, markers =
       }
     })
     m.on('click', (e) => tapRef.current?.({ lat: e.lngLat.lat, lon: e.lngLat.lng }))
+    // 지도를 나중에 불러오면 처음 잰 크기가 틀릴 수 있어, 상자 크기가 바뀔 때마다 다시 맞춘다
+    const ro = new ResizeObserver(() => m.resize())
+    ro.observe(box.current)
     map.current = m
-    return () => m.remove()
+    return () => { ro.disconnect(); m.remove() }
   }, [])
 
   // 중심 이동
