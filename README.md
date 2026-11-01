@@ -9,7 +9,8 @@
 |---|---|
 | [PRD.md](PRD.md) | 앱 소개·기능·법·데이터·할 일 (팀원용 핵심 문서) |
 | [docs/사용설명서.md](docs/사용설명서.md) | 1분 사용법 |
-| [docs/발표원고.md](docs/발표원고.md) | **PPT 8장 내용·숫자·출처 (발표 기준 문서)** |
+| [docs/PPT_구성안.md](docs/PPT_구성안.md) | **PPT 8장 구성안 (수상작 목차 기준: 페르소나·캔버스·BMC 포함)** |
+| [docs/발표원고.md](docs/발표원고.md) | 장별 숫자·출처·멘트, 예상 질문 |
 | [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md) | 데이터 목록·출처·재생성 방법·가정·검증 필요 수치 |
 | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | 실행·배포·환경변수 |
 | [docs/복합할증_해결방안_리서치.md](docs/복합할증_해결방안_리서치.md) | 국내 사례·연구 19건 |
