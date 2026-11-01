@@ -3,7 +3,7 @@ import L from 'leaflet'
 import MapView, { Marker, Tooltip } from '../components/MapView.jsx'
 import Icon from '../components/Icon.jsx'
 import { Badge, SharedTaxi } from '../components/Illust.jsx'
-import { waitingBySpot, tripQuote, zones, won, spotZoneId, placeFromId, nearestZoneId, pairs } from '../data.js'
+import { waitingBySpot, tripQuote, zones, won, spotZoneId, placeFromId, nearestZoneId, usualDest as topDestOf } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { askNotify } from '../lib/alerts.js'
 import { useTrains, minutesUntil } from '../lib/live.js'
@@ -37,7 +37,7 @@ export default function Together({ account, onLogin }) {
   const canUse = !!(supabase && session && profile)
   const spotOf = (id) => placeFromId(id)
   // 직접 고른 곳의 기본 목적지: 그곳에서 택시로 가장 많이 가는 다른 지역
-  const usualDest = g?.destZone ?? pairs.filter((p) => p.o === zone && p.d !== zone).sort((a, b) => b.taxi - a.taxi)[0]?.d
+  const usualDest = g?.destZone ?? topDestOf(zone)
   const choose = (id) => { setSel(id); setForm(null); setMore(false); setMsg(null) }
   const useMyLocation = () => {
     if (!navigator.geolocation) return setLocMsg('이 기기에서는 위치를 쓸 수 없어요.')

@@ -1,8 +1,0 @@
-﻿scope,category,pair_count,taxi_trips_per_weekday,all_trips_per_weekday,taxi_share_of_all_taxi_pct,daily_surcharge_paid_won,daily_diff_if_eupmyeon_rate_won
-all,dong_to_dong,900,130381.3,2118730.3,67.4,0.0,204134545.0
-all,dong_to_eupmyeon,780,37560.6,373837.3,19.4,159166978.0,159166978.0
-all,eupmyeon_to_other_eupmyeon,156,7056.0,96924.2,3.6,31005488.0,31005488.0
-all,same_eupmyeon_internal,13,18468.5,211138.8,9.6,0.0,21956144.0
-touches_osong_or_ochang,dong_to_eupmyeon,120,13605.9,130364.3,40.9,63161170.0,63161170.0
-touches_osong_or_ochang,eupmyeon_to_other_eupmyeon,46,5550.0,64126.2,16.7,24345534.0,24345534.0
-touches_osong_or_ochang,same_eupmyeon_internal,2,14091.4,91440.3,42.4,0.0,16416481.0

@@ -1,6 +1,6 @@
 // 실시간 버스 도착 (Vercel 서버 함수 api/bus) 불러오기 + 1분마다 갱신
 import { useEffect, useState } from 'react'
-import { HOUR_PROFILE } from './simulate.js'
+import { HOUR_PROFILE } from './hours.js'
 
 async function getJSON(url) {
   try {

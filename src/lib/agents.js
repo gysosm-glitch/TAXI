@@ -1,6 +1,6 @@
 // 택시·승객 행위자 기반 하루 시뮬레이션 (1분 단위).
 // 기준 시나리오는 TIMS 실측(청주 하루 승차 약 5.8만 건, 공차거리 비율 46.5%)을 재현하도록 보정한다.
-import { HOUR_PROFILE } from './simulate.js'
+import { HOUR_PROFILE } from './hours.js'
 
 const SURCHARGED = new Set(['dong_to_eupmyeon', 'eupmyeon_to_other_eupmyeon'])
 const SPEED_KM_PER_MIN = 0.4          // 평균 24km/h (가정)

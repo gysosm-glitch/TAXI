@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { runDay, SCENARIOS } from '../src/lib/agents.js'
 
 const read = (p) => JSON.parse(readFileSync(new URL(`../${p}`, import.meta.url)))
-const pairs = read('data/web/03_demand/taxi_od_pairs.min.json')
+const pairs = read('private/derived/taxi_od_pairs.min.json')   // KTDB 파생, 비공개
 const zones = read('data/web/01_zones/zones.json')
 const tims = read('data/web/10_tims/tims_app.json')
 const pickups = Object.fromEntries(tims.zones.map((z) => [z.zone_id, z.rides_per_day]))

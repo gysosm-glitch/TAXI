@@ -7,6 +7,9 @@ from pathlib import Path
 import pandas as pd
 
 RAW, OUT = Path(sys.argv[1]), Path(sys.argv[2])
+# KTDB 여객 OD는 재배포 금지 → 저장소 밖 private/ 에서 읽고, OD 파생 결과도 private/ 에만 쓴다
+PRIV = OUT.parent.parent / "private"
+(PRIV / "derived").mkdir(parents=True, exist_ok=True)
 ENC = "utf-8-sig"
 
 def save_json(path, obj):
@@ -125,8 +128,8 @@ def est_distance_m(o, d):
     return haversine_m(zo["centroid_lon"], zo["centroid_lat"], zd["centroid_lon"], zd["centroid_lat"]) * DETOUR
 
 # ---------------------------------------------------------------- 03 demand
-od = pd.read_csv(RAW / "청주시_주수단OD_2024_평일.csv", encoding=ENC)
-pur = pd.read_csv(RAW / "청주시_목적OD_2024_평일.csv", encoding=ENC)
+od = pd.read_csv(PRIV / "ktdb/청주시_주수단OD_2024_평일.csv", encoding=ENC)
+pur = pd.read_csv(PRIV / "ktdb/청주시_목적OD_2024_평일.csv", encoding=ENC)
 od = od.merge(pur[["출발존", "도착존", "출근", "등교", "업무", "귀가", "기타"]], on=["출발존", "도착존"], how="left")
 rows = []
 for r in od.itertuples(index=False):
@@ -148,7 +151,8 @@ for r in od.itertuples(index=False):
         "est_surcharge_per_trip": (f_em - f_dong) if surcharged else 0,
     })
 pairs = pd.DataFrame(rows)
-save_csv(OUT / "03_demand/taxi_od_pairs.csv", pairs)
+save_csv(PRIV / "derived/taxi_od_pairs.csv", pairs)
+(PRIV / "derived/taxi_od_pairs.min.json").write_text(pairs[["origin_zone", "dest_zone", "origin_name", "dest_name", "category", "taxi_trips_per_weekday", "est_distance_km", "est_fare_dong_rate", "est_fare_eupmyeon_rate"]].set_axis(["o", "d", "on", "dn", "cat", "taxi", "km", "fd", "fe"], axis=1).to_json(orient="records", force_ascii=False), encoding="utf-8")
 
 def summarize(df, label):
     g = df.groupby("category").agg(
@@ -167,7 +171,7 @@ def summarize(df, label):
 summary = summarize(pairs, "all")
 oo = pairs[pairs.origin_name.isin(["오송읍", "오창읍"]) | pairs.dest_name.isin(["오송읍", "오창읍"])]
 summary = pd.concat([summary, summarize(oo, "touches_osong_or_ochang")])
-save_csv(OUT / "03_demand/surcharge_demand_summary.csv", summary)
+save_csv(PRIV / "derived/surcharge_demand_summary.csv", summary)
 
 link = pd.read_csv(RAW / "청주시_노드링크별_평균택시통행량_읍면동_2025.csv", encoding=ENC)
 lz = (link.dropna(subset=["읍면동"]).groupby(["구", "읍면동", "구분"])
@@ -178,8 +182,8 @@ save_csv(OUT / "03_demand/taxi_link_volume_by_zone.csv", lz)
 top = link.sort_values("일평균택시통행량(대)", ascending=False).head(50)[
     ["구", "읍면동", "구분", "링크아이디", "도로명", "링크길이(m)", "일평균택시통행량(대)"]]
 save_csv(OUT / "03_demand/top50_taxi_links.csv", top)
-emsum = pd.read_csv(RAW / "청주시_읍면별_시내연결_요약_2024.csv", encoding=ENC)
-save_csv(OUT / "03_demand/eupmyeon_city_link_summary.csv", emsum)
+emsum = pd.read_csv(PRIV / "ktdb/청주시_읍면별_시내연결_요약_2024.csv", encoding=ENC)
+save_csv(PRIV / "derived/eupmyeon_city_link_summary.csv", emsum)
 
 # ---------------------------------------------------------------- 05 matching
 MATCH = {
@@ -195,47 +199,6 @@ MATCH = {
 }
 save_json(OUT / "05_matching/matching_rules.json", MATCH)
 
-random.seed(20261030)
-w = pairs[pairs.taxi_trips_per_weekday > 0]
-picks = w.sample(n=200, replace=True, weights=w.taxi_trips_per_weekday, random_state=20261030)
-nick_a = ["새벽", "푸른", "늦은", "졸린", "바쁜", "조용한", "느긋한", "부지런한"]
-nick_b = ["고래", "여우", "참새", "곰", "토끼", "수달", "부엉이", "판다"]
 
-def jitter(z):
-    c = zone_by_id[z]
-    return round(c["centroid_lon"] + random.uniform(-0.006, 0.006), 6), round(c["centroid_lat"] + random.uniform(-0.005, 0.005), 6)
-
-req = []
-for i, r in enumerate(picks.itertuples(index=False), 1):
-    olon, olat = jitter(r.origin_zone); dlon, dlat = jitter(r.dest_zone)
-    hour = random.choice([7, 8, 8, 9, 12, 18, 18, 19, 21, 22, 23, 23, 0, 1])
-    req.append({
-        "id": i, "nickname": f"{random.choice(nick_a)}{random.choice(nick_b)}{random.randint(10, 99)}",
-        "gender": random.choice(["F", "M"]), "age_group": random.choice(["20s", "20s", "30s"]),
-        "origin_zone": r.origin_zone, "origin_name": r.origin_name, "origin_lon": olon, "origin_lat": olat,
-        "dest_zone": r.dest_zone, "dest_name": r.dest_name, "dest_lon": dlon, "dest_lat": dlat,
-        "depart_at": f"2026-11-10T{hour:02d}:{random.choice([0, 10, 20, 30, 40, 50]):02d}:00+09:00",
-        "seats": random.choice([1, 1, 1, 2]), "same_gender_only": True,
-        "category": r.category, "status": "waiting", "is_synthetic": True,
-    })
-# 수요 밀집 시간·장소 클러스터 (보고서 §1: 합승의 병목은 수요 밀도 → 오송역 KTX 심야 도착, 대학가 심야, 오창 출근)
-HOTSPOTS = [
-    (130, 131, "23:", 12),   # 충북대(성화·개신·죽림동) → 오송역
-    (131, 130, "23:", 10),   # 오송역 → 충북대
-    (143, 137, "08:", 10),   # 오창 → 가경동(시외버스터미널)
-    (137, 143, "18:", 8),    # 가경동 → 오창
-]
-for o, d, hh, n in HOTSPOTS:
-    for _ in range(n):
-        olon, olat = jitter(o); dlon, dlat = jitter(d)
-        req.append({
-            "id": len(req) + 1, "nickname": f"{random.choice(nick_a)}{random.choice(nick_b)}{random.randint(10, 99)}",
-            "gender": random.choice(["F", "M"]), "age_group": random.choice(["20s", "20s", "30s"]),
-            "origin_zone": o, "origin_name": zone_by_id[o]["name"], "origin_lon": olon, "origin_lat": olat,
-            "dest_zone": d, "dest_name": zone_by_id[d]["name"], "dest_lon": dlon, "dest_lat": dlat,
-            "depart_at": f"2026-11-10T{hh}{random.choice([0, 5, 10, 15, 20, 25]):02d}:00+09:00",
-            "seats": 1, "same_gender_only": True, "category": category(o, d), "status": "waiting", "is_synthetic": True,
-        })
-save_csv(OUT / "05_matching/synthetic_ride_requests.csv", pd.DataFrame(req))
 
 print(summary.to_string())

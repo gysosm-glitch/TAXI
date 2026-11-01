@@ -3,7 +3,7 @@ import Icon from '../components/Icon.jsx'
 import { BusStop, Badge } from '../components/Illust.jsx'
 import { spots } from '../data.js'
 import { useLive, useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
-import { HOUR_PROFILE } from '../lib/simulate.js'
+import { HOUR_PROFILE } from '../lib/hours.js'
 
 const SUM = HOUR_PROFILE.reduce((a, b) => a + b, 0)
 

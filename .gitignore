@@ -13,3 +13,6 @@ Thumbs.db
 # 공공데이터 원본 압축·대용량 파일 (가공 결과만 커밋)
 data/raw/국토교통부_*.zip
 data/web/10_tims/tims_region_stats_2022_2025.csv
+
+# KTDB 여객 OD(원자료·파생)는 이용 조건상 재배포 금지 → 로컬 private/ 에만 보관
+private/

@@ -1,13 +1,13 @@
 // 앱 전체에서 쓰는 데이터와 공용 계산
 import fareRules from '../data/web/02_fare_rules/fare_rules.json'
 import zoneList from '../data/web/01_zones/zones.json'
-import pairs from '../data/web/03_demand/taxi_od_pairs.min.json'
+import topDest from '../data/web/03_demand/zone_top_dest.json'
 import tims from '../data/web/10_tims/tims_app.json'
 import spots from '../data/web/13_spots/spots.json'
 import matching from '../data/web/05_matching/matching_rules.json'
 import { quote, splitFare, haversineM } from './lib/fare.js'
 
-export { pairs, tims, spots, matching }
+export { tims, spots, matching }
 export const rules = fareRules.regions.cheongju
 export const zones = [...zoneList].sort((a, b) => a.name.localeCompare(b.name, 'ko'))
 export const zoneById = Object.fromEntries(zones.map((z) => [z.zone_id, z]))
@@ -34,31 +34,25 @@ export const places = [
   ...zones.map((z) => ({ id: `zone:${z.zone_id}`, name: z.name, sub: `${z.gu} · ${z.type_ko}`, lat: z.centroid_lat, lon: z.centroid_lon, zone: z.zone_id })),
 ]
 
-// 스팟별 지금 같이 타기 대기 현황 (시범: 합성 요청 중 현재 시각 ±1시간 출발분)
-import synthetic from '../data/web/05_matching/synthetic_ride_requests.json'
 export const spotZoneId = (s) => zoneByName[s.zone]?.zone_id ?? nearestZone(s.lat, s.lon).zone_id
-export function waitingBySpot(now = new Date()) {
-  const h = now.getHours()
-  const near = synthetic.filter((r) => {
-    const rh = Number(r.depart_at.slice(11, 13))
-    return Math.min(Math.abs(rh - h), 24 - Math.abs(rh - h)) <= 1
-  })
+// 그 지역에서 택시로 가장 많이 가는 다른 지역 (할증 구간 우선, 순위만 공개)
+export const usualDest = (zoneId) => topDest[zoneId]?.[0] ?? null
+
+// 추천 스팟 목록 (실제 대기 인원은 로그인 시 서버 모집으로 채운다)
+export function waitingBySpot() {
   return spots.map((s) => {
     const z = spotZoneId(s)
-    const list = near.filter((r) => r.origin_zone === z)
-    const dests = {}
-    for (const r of list) dests[r.dest_zone] = (dests[r.dest_zone] || 0) + 1
-    const top = Object.entries(dests).sort((a, b) => b[1] - a[1])[0]
-    // 대기자가 없으면 이 스팟에서 할증 붙는 이동 중 가장 많은 목적지를 대표로 보여 준다
-    const usual = pairs.filter((p) => p.o === z && p.d !== z && p.cat !== 'dong_to_dong').sort((a, b) => b.taxi - a.taxi)[0]
-      ?? pairs.filter((p) => p.o === z && p.d !== z).sort((a, b) => b.taxi - a.taxi)[0]
-    return { spot: s, zone: z, waiting: Math.min(list.length, 3), destZone: top ? Number(top[0]) : usual?.d ?? null }
-  }).sort((a, b) => b.waiting - a.waiting || b.spot.pickups_per_day - a.spot.pickups_per_day)
+    return { spot: s, zone: z, waiting: 0, destZone: usualDest(z) }
+  }).sort((a, b) => b.spot.pickups_per_day - a.spot.pickups_per_day)
 }
 
+// 구간 거리(추정): 같은 지역 안은 평균 이동거리, 다른 지역은 중심점 직선거리 × 1.35(도로 우회)
+const INTRA_KM = { dong: 2.5, eup: 3.5, myeon: 4.0 }
 export function estKm(o, d) {
-  const p = pairs.find((x) => x.o === o && x.d === d)
-  return p ? p.km : 5
+  const a = zoneById[o], b = zoneById[d]
+  if (!a || !b) return 5
+  if (o === d) return INTRA_KM[a.type] ?? 3
+  return Math.round(haversineM(a.centroid_lon, a.centroid_lat, b.centroid_lon, b.centroid_lat) * 1.35 / 10) / 100
 }
 
 // 한 번의 이동에 대한 요금·할증·합승 분담
