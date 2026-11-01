@@ -144,8 +144,11 @@ export default function Me({ account, onLogin }) {
   // 3) 가입 완료
   return (
     <>
-      <h1 className="page-title">내 정보</h1>
-      <p className="page-sub">{session.user.email}</p>
+      <div className="page-head">
+        <h1 className="page-title">내 정보</h1>
+        <button className="logout-btn" onClick={signOut}>로그아웃</button>
+      </div>
+      <p className="page-sub">{session.user.email}{session.user.email?.startsWith('demo.') ? ' · 체험 계정' : ''}</p>
       <div className="card ring-card">
         <div className="avatar" style={{ width: 52, height: 52, fontSize: 20 }}>{profile.nickname.slice(0, 1)}</div>
         <div style={{ flex: 1 }}>

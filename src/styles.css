@@ -297,3 +297,5 @@ a { color: var(--teal-dark); }
 .diff-row b { color: var(--teal-dark); }
 .swap-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #ececf0; background: #fff; color: #0f6e56; font-size: 18px; font-weight: 700; }
 .map-loading { background: #eef0ec; }
+.page-head { display: flex; justify-content: space-between; align-items: center; }
+.logout-btn { border: 1px solid var(--line); background: var(--card); color: var(--ink-2); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; }
