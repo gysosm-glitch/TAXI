@@ -63,12 +63,15 @@ const chartFont = { dataLabelFontFace: F, catAxisLabelFontFace: F, titleFontFace
 // ============================================================ 1. 표지 + 연구 배경 + 목차(노선)
 {
   const s = pres.addSlide(); bg(s, 'p_cover.jpg')
-  T(s, '충북대학교 경영대학 캡스톤디자인 · 고경택시', { x: 0.7, y: 0.55, w: 7, h: 0.35, fontSize: 13, bold: true, color: C.amber })
+  T(s, '충북대학교 경영대학 캡스톤디자인', { x: 0.7, y: 0.55, w: 7, h: 0.35, fontSize: 13, bold: true, color: C.amber })
   s.addImage({ path: IMG('logo.png'), x: 0.7, y: 1.1, w: 1.05, h: 1.05 })
   H(s, '쉐어택', { x: 1.98, y: 1.0, w: 5, h: 1.2, fontSize: 64, color: C.white, valign: 'middle' })
   T(s, '택시 앱과 함께 쓰는 할증 도우미', { x: 0.7, y: 2.4, w: 7, h: 0.45, fontSize: 20, bold: true, color: C.white })
   H(s, '같은 청주인데, 읍·면만 가면 35% 더 낸다', { x: 0.7, y: 2.92, w: 7.5, h: 0.55, fontSize: 25, color: C.amber })
-  T(s, '할증은 빈 차로 돌아오는 손실을 메우기 위한 것.\n그렇다면 빈 차를 채우면, 할증의 이유도 사라지지 않을까?', { x: 0.7, y: 3.6, w: 6.8, h: 0.85, fontSize: 15, color: C.pale, lineSpacingMultiple: 1.3 })
+  // 팀 소개 (할증 질문 문장은 발표자 노트로)
+  box(s, 0.7, 3.72, 0.06, 0.78, C.amber, 0)
+  T(s, '고경택시 · 경영정보학과', { x: 0.92, y: 3.7, w: 6, h: 0.32, fontSize: 13, bold: true, color: C.soft })
+  T(s, '오성민   고경택   이정재', { x: 0.92, y: 4.02, w: 6, h: 0.45, fontSize: 19, bold: true, color: C.white })
   // 택시 미터기
   s.addShape(pres.ShapeType.roundRect, { x: 8.25, y: 0.75, w: 4.5, h: 3.65, rectRadius: 0.16, fill: { color: C.meter, transparency: 8 }, line: { color: C.panel, width: 1.5 } })
   box(s, 8.55, 1.02, 0.7, 0.32, C.amber, 0.16)
@@ -90,7 +93,7 @@ const chartFont = { dataLabelFontFace: F, catAxisLabelFontFace: F, titleFontFace
     T(s, String(i + 1).padStart(2, '0'), { x: cx - 0.25, y: 5.35, w: 0.5, h: 0.5, fontSize: 13, bold: true, color: C.night, align: 'center', valign: 'middle' })
     T(s, t, { x: cx - 0.8, y: 6.12, w: 1.6, h: 0.35, fontSize: 14, bold: true, color: C.white, align: 'center' })
   })
-  s.addNotes('안녕하세요, 고경택시입니다. 같은 청주인데 오송·오창만 가면 택시비가 35% 더 붙습니다. 그런데 시는 이 할증이 빈 차로 돌아오는 손실을 메우기 위한 것이라고 설명합니다. 그렇다면 빈 차를 채우면 할증의 이유도 사라지지 않을까요? 이 질문에서 쉐어택이 시작됐습니다.' + credit('Cheongju Old Town at Night, Minseong Kim, CC BY-SA 4.0'))
+  s.addNotes('안녕하세요, 경영정보학과 오성민, 고경택, 이정재, 팀 고경택시입니다. 같은 청주인데 오송·오창만 가면 택시비가 35% 더 붙습니다. 그런데 시는 이 할증이 빈 차로 돌아오는 손실을 메우기 위한 것이라고 설명합니다. 그렇다면 빈 차를 채우면 할증의 이유도 사라지지 않을까요? 이 질문에서 쉐어택이 시작됐습니다.' + credit('Cheongju Old Town at Night, Minseong Kim, CC BY-SA 4.0'))
 }
 
 // ============================================================ 2. 페르소나 + 고객 여정 (지금의 문제)
@@ -301,7 +304,7 @@ const chartFont = { dataLabelFontFace: F, catAxisLabelFontFace: F, titleFontFace
 // ============================================================ 8. 실행 계획 (로드맵)
 {
   const s = pres.addSlide(); bg(s, 'p_end.jpg')
-  head(s, '08', '오송역 한 곳에서 시작해 할증 면제까지', '1차 목표: 오송 귀로 매칭 하루 36건 (기사 10%·승객 앱 오송 집중 시뮬레이션) · 참여 기사 하루 +5,774원', true)
+  head(s, '08', '오송역 한 곳에서 시작해 할증 면제까지', '실제 운영은 내년(2027)을 가정 · 1차 목표 오송 귀로 매칭 하루 36건 (시뮬레이션) · 참여 기사 하루 +5,774원', true)
   ;[['오송역 시범', 'KTX 도착 시간대 집중'], ['제휴', '승강장 택시 단체·호출 플랫폼'], ['거점 확대', '오송·오창 실증, 데이터 축적'], ['정책 건의', '귀로 운행 할증 면제 고시']].forEach(([t, d], i) => {
     const x = 0.55 + i * 3.07, last = i === 3
     s.addShape(i === 0 ? pres.ShapeType.homePlate : pres.ShapeType.chevron, { x, y: 1.55, w: 3.2, h: 1.25, fill: { color: last ? C.amber : C.panel, transparency: last ? 0 : 5 }, line: { color: last ? C.amber : C.panel, width: 0 } })
@@ -322,7 +325,7 @@ const chartFont = { dataLabelFontFace: F, catAxisLabelFontFace: F, titleFontFace
   H(s, '빈 차를 채우면, 할증의 이유가 사라진다', { x: 1.55, y: 6.1, w: 11, h: 0.55, fontSize: 26, color: C.white, valign: 'middle' })
   T(s, '앱 체험 taxi-woad-seven.vercel.app', { x: 1.55, y: 6.65, w: 6, h: 0.3, fontSize: 12, color: C.led })
   T(s, '8 / 8', { x: 12.1, y: 7.0, w: 0.7, h: 0.3, fontSize: 11, color: C.soft, align: 'right', valign: 'middle' })
-  s.addNotes('오송역 한 곳, KTX 도착 시간대부터 작게 시작하고, 택시 단체와 제휴한 뒤 데이터를 쌓아 시에 귀로 운행 할증 면제를 건의하겠습니다. 빈 차 귀로를 채우면, 할증의 이유가 사라집니다. 감사합니다.' + credit('Osong Station North, Minseong Kim, CC BY-SA 4.0'))
+  s.addNotes('이번 학기에는 체험 계정으로 앱을 모의 시범해 봤고, 실제 운영은 내년을 가정한 계획입니다. 오송역 한 곳, KTX 도착 시간대부터 작게 시작하고, 택시 단체와 제휴한 뒤 데이터를 쌓아 시에 귀로 운행 할증 면제를 건의하겠습니다. 빈 차 귀로를 채우면, 할증의 이유가 사라집니다. 감사합니다.' + credit('Osong Station North, Minseong Kim, CC BY-SA 4.0'))
 }
 
 // 한글 단어가 중간에서 끊기지 않게 + 한국어 언어 태그
