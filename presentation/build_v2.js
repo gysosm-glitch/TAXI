@@ -40,7 +40,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
   s.addImage({ path: IMG('logo.png'), x: 0.7, y: 1.1, w: 1.05, h: 1.05 })
   T(s, '쉐어택', { x: 1.95, y: 1.05, w: 5, h: 1.15, fontSize: 54, bold: true, color: C.white, valign: 'middle' })
   T(s, '🚕 택시 앱과 함께 쓰는 할증 도우미', { x: 0.7, y: 2.3, w: 7.2, h: 0.45, fontSize: 20, bold: true, color: C.white })
-  T(s, '같은 청주인데, 읍·면만 가면 35% 더 낸다', { x: 0.7, y: 2.78, w: 7.2, h: 0.4, fontSize: 15, color: C.soft })
+  T(s, '같은 청주인데, 읍·면만 가면 35% 더 낸다', { x: 0.7, y: 2.78, w: 7.6, h: 0.5, fontSize: 21, bold: true, color: C.amber })
   // 연구 배경 숫자 카드
   const facts = [['💸', '35%', '동↔읍·면 복합할증', C.amber], ['📍', '73%', '읍·면 택시 승차 중\n오송·오창 비중', C.white], ['🚗', '46.5%', '청주 택시\n빈 차 주행 비율', C.white]]
   facts.forEach(([e, n, l, c], i) => {
@@ -105,7 +105,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
   s.addShape(pres.ShapeType.line, { x: 0.8, y: 3.65, w: 3.2, h: 0, line: { color: C.line, width: 1 } })
   T(s, '수요는 충분해요', { x: 0.8, y: 3.8, w: 3.3, h: 0.35, fontSize: 13, bold: true, color: C.muted })
   T(s, [{ text: '오송읍 ', options: {} }, { text: '3,025건/일', options: { bold: true, color: C.teal } }, { text: '\n오창읍 ', options: {} }, { text: '2,617건/일', options: { bold: true, color: C.teal } }, { text: '\n오송역 승차의 ', options: {} }, { text: '52%', options: { bold: true, color: C.amber } }, { text: '가 시내행', options: {} }],
-    { x: 0.8, y: 4.2, w: 3.3, h: 1.2, fontSize: 14, color: C.ink, lineSpacingMultiple: 1.3 })
+    { x: 0.8, y: 4.15, w: 3.3, h: 1.35, fontSize: 12.5, color: C.ink, lineSpacingMultiple: 1.15 })
   s.addShape(pres.ShapeType.roundRect, { x: 0.8, y: 5.6, w: 3.2, h: 1.0, rectRadius: 0.1, fill: { color: C.sand }, line: { color: C.sand, width: 0 } })
   T(s, '손님이 없는 게 아니라\n빈 차와 손님이 엇갈린다', { x: 0.95, y: 5.6, w: 3.0, h: 1.0, fontSize: 12.5, bold: true, color: C.dark, valign: 'middle' })
   card(s, 4.45, 1.45, 3.6, 5.35)
