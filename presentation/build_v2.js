@@ -40,7 +40,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
   s.addImage({ path: IMG('logo.png'), x: 0.7, y: 1.1, w: 1.05, h: 1.05 })
   T(s, '쉐어택', { x: 1.95, y: 1.05, w: 5, h: 1.15, fontSize: 54, bold: true, color: C.white, valign: 'middle' })
   T(s, '🚕 택시 앱과 함께 쓰는 할증 도우미', { x: 0.7, y: 2.3, w: 7.2, h: 0.45, fontSize: 20, bold: true, color: C.white })
-  T(s, '빈 차로 돌아가는 택시에, 시내 가는 손님을 태워 보내요', { x: 0.7, y: 2.78, w: 7.2, h: 0.4, fontSize: 15, color: C.soft })
+  T(s, '같은 청주인데, 읍·면만 가면 35% 더 낸다', { x: 0.7, y: 2.78, w: 7.2, h: 0.4, fontSize: 15, color: C.soft })
   // 연구 배경 숫자 카드
   const facts = [['💸', '35%', '동↔읍·면 복합할증', C.amber], ['📍', '73%', '읍·면 택시 승차 중\n오송·오창 비중', C.white], ['🚗', '46.5%', '청주 택시\n빈 차 주행 비율', C.white]]
   facts.forEach(([e, n, l, c], i) => {
@@ -65,7 +65,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
 // ============================================================ 2. 페르소나 + 고객 여정
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '02', '페르소나 · 고객 여정', '우리 팀원들이 직접 겪은 복합할증 요금 부담에서 시작했어요')
+  head(s, '02', '손님은 할증을, 기사는 빈 차를 떠안는다', '같은 길 위에서 양쪽 모두 손해를 본다 · 팀원들이 직접 겪은 요금 부담')
   const persona = (x, emoji, name, info, quote, pains, tone) => {
     card(s, x, 1.45, 6.0, 2.55)
     T(s, emoji, { x: x + 0.25, y: 1.6, w: 0.9, h: 0.9, fontSize: 40 })
@@ -97,7 +97,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
 // ============================================================ 3. 원인 분석
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '03', '원인 분석', '할증이 가장 많이 붙는 곳이, 빈 차로 돌아올 위험은 가장 낮아요')
+  head(s, '03', '할증이 가장 많은 곳이, 빈 차 위험은 가장 낮다', '손님이 없는 게 아니라 빈 차와 손님이 엇갈린다')
   card(s, 0.55, 1.45, 3.7, 5.35)
   T(s, '빈 차 주행 비율', { x: 0.8, y: 1.65, w: 3.3, h: 0.35, fontSize: 13, bold: true, color: C.muted })
   T(s, '46.5%', { x: 0.8, y: 2.0, w: 3.3, h: 0.9, fontSize: 44, bold: true, color: C.ink })
@@ -128,7 +128,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
 // ============================================================ 4. 가치제안 캔버스
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '04', '가치제안 캔버스', '손님과 기사, 두 고객에게 각각 이득이 생겨요')
+  head(s, '04', '손님은 싸게, 기사는 더 번다', '한쪽만 이득이면 오래가지 못한다 · 가치제안 캔버스')
   const cols = [['', 1.95], ['👤 손님', 5.1], ['🚕 기사', 5.1]]
   const rows = [
     ['🎯 하려는 일', '오송역·산단 ↔ 시내 이동', '하루 수입 올리기'],
@@ -154,7 +154,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
 // ============================================================ 5. MVP + 차별점
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '05', 'MVP · 차별점', '택시 앱을 대신하지 않아요. 부르기 전·후에 할증을 줄여 줘요')
+  head(s, '05', '택시 앱을 바꾸지 않고, 할증 없는 길을 더한다', '왕복 매칭 · 귀로 연계 결제 · 나눠 타기')
   ;[['shot_ride.png', 2.3, '👤 손님 화면'], ['shot_driver.png', 2.0, '🚕 기사 화면']].forEach(([f, w, cap], i) => {
     const x = 0.55 + i * 2.52
     card(s, x, 1.45, w + 0.14, 3.95, C.ink)
@@ -190,7 +190,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
 // ============================================================ 6. 비즈니스 모델 캔버스
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '06', '비즈니스 모델 캔버스', '시 재정 없이도 손님·기사·시가 모두 이득을 보는 구조')
+  head(s, '06', '시 예산 0원으로 할증을 없앤다', '손님 1,679원 이득 · 기사 손해 0 · 플랫폼 건당 약 400원 · 비즈니스 모델 캔버스')
   const blk = (x, y, w, h, title, body, fill = C.white) => { card(s, x, y, w, h, fill); T(s, title, { x: x + 0.15, y: y + 0.1, w: w - 0.3, h: 0.32, fontSize: 13.5, bold: true, color: C.teal }); T(s, body, { x: x + 0.15, y: y + 0.5, w: w - 0.3, h: h - 0.6, fontSize: 12.5, color: C.ink, lineSpacingMultiple: 1.3 }) }
   const W = 2.38, X = (i) => 0.55 + i * (W + 0.08)
   blk(X(0), 1.4, W, 3.6, '🤝 핵심 파트너', '청주시 교통정책과\n등록 호출 플랫폼\n택시조합·운수사\n코레일(오송역)')
@@ -210,7 +210,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
 // ============================================================ 7. 사업성 검증
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '07', '사업성 검증', '합승은 기사 수입을 깎고, 귀로 매칭은 늘려요')
+  head(s, '07', '시민 63%가 할증 때문에 택시를 포기했다', '참여 기사는 하루 5,774원을 더 번다 · 사업성 검증')
   card(s, 0.55, 1.45, 5.2, 5.4)
   s.addChart(pres.ChartType.bar, [{ name: '기사 수입 변화(%)', labels: ['합승', '스팟 합승\n+귀로', '귀로 매칭\n(앱 30%)', '귀로 매칭\n(앱 100%)'], values: [-0.45, -0.9, 0.16, 0.5] }], {
     x: 0.65, y: 1.55, w: 5.0, h: 5.2, barDir: 'col', chartColors: [C.soft, C.soft, C.teal, C.teal], valueBarColors: true, barGapWidthPct: 50,
@@ -240,7 +240,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
 // ============================================================ 8. 실행 계획
 {
   const s = pres.addSlide(); bgDark(s)
-  head(s, '08', '실행 계획', '법 안에서, 오송역 한 곳부터 작게 시작해요', true)
+  head(s, '08', '오송역 한 곳에서 시작해 할증 면제까지', '시범 → 제휴 → 거점 확대 → 고시 건의', true)
   ;[['1️⃣', '오송역 시범', 'KTX 도착 시간대 집중'], ['2️⃣', '제휴', '승강장 택시 단체·호출 플랫폼'], ['3️⃣', '거점 확대', '오송·오창 실증, 데이터 축적'], ['4️⃣', '정책 건의', '귀로 운행 할증 면제 고시']].forEach(([e, t, d], i) => {
     const x = 0.55 + i * 3.1
     card(s, x, 1.45, 2.85, 1.35, C.dark2)
@@ -258,7 +258,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
     { text: '한계: 시뮬레이션 기반, 요율 보도 기준, 면제는 시 고시 변경 필요', options: { bullet: true } },
   ], { x: 6.95, y: 3.55, w: 5.65, h: 2.3, fontSize: 11.5, color: C.white, paraSpaceAfter: 6, lineSpacingMultiple: 1.15 })
   s.addImage({ path: QR, x: 0.55, y: 6.15, w: 0.8, h: 0.8 })
-  T(s, '🚕 빈 차 귀로를 채우면, 할증의 이유가 사라집니다', { x: 1.55, y: 6.15, w: 11, h: 0.5, fontSize: 20, bold: true, color: C.white, valign: 'middle' })
+  T(s, '빈 차를 채우면, 할증의 이유가 사라진다', { x: 1.55, y: 6.15, w: 11, h: 0.5, fontSize: 20, bold: true, color: C.white, valign: 'middle' })
   T(s, '앱 체험 taxi-woad-seven.vercel.app', { x: 1.55, y: 6.62, w: 6, h: 0.3, fontSize: 11, color: C.teal })
   pageNo(s, 8, true)
   s.addNotes('오송역 한 곳, KTX 도착 시간대부터 작게 시작하고, 택시 단체와 제휴한 뒤 데이터를 쌓아 시에 귀로 운행 할증 면제를 건의하겠습니다. 빈 차 귀로를 채우면, 할증의 이유가 사라집니다. 감사합니다.')
