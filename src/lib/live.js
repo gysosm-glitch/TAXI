@@ -2,9 +2,9 @@
 import { useEffect, useState } from 'react'
 import { HOUR_PROFILE } from './hours.js'
 
-async function getJSON(url) {
+async function getJSON(url, ms = 8000) {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout?.(8000) })   // 공공 API가 느려도 화면이 멈추지 않게
+    const res = await fetch(url, { signal: AbortSignal.timeout?.(ms) })   // 공공 API가 느려도 화면이 멈추지 않게
     if (!res.ok || !(res.headers.get('content-type') || '').includes('json')) return { ok: false, reason: 'no_server' }
     return await res.json()
   } catch { return { ok: false, reason: 'no_server' } }
@@ -49,7 +49,7 @@ export function useLastBus(spot) {
   useEffect(() => {
     let alive = true
     setData(null)
-    getJSON(`/api/lastbus?lat=${spot.lat}&lon=${spot.lon}`).then((d) => { if (alive) setData(d) })
+    getJSON(`/api/lastbus?lat=${(+spot.lat).toFixed(3)}&lon=${(+spot.lon).toFixed(3)}`, 15000)   // 좌표를 100m 단위로 맞춰 서버 캐시(6시간)를 같이 쓴다.then((d) => { if (alive) setData(d) })
     return () => { alive = false }
   }, [spot.id])
   return data
