@@ -262,7 +262,7 @@ export default function Ride({ account, onLogin }) {
               <p className="card-title"><span>내 모집</span>
                 <span className={`tag ${r.status === 'open' ? 'amber' : ''}`}>{r.status === 'open' ? `${members.length}/${r.max_people}명 모집 중` : r.status === 'full' ? '모집 완료' : '도착'}</span></p>
               <p className="trip-line">{r.spot_name} <span>→</span> {r.dest_name}</p>
-              <p className="sub">{hhmm(r.depart_at)} 출발 ({when(r.depart_at)}) · 1인 약 {won(price(r, members.length).share)}</p>
+              <p className="sub">{hhmm(r.depart_at)} 출발 ({when(r.depart_at)}) · {r.kind === 'roundtrip' ? `할증 없이 약 ${won(price(r, 1).fareDongRate)}` : `1인 약 ${won(price(r, members.length).share)}`}</p>
               <div className="detail">
                 <b>탑승 전 안내</b>
                 {members.map((m, i) => <div key={m.user_id} className="seat"><span>{m.nickname}{m.user_id === me ? ' (나)' : ''}{m.user_id === r.host_id ? ' · 모집자' : ''}</span><span>{SEATS[i] ?? '뒷좌석'}</span></div>)}

@@ -4,7 +4,7 @@ import { HOUR_PROFILE } from './hours.js'
 
 async function getJSON(url) {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(8000) })   // 공공 API가 느려도 화면이 멈추지 않게
+    const res = await fetch(url, { signal: AbortSignal.timeout?.(8000) })   // 공공 API가 느려도 화면이 멈추지 않게
     if (!res.ok || !(res.headers.get('content-type') || '').includes('json')) return { ok: false, reason: 'no_server' }
     return await res.json()
   } catch { return { ok: false, reason: 'no_server' } }
