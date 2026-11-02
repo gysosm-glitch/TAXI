@@ -21,7 +21,9 @@ export default async function handler(req, res) {
   const q = String(req.query.q ?? '').trim().slice(0, 60)
   if (q.length < 2) return res.status(400).json({ ok: false, reason: 'q 필요' })
   const [road, parcel, place] = await Promise.all([search(key, q, 'address', 'road'), search(key, q, 'address', 'parcel'), search(key, q, 'place')])
-  const pick = (it, name, sub) => ({ name, sub, lat: Number(it.point?.y), lon: Number(it.point?.x) })
+  // '충청북도 청주시 흥덕구 가로수로 1000' → '가로수로 1000' (출발·도착 칸에서 잘리지 않게)
+  const short = (t) => (t ?? '').replace(/^충청북도\s*청주시\s*(상당구|서원구|흥덕구|청원구)?\s*/, '')
+  const pick = (it, name, sub) => ({ name: short(name), sub: short(sub), lat: Number(it.point?.y), lon: Number(it.point?.x) })
   const items = [
     ...road.map((it) => pick(it, it.address?.road, it.address?.parcel)),
     ...parcel.map((it) => pick(it, it.address?.parcel, it.address?.road)),
