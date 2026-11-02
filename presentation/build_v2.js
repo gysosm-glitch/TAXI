@@ -28,8 +28,8 @@ function head(s, no, title, msg, dark) {
   T(s, title, { x: 1.35, y: 0.36, w: 11.3, h: 0.5, fontSize: 26, bold: true, color: dark ? C.white : C.ink, valign: 'middle' })
   T(s, msg, { x: 1.35, y: 0.86, w: 11.3, h: 0.36, fontSize: 14, color: dark ? C.soft : C.muted, valign: 'middle' })
 }
-const foot = (s, text, dark) => T(s, text, { x: 0.55, y: 7.05, w: 11.6, h: 0.28, fontSize: 9, color: dark ? C.soft : C.muted, valign: 'middle' })
-const pageNo = (s, n, dark) => T(s, `${n} / 8`, { x: 12.2, y: 7.05, w: 0.6, h: 0.28, fontSize: 9, color: dark ? C.soft : C.muted, align: 'right', valign: 'middle' })
+const foot = (s, text, dark) => T(s, text, { x: 0.55, y: 7.02, w: 11.6, h: 0.32, fontSize: 10.5, color: dark ? C.soft : C.muted, valign: 'middle' })
+const pageNo = (s, n, dark) => T(s, `${n} / 8`, { x: 12.1, y: 7.02, w: 0.7, h: 0.32, fontSize: 10.5, color: dark ? C.soft : C.muted, align: 'right', valign: 'middle' })
 const bgDark = (s) => s.addImage({ path: IMG('bg_dark.png'), x: 0, y: 0, w: 13.333, h: 7.5 })
 const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13.333, h: 7.5 })
 
@@ -73,7 +73,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
     T(s, info, { x: x + 1.25, y: 2.0, w: 4.6, h: 0.32, fontSize: 11, color: C.muted })
     s.addShape(pres.ShapeType.roundRect, { x: x + 1.25, y: 2.4, w: 4.5, h: 0.62, rectRadius: 0.12, fill: { color: tone }, line: { color: tone, width: 0 } })
     T(s, quote, { x: x + 1.4, y: 2.42, w: 4.25, h: 0.58, fontSize: 11.5, italic: true, color: C.ink, valign: 'middle' })
-    T(s, pains.map((p, i) => ({ text: p, options: { bullet: true, breakLine: i < pains.length - 1 } })), { x: x + 0.3, y: 3.15, w: 5.5, h: 0.8, fontSize: 11, color: C.ink })
+    T(s, pains.map((p, i) => ({ text: p, options: { bullet: true, breakLine: i < pains.length - 1 } })), { x: x + 0.3, y: 3.12, w: 5.5, h: 0.85, fontSize: 12.5, color: C.ink })
   }
   persona(0.55, '👩‍🔬', '손님 · [이름] (28)', '오송 바이오단지 연구원 · KTX로 서울 출장', '"오송역에서 시내까지 택시비가 1만 8천 원 가까이 나와요"', ['😣 35% 할증, 막차 끊기면 대안 없음', '😶 혼자 타기 부담, 같은 방향 사람을 못 찾음'], C.sand)
   persona(6.78, '🧑‍✈️', '기사 · [이름] (50대)', '청주 법인택시 · 시내↔오송·오창 운행', '"[인터뷰 인용: 오송에 내려 주면 거의 빈 차로 돌아온다]"', ['🛣️ 읍·면 하차 후 빈 차 귀로 = 연료·시간 손해', '📱 호출 앱 수수료는 그대로'], C.mint)
@@ -144,7 +144,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
     const yy = 2.1 + i * 0.8
     card(s, 0.55, yy, 1.95, 0.7, C.dark)
     T(s, r[0], { x: 0.65, y: yy, w: 1.8, h: 0.7, fontSize: 11.5, bold: true, color: C.white, valign: 'middle' })
-    ;[[2.6, r[1]], [7.8, r[2]]].forEach(([x, t]) => { card(s, x, yy, 5.1, 0.7, i >= 4 ? C.mint : C.white); T(s, t, { x: x + 0.2, y: yy, w: 4.75, h: 0.7, fontSize: 11.5, color: C.ink, valign: 'middle' }) })
+    ;[[2.6, r[1]], [7.8, r[2]]].forEach(([x, t]) => { card(s, x, yy, 5.1, 0.7, i >= 4 ? C.mint : C.white); T(s, t, { x: x + 0.2, y: yy, w: 4.75, h: 0.7, fontSize: 12.5, color: C.ink, valign: 'middle' }) })
   })
   foot(s, '불편 해소·이득 창출의 금액은 오송역→가경동(13.8km) 예시와 행위자 시뮬레이션(앱 이용 30%) 기준')
   pageNo(s, 4)
@@ -155,8 +155,8 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
 {
   const s = pres.addSlide(); bgLight(s)
   head(s, '05', 'MVP · 차별점', '택시 앱을 대신하지 않아요. 부르기 전·후에 할증을 줄여 줘요')
-  ;[['shot_ride.png', 2.0, '👤 손님 화면'], ['shot_driver.png', 2.15, '🚕 기사 화면']].forEach(([f, w, cap], i) => {
-    const x = 0.55 + i * 2.35
+  ;[['shot_ride.png', 2.3, '👤 손님 화면'], ['shot_driver.png', 2.0, '🚕 기사 화면']].forEach(([f, w, cap], i) => {
+    const x = 0.55 + i * 2.52
     card(s, x, 1.45, w + 0.14, 3.95, C.ink)
     s.addImage({ path: IMG(f), x: x + 0.07, y: 1.52, w, h: 3.8, sizing: { type: 'crop', w, h: 3.8 } })
     T(s, cap, { x, y: 5.45, w: w + 0.14, h: 0.3, fontSize: 11, bold: true, color: C.ink, align: 'center' })
@@ -170,11 +170,11 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
     const x = 5.5 + i * 2.4
     s.addShape(pres.ShapeType.roundRect, { x, y: 2.02, w: 2.28, h: 1.72, rectRadius: 0.1, fill: { color: f }, line: { color: f, width: 0 } })
     T(s, `${e} ${t}`, { x: x + 0.12, y: 2.12, w: 2.05, h: 0.35, fontSize: 12.5, bold: true, color: C.ink })
-    T(s, d, { x: x + 0.12, y: 2.5, w: 2.05, h: 1.15, fontSize: 10.5, color: C.ink })
+    T(s, d, { x: x + 0.12, y: 2.5, w: 2.05, h: 1.2, fontSize: 11.5, color: C.ink })
   })
   // 경쟁 비교
-  const th = (t, hi) => ({ text: t, options: { bold: true, color: C.white, fill: { color: hi ? C.teal : C.dark }, fontSize: 10.5, align: 'center', valign: 'middle' } })
-  const td = (t, hi) => ({ text: t, options: { fontSize: 10, color: C.ink, fill: { color: hi ? C.mint : C.white }, align: 'center', valign: 'middle', bold: !!hi } })
+  const th = (t, hi) => ({ text: t, options: { bold: true, color: C.white, fill: { color: hi ? C.teal : C.dark }, fontSize: 12, align: 'center', valign: 'middle' } })
+  const td = (t, hi) => ({ text: t, options: { fontSize: 11.5, color: C.ink, fill: { color: hi ? C.mint : C.white }, align: 'center', valign: 'middle', bold: !!hi } })
   s.addTable([
     [th(''), th('호출 앱 (카카오T 등)'), th('반반택시 (동승)'), th('🚕 쉐어택', true)],
     [td('핵심'), td('가까운 빈 차 호출'), td('같은 방향 동승'), td('돌아가는 빈 차와 방향 맞추기', true)],
@@ -219,9 +219,9 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
     valGridLine: { style: 'none' }, showLegend: false, showTitle: true, title: '📊 기사 수입 변화 (현행 대비, 할증 그대로)', titleFontSize: 12, titleColor: C.muted,
   })
   const big = [['+5,774원', '참여 기사 1대 하루 수입 (+1.86%)', C.teal], ['6배', '오송에 집중하면 귀로 매칭 6→36건/일', C.teal], ['−3.7%', '합승이 줄이는 할증 부담은 이 정도뿐', C.amber]]
-  big.forEach(([n, l, c], i) => { const x = 5.95 + i * 2.3; card(s, x, 1.45, 2.18, 1.55); T(s, n, { x: x + 0.15, y: 1.55, w: 1.95, h: 0.7, fontSize: 24, bold: true, color: c }); T(s, l, { x: x + 0.15, y: 2.25, w: 1.95, h: 0.7, fontSize: 10, color: C.muted }) })
-  const th = (t) => ({ text: t, options: { bold: true, color: C.white, fill: { color: C.dark }, fontSize: 10, align: 'center', valign: 'middle' } })
-  const td = (t, hi) => ({ text: t, options: { fontSize: 10.5, color: hi ? C.teal : C.ink, bold: !!hi, fill: { color: C.white }, align: 'center', valign: 'middle' } })
+  big.forEach(([n, l, c], i) => { const x = 5.95 + i * 2.3; card(s, x, 1.45, 2.18, 1.55); T(s, n, { x: x + 0.15, y: 1.55, w: 1.95, h: 0.7, fontSize: 24, bold: true, color: c }); T(s, l, { x: x + 0.15, y: 2.22, w: 1.95, h: 0.75, fontSize: 12, color: C.muted }) })
+  const th = (t) => ({ text: t, options: { bold: true, color: C.white, fill: { color: C.dark }, fontSize: 11.5, align: 'center', valign: 'middle' } })
+  const td = (t, hi) => ({ text: t, options: { fontSize: 12, color: hi ? C.teal : C.ink, bold: !!hi, fill: { color: C.white }, align: 'center', valign: 'middle' } })
   s.addTable([[th('앱 이용률'), th('귀로 매칭/일'), th('손님 면제액'), th('보전 없이 면제'), th('손해 0 보전액')],
     [td('30%'), td('488건'), td('4,301원'), td('할증의 39%'), td('2,622원', 1)], [td('50%'), td('1,220건'), td('4,285원'), td('19%'), td('3,462원', 1)], [td('100%'), td('4,893건'), td('4,258원'), td('12%'), td('3,733원', 1)]],
     { x: 5.95, y: 3.2, w: 6.83, rowH: 0.4, border: { type: 'solid', pt: 1, color: C.line } })
@@ -241,11 +241,11 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
     const x = 0.55 + i * 3.1
     card(s, x, 1.45, 2.85, 1.35, C.dark2)
     T(s, `${e} ${t}`, { x: x + 0.2, y: 1.55, w: 2.5, h: 0.45, fontSize: 15, bold: true, color: C.white })
-    T(s, d, { x: x + 0.2, y: 2.05, w: 2.5, h: 0.6, fontSize: 11, color: C.soft })
+    T(s, d, { x: x + 0.2, y: 2.05, w: 2.5, h: 0.6, fontSize: 12.5, color: C.soft })
     if (i < 3) T(s, '➜', { x: x + 2.83, y: 1.85, w: 0.3, h: 0.5, fontSize: 16, color: C.amber })
   })
   const sw = [['💪 S 강점', '데이터 근거, 시 정책 연동\n손님·기사 모두 이득', C.teal], ['⚠️ W 약점', '초기 이용자 확보\n제휴 필요', 'C9D1CD'], ['🌱 O 기회', '9/28 개편 여론, KTX 수요\n반반택시 선례', C.amber], ['🌩️ T 위협', '대형 호출 앱 진입\n업계 반발', 'E8A87C']]
-  sw.forEach(([t, d, c], i) => { const x = 0.55 + (i % 2) * 3.05, y = 3.0 + Math.floor(i / 2) * 1.55; card(s, x, y, 2.9, 1.42, C.white); s.addShape(pres.ShapeType.rect, { x, y, w: 2.9, h: 0.08, fill: { color: c }, line: { color: c, width: 0 } }); T(s, t, { x: x + 0.15, y: y + 0.15, w: 2.6, h: 0.35, fontSize: 12.5, bold: true, color: C.ink }); T(s, d, { x: x + 0.15, y: y + 0.55, w: 2.6, h: 0.8, fontSize: 10.5, color: C.ink }) })
+  sw.forEach(([t, d, c], i) => { const x = 0.55 + (i % 2) * 3.05, y = 3.0 + Math.floor(i / 2) * 1.55; card(s, x, y, 2.9, 1.42, C.white); s.addShape(pres.ShapeType.rect, { x, y, w: 2.9, h: 0.08, fill: { color: c }, line: { color: c, width: 0 } }); T(s, t, { x: x + 0.15, y: y + 0.15, w: 2.6, h: 0.35, fontSize: 12.5, bold: true, color: C.ink }); T(s, d, { x: x + 0.15, y: y + 0.55, w: 2.6, h: 0.8, fontSize: 12, color: C.ink }) })
   card(s, 6.75, 3.0, 6.03, 2.97, C.dark2)
   T(s, '⚖️ 법 · 기대 효과 · 한계', { x: 6.95, y: 3.1, w: 5.6, h: 0.35, fontSize: 13, bold: true, color: C.amber })
   T(s, [
