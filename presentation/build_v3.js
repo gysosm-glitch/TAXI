@@ -154,7 +154,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
 // ============================================================ 5. MVP + 차별점
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '05', '택시 앱을 바꾸지 않고, 할증 없는 길을 더한다', '왕복 매칭 · 귀로 연계 결제 · 나눠 타기')
+  head(s, '05', '택시 앱을 바꾸지 않고, 할증 없는 길을 더한다', '① 주소·GPS로 출발·도착 → ② 할증 없이 가기 확인 → ③ 모집 열기·참여')
   ;[['shot_ride.png', 2.3, '👤 손님 화면'], ['shot_driver.png', 2.0, '🚕 기사 화면']].forEach(([f, w, cap], i) => {
     const x = 0.55 + i * 2.52
     card(s, x, 1.45, w + 0.14, 3.95, C.ink)
@@ -227,10 +227,11 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
     { x: 5.95, y: 3.2, w: 6.83, rowH: 0.4, border: { type: 'solid', pt: 1, color: C.line } })
   card(s, 5.95, 5.0, 6.83, 1.85, C.sand)
   T(s, '시민 설문 57명 (2026.10) · 핵심 타깃 대학생 84%', { x: 6.15, y: 5.08, w: 6.4, h: 0.35, fontSize: 13, bold: true, color: C.dark })
-  ;[['63%', '할증 때문에 택시 포기·대체'], ['74%', '읍·면 35% 할증 불합리'], ['93%', '할증 없으면 이용 증가'], ['96%', '조건부 나눠 타기 의향']].forEach(([n, l], i) => {
-    const x = 6.15 + i * 1.62
-    T(s, n, { x, y: 5.45, w: 1.55, h: 0.55, fontSize: 22, bold: true, color: i === 3 ? C.teal : C.dark })
-    T(s, l, { x, y: 5.98, w: 1.55, h: 0.75, fontSize: 11, color: C.ink })
+  s.addChart(pres.ChartType.bar, [{ name: '응답 비율', labels: ['할증 때문에 택시 포기·대체', '읍·면 35% 할증 불합리', '할증 없으면 이용 증가', '조건부 나눠 타기 의향'], values: [63, 74, 93, 96] }], {
+    x: 6.1, y: 5.42, w: 6.55, h: 1.38, barDir: 'bar', catAxisOrientation: 'maxMin', valAxisHidden: true, valAxisMaxVal: 115, valAxisMinVal: 0,
+    chartColors: [C.amber, C.amber, C.teal, C.teal], valueBarColors: true, barGapWidthPct: 35, showValue: true, dataLabelPosition: 'outEnd',
+    dataLabelFormatCode: '0"%"', dataLabelFontSize: 12, dataLabelFontBold: true, dataLabelColor: C.ink, catAxisLabelColor: C.ink, catAxisLabelFontSize: 11,
+    catAxisLineShow: false, valGridLine: { style: 'none' }, showLegend: false,
   })
   foot(s, '시뮬레이션: 택시 2,956대·하루 약 5.6만 건, TIMS 2025 실측 보정(실측 아님) · 설문: 57명 중 대학생 84% = 요금에 가장 민감한 초기 타깃 · 요금 분담은 거리 비율 선호 68% → 개선 과제')
   pageNo(s, 7)
@@ -240,7 +241,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
 // ============================================================ 8. 실행 계획
 {
   const s = pres.addSlide(); bgDark(s)
-  head(s, '08', '오송역 한 곳에서 시작해 할증 면제까지', '시범 → 제휴 → 거점 확대 → 고시 건의', true)
+  head(s, '08', '오송역 한 곳에서 시작해 할증 면제까지', '1차 목표: 오송 귀로 매칭 하루 36건 (기사 10%·승객 앱 오송 집중 시뮬레이션) · 참여 기사 하루 +5,774원', true)
   ;[['1️⃣', '오송역 시범', 'KTX 도착 시간대 집중'], ['2️⃣', '제휴', '승강장 택시 단체·호출 플랫폼'], ['3️⃣', '거점 확대', '오송·오창 실증, 데이터 축적'], ['4️⃣', '정책 건의', '귀로 운행 할증 면제 고시']].forEach(([e, t, d], i) => {
     const x = 0.55 + i * 3.1
     card(s, x, 1.45, 2.85, 1.35, C.dark2)
