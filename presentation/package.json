@@ -4,7 +4,7 @@
   "description": "쉐어택 캡스톤 발표 PPT(8장) 생성기",
   "scripts": {
     "art": "node art.js",
-    "build": "node build.js"
+    "build": "node build_v3.js"
   },
   "dependencies": {
     "pptxgenjs": "3.12.0",

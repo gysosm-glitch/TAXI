@@ -9,11 +9,11 @@ const dark = `<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080"
     <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#F2A93B" stop-opacity=".55"/><stop offset="1" stop-color="#F2A93B" stop-opacity="0"/></radialGradient>
   </defs>
   <rect width="1920" height="1080" fill="url(#g)"/>
-  <path d="M1100 1080 L1560 0 L1920 0 L1920 1080 Z" fill="#111111" opacity=".85"/>
-  <path d="M1330 1080 L1740 0" stroke="#F2A93B" stroke-width="10" stroke-dasharray="60 50" opacity=".55"/>
-  <path d="M1110 1080 L1565 0" stroke="#C9D6D0" stroke-width="5" opacity=".35"/>
+  <path d="M1380 1080 L1720 0 L1920 0 L1920 1080 Z" fill="#111111" opacity=".85"/>
+  <path d="M1590 1080 L1860 0" stroke="#F2A93B" stroke-width="10" stroke-dasharray="60 50" opacity=".55"/>
+  <path d="M1390 1080 L1725 0" stroke="#C9D6D0" stroke-width="5" opacity=".35"/>
   <path d="M1915 1080 L1918 0" stroke="#C9D6D0" stroke-width="5" opacity=".2"/>
-  ${[[1480, 420, 120], [1610, 180, 80], [1380, 700, 150], [1700, 820, 110]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#glow)"/>`).join('')}
+  ${[[1720, 420, 110], [1820, 180, 80], [1640, 760, 140], [1840, 900, 100]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="url(#glow)"/>`).join('')}
   ${Array.from({ length: 40 }, (_, i) => `<circle cx="${(i * 137) % 1100}" cy="${(i * 211) % 1080}" r="${1 + (i % 3)}" fill="#C9D6D0" opacity=".18"/>`).join('')}
 </svg>`
 

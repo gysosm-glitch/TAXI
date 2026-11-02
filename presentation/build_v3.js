@@ -1,5 +1,5 @@
 // 쉐어택 캡스톤 발표 v3 (Uber DESIGN.md 스타일) — 수상작 목차 8장 (배경·페르소나·원인·가치제안·MVP·BMC·검증·실행)
-// Usage: npm install && npm run art && node bg.js && node build_v2.js  →  쉐어택_발표_v3.pptx
+// Usage: npm install && npm run art && node bg3.js && node build_v3.js  →  쉐어택_발표_v3.pptx (최종본)
 // 숫자는 docs/자료_출처_정리.md 기준. [ ]는 팀이 채울 자리
 const fs = require('fs')
 const path = require('path')
@@ -42,18 +42,17 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
   T(s, '🚕 택시 앱과 함께 쓰는 할증 도우미', { x: 0.7, y: 2.3, w: 7.2, h: 0.45, fontSize: 20, bold: true, color: C.white })
   T(s, '같은 청주인데, 읍·면만 가면 35% 더 낸다', { x: 0.7, y: 2.78, w: 7.6, h: 0.5, fontSize: 21, bold: true, color: C.amber })
   // 연구 배경 숫자 카드
-  const facts = [['💸', '35%', '동↔읍·면 복합할증', C.amber], ['📍', '73%', '읍·면 택시 승차 중\n오송·오창 비중', C.white], ['🚗', '46.5%', '청주 택시\n빈 차 주행 비율', C.white]]
-  facts.forEach(([e, n, l, c], i) => {
+  const facts = [['35%', '동↔읍·면 복합할증', C.amber], ['73%', '읍·면 택시 승차 중\n오송·오창 비중', C.white], ['46.5%', '청주 택시\n빈 차 주행 비율', C.white]]
+  facts.forEach(([n, l, c], i) => {
     const x = 0.7 + i * 2.45
     card(s, x, 3.55, 2.25, 2.0, C.dark2)
-    T(s, e, { x: x + 0.2, y: 3.7, w: 0.6, h: 0.5, fontSize: 22 })
-    T(s, n, { x: x + 0.2, y: 4.2, w: 2, h: 0.65, fontSize: 32, bold: true, color: c })
-    T(s, l, { x: x + 0.2, y: 4.85, w: 2, h: 0.6, fontSize: 11, color: C.soft })
+    T(s, n, { x: x + 0.2, y: 3.85, w: 2, h: 0.65, fontSize: 32, bold: true, color: c })
+    T(s, l, { x: x + 0.2, y: 4.6, w: 2, h: 0.7, fontSize: 12, color: C.soft })
   })
-  T(s, '할증은 빈 차로 돌아오는 손실을 메우기 위한 것. 그렇다면 빈 차를 채우면, 할증의 이유도 사라지지 않을까?', { x: 0.7, y: 5.8, w: 7.3, h: 0.8, fontSize: 12.5, italic: true, color: C.white })
+  T(s, '할증은 빈 차로 돌아오는 손실을 메우기 위한 것. 그렇다면 빈 차를 채우면, 할증의 이유도 사라지지 않을까?', { x: 0.7, y: 5.8, w: 7.3, h: 0.8, fontSize: 14, color: C.white, lineSpacingMultiple: 1.2 })
   // 목차
   card(s, 8.55, 0.9, 4.2, 5.75, C.white)
-  T(s, 'CONTENTS', { x: 8.85, y: 1.1, w: 3.6, h: 0.4, fontSize: 14, bold: true, color: C.teal })
+  T(s, '목차', { x: 8.85, y: 1.1, w: 3.6, h: 0.4, fontSize: 15, bold: true, color: C.teal })
   ;['01 연구 배경', '02 페르소나 · 고객 여정', '03 원인 분석', '04 가치제안 캔버스', '05 MVP · 차별점', '06 비즈니스 모델 캔버스', '07 사업성 검증', '08 실행 계획'].forEach((t, i) => {
     T(s, t, { x: 8.85, y: 1.65 + i * 0.6, w: 3.6, h: 0.45, fontSize: 14, bold: i === 0, color: C.ink, valign: 'middle' })
     if (i < 7) s.addShape(pres.ShapeType.line, { x: 8.85, y: 2.15 + i * 0.6, w: 3.6, h: 0, line: { color: C.line, width: 1 } })
@@ -72,24 +71,25 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
     T(s, name, { x: x + 1.25, y: 1.62, w: 4.5, h: 0.4, fontSize: 16, bold: true, color: C.ink })
     T(s, info, { x: x + 1.25, y: 2.0, w: 4.6, h: 0.32, fontSize: 11, color: C.muted })
     s.addShape(pres.ShapeType.roundRect, { x: x + 1.25, y: 2.4, w: 4.5, h: 0.62, rectRadius: 0.12, fill: { color: tone }, line: { color: tone, width: 0 } })
-    T(s, quote, { x: x + 1.4, y: 2.42, w: 4.25, h: 0.58, fontSize: 11.5, italic: true, color: C.ink, valign: 'middle' })
-    T(s, pains.map((p, i) => ({ text: p, options: { bullet: true, breakLine: i < pains.length - 1 } })), { x: x + 0.3, y: 3.1, w: 5.5, h: 0.9, fontSize: 14, color: C.ink })
+    T(s, quote, { x: x + 1.4, y: 2.42, w: 4.25, h: 0.58, fontSize: 12, color: C.ink, valign: 'middle' })
+    T(s, pains.map((p, i) => ({ text: p, options: { breakLine: i < pains.length - 1 } })), { x: x + 0.3, y: 3.1, w: 5.5, h: 0.9, fontSize: 14, color: C.ink })
   }
   persona(0.55, '👩‍🔬', '손님 · 팀원의 경험', '충북대 학생 · KTX 타러 오송역을 오가는 길', '"같은 청주인데 오송역만 가면 택시비가 확 뛰어요"', ['😣 35% 할증, 막차 끊기면 대안 없음', '😶 혼자 타기 부담, 같은 방향 사람을 못 찾음'], C.sand)
   persona(6.78, '🧑‍✈️', '기사 · 귀로의 현실', '시내 ↔ 오송·오창을 오가는 택시', '"오송에 손님 내려 주면, 돌아올 땐 빈 차일 때가 많죠"', ['🛣️ 읍·면 하차 후 빈 차 귀로 = 연료·시간 손해', '📱 호출 앱 수수료는 그대로'], C.mint)
   // 고객 여정
   card(s, 0.55, 4.2, 12.23, 2.65)
-  T(s, '손님 여정  (지금 → 쉐어택)', { x: 0.8, y: 4.32, w: 6, h: 0.35, fontSize: 13, bold: true, color: C.teal })
-  const steps = [['🚄', 'KTX 도착', '😐'], ['🚕', '택시 줄 서기', '😟'], ['💸', '할증 요금 확인', '😡'], ['🧍', '혼자 탑승', '😞'], ['🏠', '시내 도착', '😮‍💨']]
-  steps.forEach(([e, t, f], i) => {
+  T(s, [{ text: '손님 여정  ', options: { color: C.ink } }, { text: '지금', options: { color: C.muted } }, { text: '  →  ', options: { color: C.soft } }, { text: '쉐어택이 있으면', options: { color: C.teal } }], { x: 0.8, y: 4.32, w: 8, h: 0.35, fontSize: 13, bold: true, color: C.teal })
+  const steps = [['🚄', 'KTX 도착', '😐', '도착 시각 맞춤 모집'], ['🚕', '택시 줄 서기', '😟', '돌아가는 택시 확인'], ['💸', '할증 요금 확인', '😡', '할증 없는 요금 확인'], ['🧍', '혼자 탑승', '😞', '같은 방향끼리 탑승'], ['🏠', '시내 도착', '😮‍💨', '시내 도착 😊']]
+  steps.forEach(([e, t, f, after], i) => {
     const x = 0.9 + i * 2.38
     s.addShape(pres.ShapeType.ellipse, { x: x + 0.55, y: 4.8, w: 0.7, h: 0.7, fill: { color: C.light }, line: { color: C.line, width: 1 } })
     T(s, e, { x: x + 0.55, y: 4.8, w: 0.7, h: 0.7, fontSize: 20, align: 'center', valign: 'middle' })
-    T(s, `${t} ${f}`, { x, y: 5.55, w: 1.8, h: 0.3, fontSize: 11, align: 'center', color: C.ink })
+    T(s, `${t} ${f}`, { x: x - 0.1, y: 5.52, w: 2.0, h: 0.28, fontSize: 11, align: 'center', color: C.muted })
+    T(s, after, { x: x - 0.1, y: 5.8, w: 2.0, h: 0.28, fontSize: 11.5, bold: true, align: 'center', color: C.teal })
     if (i < 4) s.addShape(pres.ShapeType.line, { x: x + 1.35, y: 5.15, w: 1.6, h: 0, line: { color: C.soft, width: 1.5, dashType: 'dash', endArrowType: 'triangle' } })
   })
-  s.addShape(pres.ShapeType.roundRect, { x: 0.8, y: 6.0, w: 11.75, h: 0.7, rectRadius: 0.12, fill: { color: C.mint }, line: { color: C.mint, width: 0 } })
-  T(s, 'INSIGHT  ① 손님은 있는데 빈 차와 엇갈린다  ② 기사 손해는 빈 차 귀로다  ③ 할증은 양쪽 모두에게 불만', { x: 1.0, y: 6.0, w: 11.4, h: 0.7, fontSize: 13, bold: true, color: C.dark, valign: 'middle' })
+  s.addShape(pres.ShapeType.roundRect, { x: 0.8, y: 6.17, w: 11.75, h: 0.55, rectRadius: 0.12, fill: { color: C.mint }, line: { color: C.mint, width: 0 } })
+  T(s, 'INSIGHT  ① 손님은 있는데 빈 차와 엇갈린다  ② 기사 손해는 빈 차 귀로다  ③ 할증은 양쪽 모두에게 불만', { x: 1.0, y: 6.17, w: 11.4, h: 0.55, fontSize: 13, bold: true, color: C.dark, valign: 'middle' })
   pageNo(s, 2)
   s.addNotes('손님은 오송역에서 시내까지 할증 포함 요금을 내고, 기사님은 오송에 손님을 내린 뒤 빈 차로 돌아옵니다. 같은 길에서 양쪽 모두 손해를 보고 있는 셈입니다. 이 프로젝트는 팀원들이 오송역을 오가며 직접 겪은 할증 부담에서 시작했습니다.')
 }
@@ -104,13 +104,17 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
   T(s, '청주 택시 운행거리의 절반 가까이를\n빈 차로 달려요 (TIMS 2025)', { x: 0.8, y: 2.9, w: 3.3, h: 0.6, fontSize: 11, color: C.muted })
   s.addShape(pres.ShapeType.line, { x: 0.8, y: 3.65, w: 3.2, h: 0, line: { color: C.line, width: 1 } })
   T(s, '수요는 충분해요', { x: 0.8, y: 3.8, w: 3.3, h: 0.35, fontSize: 13, bold: true, color: C.muted })
-  T(s, [{ text: '오송읍 ', options: {} }, { text: '3,025건/일', options: { bold: true, color: C.teal } }, { text: '\n오창읍 ', options: {} }, { text: '2,617건/일', options: { bold: true, color: C.teal } }, { text: '\n오송역 승차의 ', options: {} }, { text: '52%', options: { bold: true, color: C.amber } }, { text: '가 시내행', options: {} }],
-    { x: 0.8, y: 4.15, w: 3.3, h: 1.35, fontSize: 12.5, color: C.ink, lineSpacingMultiple: 1.15 })
+  T(s, [{ text: '오송읍 ', options: {} }, { text: '3,025건/일', options: { bold: true, color: C.teal, breakLine: true } }, { text: '오창읍 ', options: {} }, { text: '2,617건/일', options: { bold: true, color: C.teal, breakLine: true } }, { text: '오송역 승차의 ', options: {} }, { text: '52%', options: { bold: true, color: C.amber } }, { text: '가 시내행', options: {} }],
+    { x: 0.8, y: 4.2, w: 3.3, h: 1.3, fontSize: 14, color: C.ink, lineSpacingMultiple: 1.25 })
   s.addShape(pres.ShapeType.roundRect, { x: 0.8, y: 5.6, w: 3.2, h: 1.0, rectRadius: 0.1, fill: { color: C.sand }, line: { color: C.sand, width: 0 } })
   T(s, '손님이 없는 게 아니라\n빈 차와 손님이 엇갈린다', { x: 0.95, y: 5.6, w: 3.0, h: 1.0, fontSize: 12.5, bold: true, color: C.dark, valign: 'middle' })
   card(s, 4.45, 1.45, 3.6, 5.35)
   s.addImage({ path: IMG('map_risk.png'), x: 4.6, y: 1.75, w: 3.3, h: 2.97 })
-  T(s, '🟢 저위험  🟡 중간  🟠 고위험\n가중치를 6가지로 바꿔도 오창·오송·옥산은\n늘 저위험 (순위 상관 0.92~0.99)', { x: 4.65, y: 4.9, w: 3.25, h: 1.4, fontSize: 11, color: C.ink, lineSpacingMultiple: 1.25 })
+  ;[['1D9E75', '저위험'], ['E8DCC0', '중간'], [C.amber, '고위험']].forEach(([c, t], i) => {
+    s.addShape(pres.ShapeType.roundRect, { x: 4.7 + i * 1.05, y: 4.98, w: 0.2, h: 0.2, rectRadius: 0.04, fill: { color: c }, line: { color: c, width: 0 } })
+    T(s, t, { x: 4.97 + i * 1.05, y: 4.93, w: 0.8, h: 0.3, fontSize: 11, color: C.ink, valign: 'middle' })
+  })
+  T(s, '가중치를 6가지로 바꿔도\n오창·오송·옥산은 늘 저위험\n(순위 상관 0.92~0.99)', { x: 4.7, y: 5.4, w: 3.25, h: 1.2, fontSize: 12.5, color: C.ink, lineSpacingMultiple: 1.25 })
   card(s, 8.25, 1.45, 4.53, 5.35)
   const rows = [['오창', 0.014], ['오송', 0.188], ['옥산', 0.376], ['내수', 0.402], ['강내', 0.406], ['남이', 0.456], ['남일', 0.531], ['북이', 0.692], ['문의', 0.788], ['현도', 0.797], ['미원', 0.847], ['낭성', 0.863], ['가덕', 0.877]]
   s.addChart(pres.ChartType.bar, [{ name: '빈 차 귀로 위험 지수', labels: rows.map((r) => r[0]), values: rows.map((r) => r[1]) }], {
@@ -210,7 +214,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
 // ============================================================ 7. 사업성 검증
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '07', '시민 63%가 할증 때문에 택시를 포기했다', '참여 기사는 하루 5,774원을 더 번다 · 사업성 검증')
+  head(s, '07', '응답자 63%가 할증 때문에 택시를 포기했다', '참여 기사는 하루 5,774원을 더 번다 · 사업성 검증')
   card(s, 0.55, 1.45, 5.2, 5.4)
   s.addChart(pres.ChartType.bar, [{ name: '기사 수입 변화(%)', labels: ['합승', '스팟 합승\n+귀로', '귀로 매칭\n(앱 30%)', '귀로 매칭\n(앱 100%)'], values: [-0.45, -0.9, 0.16, 0.5] }], {
     x: 0.65, y: 1.55, w: 5.0, h: 5.2, barDir: 'col', chartColors: [C.soft, C.soft, C.teal, C.teal], valueBarColors: true, barGapWidthPct: 50,
@@ -255,7 +259,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
   T(s, '법 · 기대 효과 · 한계', { x: 6.95, y: 3.1, w: 5.6, h: 0.35, fontSize: 13, bold: true, color: C.amber })
   T(s, [
     { text: '법: 왕복 매칭은 동승이 아니라 합승 규제 밖, 합승은 택시발전법 시행규칙 제11조의2 준수', options: { bullet: true, breakLine: true } },
-    { text: '효과: 손님 할증↓ · 기사 공차↓ 수입↑ · 시 보전 예산↓ · 빈 차 주행·탄소↓', options: { bullet: true, breakLine: true } },
+    { text: '효과: 손님 할증↓ · 기사 수입↑ · 시 예산↓ · 탄소↓', options: { bullet: true, breakLine: true } },
     { text: '한계: 시뮬레이션 기반, 요율 보도 기준, 면제는 시 고시 변경 필요', options: { bullet: true } },
   ], { x: 6.95, y: 3.6, w: 5.65, h: 2.3, fontSize: 14, color: C.white, paraSpaceAfter: 12, lineSpacingMultiple: 1.2 })
   s.addImage({ path: QR, x: 0.55, y: 6.15, w: 0.8, h: 0.8 })
