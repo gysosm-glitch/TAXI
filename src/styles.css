@@ -304,3 +304,6 @@ a { color: var(--teal-dark); }
 .rt-card .rt-opt .sub { margin-top: 4px; line-height: 1.55; }
 .chance { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--teal-soft); color: var(--teal-ink); font-size: 13px; }
 .chance small { display: block; font-size: 11px; opacity: .8; margin-top: 2px; }
+.save-as { font-style: normal; font-size: 11px; font-weight: 700; color: var(--teal-dark); background: var(--teal-soft); border-radius: 999px; padding: 4px 8px; margin-left: 4px; flex: none; }
+.pick-tile:disabled { opacity: .55; }
+.pick-tile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }

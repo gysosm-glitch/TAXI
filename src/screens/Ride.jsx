@@ -35,9 +35,23 @@ function saveRecent(p) {
   try { localStorage.setItem(RECENT, JSON.stringify([p, ...loadRecent().filter((x) => x.name !== p.name)].slice(0, 5))) } catch {}
 }
 
+// 집·회사 (이 기기에만 저장)
+const SAVED = 'saved_places_v1'
+const loadSaved = () => { try { return JSON.parse(localStorage.getItem(SAVED)) ?? {} } catch { return {} } }
+const saveAs = (kind, p) => { try { localStorage.setItem(SAVED, JSON.stringify({ ...loadSaved(), [kind]: p })) } catch {} }
+
+// 모집을 카톡 등으로 공유 (처음 사람이 적을 때 직접 모으기)
+function shareRide(r) {
+  const text = `[쉐어택] ${r.spot_name.split(' · ')[0]} → ${r.dest_name}, ${hhmm(r.depart_at)} 출발${r.kind === 'roundtrip' ? ' · 왕복 택시라 할증 없음' : ''}. 같이 타요!`
+  if (navigator.share) navigator.share({ title: '쉐어택 모집', text, url: location.origin }).catch(() => {})
+  else navigator.clipboard?.writeText(`${text} ${location.origin}`)
+}
+
 function PlaceSheet({ title, near, onPick, onHere, onMap, onClose, gpsState }) {
   const [q, setQ] = useState('')
   const [res, setRes] = useState(null)
+  const [saved, setSaved] = useState(loadSaved)
+  const keep = (kind, p) => { saveAs(kind, p); setSaved(loadSaved()) }
   useEffect(() => {
     if (q.trim().length < 2) { setRes(null); return }
     const t = setTimeout(async () => setRes(await searchPlaces(q.trim(), near) ?? 'error'), 350)
@@ -48,12 +62,13 @@ function PlaceSheet({ title, near, onPick, onHere, onMap, onClose, gpsState }) {
       <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
         <div className="grabber" />
         <h2 className="sheet-title">{title}</h2>
-        <input className="search-input" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="장소·건물·주소 검색 (예: 충북대학교, 오송역)" />
+        <input className="search-input" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="주소·장소 검색 (예: 오창읍 양청리, 가로수로 1234, 충북대학교)" />
         {res === 'error' && <p className="sub" style={{ marginTop: 8 }}>검색이 잠시 안 돼요. 지도에서 골라 주세요.</p>}
         {Array.isArray(res) && res.length === 0 && <p className="sub" style={{ marginTop: 8 }}>청주 안에서 찾지 못했어요.</p>}
         {Array.isArray(res) && res.map((p, i) => (
           <button key={i} className="pick-row" onClick={() => onPick(p)}>
             <Icon name="pin" size={18} /><span><b>{p.name}</b><small>{zoneById[p.zoneId].name}{p.sub ? ` · ${p.sub}` : ''}</small></span>
+            <i className="save-as" onClick={(e) => { e.stopPropagation(); keep('home', p) }}>집</i><i className="save-as" onClick={(e) => { e.stopPropagation(); keep('work', p) }}>회사</i>
           </button>
         ))}
         {!res && (
@@ -61,6 +76,9 @@ function PlaceSheet({ title, near, onPick, onHere, onMap, onClose, gpsState }) {
             <div className="grid2" style={{ marginTop: 12 }}>
               {onHere && <button className="pick-tile" onClick={onHere}><Icon name="locate" size={20} /><b>현재 위치</b><small>{gpsState === 'finding' ? '찾는 중…' : 'GPS'}</small></button>}
               <button className="pick-tile" onClick={onMap}><Icon name="pin" size={20} /><b>지도에서 고르기</b><small>지도를 누르세요</small></button>
+              {[['home', '🏠 집'], ['work', '🏢 회사']].map(([k, l]) => (
+                <button key={k} className="pick-tile" disabled={!saved[k]} onClick={() => saved[k] && onPick(saved[k])}><b>{l}</b><small>{saved[k] ? saved[k].name : '검색 결과에서 저장'}</small></button>
+              ))}
             </div>
             {loadRecent().length > 0 && <p className="label" style={{ margin: '14px 0 2px' }}>최근</p>}
             {loadRecent().map((p, i) => (
@@ -266,6 +284,7 @@ export default function Ride({ account, onLogin }) {
               </div>
               <div className="safety-row">
                 <a href="tel:112" className="sos">112 신고</a>
+                {r.status === 'open' && <button className="ghost-link" onClick={() => shareRide(r)}>모집 공유</button>}
                 <button className="ghost-link" onClick={() => shareTrip(r, profile.nickname)}>지인에게 탑승 알리기</button>
                 <a href="kakaot://" className="ghost-link">택시 부르기</a>
               </div>
