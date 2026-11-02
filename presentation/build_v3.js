@@ -17,7 +17,7 @@ pres.title = '쉐어택'
 pres.theme = { headFontFace: F, bodyFontFace: F }
 
 const T = (s, text, o) => s.addText(text, { margin: 0, isTextBox: true, valign: 'top', fontFace: F, ...o })
-const shadow = () => ({ type: 'outer', color: '000000', opacity: 0, blur: 0, offset: 0, angle: 90 })
+const shadow = () => undefined   // Uber DESIGN.md: 그림자 없음
 const card = (s, x, y, w, h, fill = C.white, o = {}) => s.addShape(pres.ShapeType.roundRect, { x, y, w, h, rectRadius: 0.12, fill: { color: fill }, line: { color: fill === C.white ? C.line : fill, width: 0.75 }, shadow: shadow(), ...o })
 const pill = (s, x, y, w, text, fill, color) => { s.addShape(pres.ShapeType.roundRect, { x, y, w, h: 0.34, rectRadius: 0.17, fill: { color: fill }, line: { color: fill, width: 0 } }); T(s, text, { x, y, w, h: 0.34, fontSize: 11, bold: true, color, align: 'center', valign: 'middle' }) }
 
@@ -73,7 +73,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
     T(s, info, { x: x + 1.25, y: 2.0, w: 4.6, h: 0.32, fontSize: 11, color: C.muted })
     s.addShape(pres.ShapeType.roundRect, { x: x + 1.25, y: 2.4, w: 4.5, h: 0.62, rectRadius: 0.12, fill: { color: tone }, line: { color: tone, width: 0 } })
     T(s, quote, { x: x + 1.4, y: 2.42, w: 4.25, h: 0.58, fontSize: 11.5, italic: true, color: C.ink, valign: 'middle' })
-    T(s, pains.map((p, i) => ({ text: p, options: { bullet: true, breakLine: i < pains.length - 1 } })), { x: x + 0.3, y: 3.12, w: 5.5, h: 0.85, fontSize: 12.5, color: C.ink })
+    T(s, pains.map((p, i) => ({ text: p, options: { bullet: true, breakLine: i < pains.length - 1 } })), { x: x + 0.3, y: 3.1, w: 5.5, h: 0.9, fontSize: 14, color: C.ink })
   }
   persona(0.55, '👩‍🔬', '손님 · 팀원의 경험', '충북대 학생 · KTX 타러 오송역을 오가는 길', '"같은 청주인데 오송역만 가면 택시비가 확 뛰어요"', ['😣 35% 할증, 막차 끊기면 대안 없음', '😶 혼자 타기 부담, 같은 방향 사람을 못 찾음'], C.sand)
   persona(6.78, '🧑‍✈️', '기사 · 귀로의 현실', '시내 ↔ 오송·오창을 오가는 택시', '"오송에 손님 내려 주면, 돌아올 땐 빈 차일 때가 많죠"', ['🛣️ 읍·면 하차 후 빈 차 귀로 = 연료·시간 손해', '📱 호출 앱 수수료는 그대로'], C.mint)
@@ -97,7 +97,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
 // ============================================================ 3. 원인 분석
 {
   const s = pres.addSlide(); bgLight(s)
-  head(s, '03', '할증이 가장 많은 곳이, 빈 차 위험은 가장 낮다', '손님이 없는 게 아니라 빈 차와 손님이 엇갈린다')
+  head(s, '03', '할증이 가장 많은 곳이, 빈 차 위험은 가장 낮다', '손님이 없는 게 아니라 엇갈린다 · 9/28 개편은 같은 읍·면 안만 풀어 시내↔오송·오창은 그대로')
   card(s, 0.55, 1.45, 3.7, 5.35)
   T(s, '빈 차 주행 비율', { x: 0.8, y: 1.65, w: 3.3, h: 0.35, fontSize: 13, bold: true, color: C.muted })
   T(s, '46.5%', { x: 0.8, y: 2.0, w: 3.3, h: 0.9, fontSize: 44, bold: true, color: C.ink })
@@ -249,14 +249,14 @@ const bgLight = (s) => s.addImage({ path: IMG('bg3_light.png'), x: 0, y: 0, w: 1
     if (i < 3) T(s, '➜', { x: x + 2.83, y: 1.85, w: 0.3, h: 0.5, fontSize: 16, color: C.amber })
   })
   const sw = [['💪 S 강점', '데이터 근거, 시 정책 연동\n손님·기사 모두 이득', C.teal], ['⚠️ W 약점', '초기 이용자 확보\n제휴 필요', 'C9D1CD'], ['🌱 O 기회', '9/28 개편 여론, KTX 수요\n반반택시 선례', C.amber], ['🌩️ T 위협', '대형 호출 앱 진입\n업계 반발', 'E8A87C']]
-  sw.forEach(([t, d, c], i) => { const x = 0.55 + (i % 2) * 3.05, y = 3.0 + Math.floor(i / 2) * 1.55; card(s, x, y, 2.9, 1.42, C.white); s.addShape(pres.ShapeType.rect, { x, y, w: 2.9, h: 0.08, fill: { color: c }, line: { color: c, width: 0 } }); T(s, t, { x: x + 0.15, y: y + 0.15, w: 2.6, h: 0.35, fontSize: 12.5, bold: true, color: C.ink }); T(s, d, { x: x + 0.15, y: y + 0.55, w: 2.6, h: 0.8, fontSize: 12, color: C.ink }) })
+  sw.forEach(([t, d, c], i) => { const x = 0.55 + (i % 2) * 3.05, y = 3.0 + Math.floor(i / 2) * 1.55; card(s, x, y, 2.9, 1.42, C.white); s.addShape(pres.ShapeType.rect, { x, y, w: 2.9, h: 0.08, fill: { color: c }, line: { color: c, width: 0 } }); T(s, t, { x: x + 0.15, y: y + 0.15, w: 2.6, h: 0.38, fontSize: 14.5, bold: true, color: C.ink }); T(s, d, { x: x + 0.15, y: y + 0.58, w: 2.6, h: 0.8, fontSize: 14, color: C.ink }) })
   card(s, 6.75, 3.0, 6.03, 2.97, C.dark2)
   T(s, '법 · 기대 효과 · 한계', { x: 6.95, y: 3.1, w: 5.6, h: 0.35, fontSize: 13, bold: true, color: C.amber })
   T(s, [
     { text: '법: 왕복 매칭은 동승이 아니라 합승 규제 밖, 합승은 택시발전법 시행규칙 제11조의2 준수', options: { bullet: true, breakLine: true } },
     { text: '효과: 손님 할증↓ · 기사 공차↓ 수입↑ · 시 보전 예산↓ · 빈 차 주행·탄소↓', options: { bullet: true, breakLine: true } },
     { text: '한계: 시뮬레이션 기반, 요율 보도 기준, 면제는 시 고시 변경 필요', options: { bullet: true } },
-  ], { x: 6.95, y: 3.55, w: 5.65, h: 2.3, fontSize: 11.5, color: C.white, paraSpaceAfter: 6, lineSpacingMultiple: 1.15 })
+  ], { x: 6.95, y: 3.6, w: 5.65, h: 2.3, fontSize: 14, color: C.white, paraSpaceAfter: 12, lineSpacingMultiple: 1.2 })
   s.addImage({ path: QR, x: 0.55, y: 6.15, w: 0.8, h: 0.8 })
   T(s, '빈 차를 채우면, 할증의 이유가 사라진다', { x: 1.55, y: 6.15, w: 11, h: 0.5, fontSize: 20, bold: true, color: C.white, valign: 'middle' })
   T(s, '앱 체험 taxi-woad-seven.vercel.app', { x: 1.55, y: 6.62, w: 6, h: 0.3, fontSize: 11, color: C.teal })
