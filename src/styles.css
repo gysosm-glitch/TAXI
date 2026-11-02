@@ -72,20 +72,6 @@ a { color: var(--teal-dark); }
 .notice { background: var(--amber-soft); color: var(--amber); border-radius: 14px; padding: 12px 14px; font-size: 13px; line-height: 1.6; }
 .notice ol { margin: 6px 0 0; padding-left: 18px; }
 
-/* 지도 (MapLibre) */
-.map-wrap .map { position: absolute; inset: 0; }   /* 지도 라이브러리 CSS(.maplibregl-map)가 나중에 로드돼도 이기도록 */
-.mpin { display: flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 999px; background: #fff; color: #0f2a22; font-size: 12px; white-space: nowrap;
-  box-shadow: 0 2px 8px rgba(15,42,34,.22); border: 1.5px solid #fff; cursor: pointer; margin-bottom: 8px; }
-.mpin::after { content: ''; position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); border: 6px solid transparent; border-bottom: 0; border-top-color: #fff; }
-.mpin b { font-weight: 700; }
-.mpin.on { background: var(--teal); color: #fff; border-color: var(--teal); z-index: 2; }
-.mpin.on::after { border-top-color: var(--teal); }
-.mpin.origin { background: var(--brand); color: #fff; border-color: var(--brand); }
-.mpin.origin::after { border-top-color: var(--brand); }
-.pin-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sun); }
-.me-dot { width: 18px; height: 18px; border-radius: 50%; background: #2f7cf6; border: 3px solid #fff; box-shadow: 0 0 0 8px rgba(47,124,246,.18), 0 1px 4px rgba(0,0,0,.3); }
-.maplibregl-ctrl-attrib { font-size: 10px; }
-
 /* 막대 그래프 */
 .bars { display: flex; align-items: flex-end; gap: 3px; height: 90px; }
 .bars div { flex: 1; background: var(--teal-soft); border-radius: 4px; }
@@ -293,7 +279,7 @@ a { color: var(--teal-dark); }
 .diff { background: var(--card); border-radius: var(--r-card); padding: 4px 14px; margin-bottom: 12px; }
 .diff-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 13px; align-items: center; }
 .diff-row:last-child { border-bottom: 0; }
-.diff-row span { color: var(--muted); text-decoration: line-through; }
+.diff-row span { color: var(--ink-2); }
 .diff-row b { color: var(--teal-dark); }
 .swap-btn { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); z-index: 2; width: 36px; height: 36px; border-radius: 50%; border: 1px solid #ececf0; background: #fff; color: #0f6e56; font-size: 18px; font-weight: 700; }
 .map-loading { background: #eef0ec; }
@@ -307,3 +293,14 @@ a { color: var(--teal-dark); }
 .save-as { font-style: normal; font-size: 11px; font-weight: 700; color: var(--teal-dark); background: var(--teal-soft); border-radius: 999px; padding: 4px 8px; margin-left: 4px; flex: none; }
 .pick-tile:disabled { opacity: .55; }
 .pick-tile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+
+/* 지도 없는 타기 화면 (11/2: 지도 끊김·외부 지도 의존 위험 제거) */
+.ride-top { background: var(--brand); padding: calc(16px + env(safe-area-inset-top)) 16px 18px; }
+.ride-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; color: #c9d6d0; font-size: 12px; }
+.ride-brand .logo b { font-size: 18px; }
+.ride-top .route-box { position: relative; top: auto; left: auto; right: auto; }
+.here-btn { margin-top: 10px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid rgba(255,255,255,.25); background: rgba(255,255,255,.08); color: #fff; border-radius: 12px; padding: 10px; font-size: 14px; font-weight: 600; }
+.ride .sheet { margin-top: 0; border-radius: 0; box-shadow: none; padding-top: 14px; }
+.ride .sheet .grabber { display: none; }
+.top-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.top-actions .here-btn { text-decoration: none; font-size: 13px; }

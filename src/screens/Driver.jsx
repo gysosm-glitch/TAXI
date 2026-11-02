@@ -67,6 +67,7 @@ export default function Driver({ account, onLogin }) {
     <>
       <h1 className="page-title">기사님 화면 <span className="tag gray">시범</span></h1>
       <p className="page-sub">손님을 내려준 곳에서 빈 차로 돌아가지 말고, 시내 방향 손님을 태워 가세요</p>
+      <p className="form-msg">운전 중에는 보지 마세요. 손님을 내리고 <b>정차한 뒤</b> 확인하세요. 배차는 쓰시던 호출 앱으로 받아요.</p>
 
       <p className="label" style={{ margin: '0 0 6px' }}>방금 손님을 내려준 곳</p>
       <div className="chips">

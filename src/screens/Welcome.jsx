@@ -13,12 +13,12 @@ const MOMENTS = [
   ['users', '오창·오송 출퇴근', '산단·바이오단지에서 시내까지, 매일 같은 시간 같은 방향끼리'],
 ]
 
-// 호출 앱: 가까운 빈 차를 부른다 / 쉐어택: 빈 차의 방향과 손님의 방향을 맞춘다
+// 쉐어택은 택시 앱을 대신하지 않는다: 택시 앱으로 부르기 전·후에 할증을 줄이는 도움을 더한다
 const DIFF = [
-  ['가까운 빈 차를 부른다', '돌아가는 빈 차와 방향을 맞춘다'],
-  ['할증은 그대로 낸다', '귀로 운행은 할증 면제(시 정책 연동)'],
-  ['기사가 호출 수수료를 낸다', '기사가 귀로 수입을 번다'],
-  ['혼자 부른다', 'KTX 도착·막차에 맞춰 같은 방향끼리 모인다'],
+  ['가까운 택시 부르기', '+ 돌아가는 빈 차·같은 방향 손님 찾기'],
+  ['미터기 요금(할증 포함)', '+ 할증 없이 가는 방법(왕복 매칭·귀로 연계)'],
+  ['혼자 기다리기', '+ KTX 도착·막차에 맞춰 같이 모이기'],
+  ['기사님: 다음 호출 기다리기', '+ 기사님: 돌아갈 때 태울 손님 미리 확인'],
 ]
 
 export default function Welcome({ onBrowse, onDemo }) {
@@ -58,7 +58,7 @@ export default function Welcome({ onBrowse, onDemo }) {
           </button>
         </div>
 
-        <p className="label section-label dark">택시 호출 앱과 다른 점</p>
+        <p className="label section-label dark">택시 앱과 함께 쓰면 <small className="hint">택시 앱 → 쉐어택이 더해 주는 것</small></p>
         <div className="diff">
           {DIFF.map(([a, b]) => <div key={a} className="diff-row"><span>{a}</span><b>{b}</b></div>)}
         </div>

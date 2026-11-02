@@ -1,6 +1,6 @@
 // 타기: 지도 + 출발·도착(검색·GPS·지도 누르기) → 요금 비교 → 주변 모집 참여·모집 열기 → 버스·막차·KTX
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
-const MapView = lazy(() => import('../components/MapView.jsx'))   // 지도 라이브러리는 첫 화면 뒤에 불러온다
+import { useEffect, useRef, useState } from 'react'
+import Logo from '../components/Logo.jsx'
 import Icon from '../components/Icon.jsx'
 import { spots, zoneById, won, spotZoneId, placeFromId, isReturnRoute, placeAt, originId, quoteBetween, tripQuote, distM, defaultDest, destChoices, returnChance } from '../data.js'
 import { supabase } from '../lib/supabase.js'
@@ -35,6 +35,9 @@ function saveRecent(p) {
   try { localStorage.setItem(RECENT, JSON.stringify([p, ...loadRecent().filter((x) => x.name !== p.name)].slice(0, 5))) } catch {}
 }
 
+// 위치 확인은 앱 안 지도 대신 카카오맵으로 (키 없음, 앱이 없으면 웹 지도로 열림)
+const mapUrl = (name, lat, lon) => `https://map.kakao.com/link/map/${encodeURIComponent(name)},${lat},${lon}`
+
 // 집·회사 (이 기기에만 저장)
 const SAVED = 'saved_places_v1'
 const loadSaved = () => { try { return JSON.parse(localStorage.getItem(SAVED)) ?? {} } catch { return {} } }
@@ -47,7 +50,7 @@ function shareRide(r) {
   else navigator.clipboard?.writeText(`${text} ${location.origin}`)
 }
 
-function PlaceSheet({ title, near, onPick, onHere, onMap, onClose, gpsState }) {
+function PlaceSheet({ title, near, onPick, onHere, onClose, gpsState }) {
   const [q, setQ] = useState('')
   const [res, setRes] = useState(null)
   const [saved, setSaved] = useState(loadSaved)
@@ -75,7 +78,6 @@ function PlaceSheet({ title, near, onPick, onHere, onMap, onClose, gpsState }) {
           <>
             <div className="grid2" style={{ marginTop: 12 }}>
               {onHere && <button className="pick-tile" onClick={onHere}><Icon name="locate" size={20} /><b>현재 위치</b><small>{gpsState === 'finding' ? '찾는 중…' : 'GPS'}</small></button>}
-              <button className="pick-tile" onClick={onMap}><Icon name="pin" size={20} /><b>지도에서 고르기</b><small>지도를 누르세요</small></button>
               {[['home', '🏠 집'], ['work', '🏢 회사']].map(([k, l]) => (
                 <button key={k} className="pick-tile" disabled={!saved[k]} onClick={() => saved[k] && onPick(saved[k])}><b>{l}</b><small>{saved[k] ? saved[k].name : '검색 결과에서 저장'}</small></button>
               ))}
@@ -102,7 +104,6 @@ export default function Ride({ account, onLogin }) {
   const [from, setFrom] = useState(() => fromSpot(OSONG))
   const [to, setTo] = useState(null)
   const [sheet, setSheet] = useState(null)        // 'from' | 'to'
-  const [mapPick, setMapPick] = useState(null)    // 지도 누르기로 고르는 중인 칸
   const [wantHere, setWantHere] = useState(false)
   const [people, setPeople] = useState(3)
   const [open, setOpen] = useState([])
@@ -135,12 +136,7 @@ export default function Ride({ account, onLogin }) {
     if (p) setFrom(p)
   }, [gps.pos?.lat])
 
-  const tapMap = ({ lat, lon }) => {
-    const p = placeAt(lat, lon)
-    if (!p) return setMsg({ bad: true, text: '청주 안을 눌러 주세요.' })
-    if (mapPick === 'to') setToPlace(p); else setFromPlace(p)
-    setMapPick(null)
-  }
+
 
   // 버스·막차·KTX (출발지 기준)
   const busSpot = { id: `${from.lat.toFixed(3)},${from.lon.toFixed(3)}`, lat: from.lat, lon: from.lon }
@@ -214,12 +210,6 @@ export default function Ride({ account, onLogin }) {
     setMsg(error ? { bad: true, text: rideError(error) } : { text: '평가를 남겼어요. 다음 매칭의 신뢰 점수에 반영돼요.' })
   }
 
-  const markers = [
-    { id: 'from', lat: from.lat, lon: from.lon, label: '출발', kind: 'origin', on: true },
-    ...(dest ? [{ id: 'to', lat: dest.lat, lon: dest.lon, label: '도착', kind: 'dest' }] : []),
-    ...nearby.slice(0, 5).map((r) => { const o = placeFromId(r.spot_id); return { id: r.id, lat: o.lat, lon: o.lon, label: `${r.ride_members.length}/${r.max_people} ${r.dest_name}`, kind: 'ride' } }),
-  ]
-
   const banner = last?.ended ? { tone: 'red', title: '버스가 끊긴 시간이에요', body: '같은 방향 손님과 택시를 나눠 타세요.' }
     : ktx[0] ? { tone: 'blue', title: `KTX ${ktx[0].time} 도착 (${minutesUntil(ktx[0].time)}분 후)`, body: '도착 시각에 맞춰 모집을 열면 같이 탈 사람이 가장 많아요.' }
     : last?.soon ? { tone: 'amber', title: `막차까지 ${last.left}분`, body: `${last.latest.route}번 ${last.latest.last} · 놓치면 같이 타기로` }
@@ -227,15 +217,17 @@ export default function Ride({ account, onLogin }) {
 
   return (
     <div className="ride">
-      <div className="map-wrap">
-        <Suspense fallback={<div className="map map-loading" />}><MapView center={to ? [(from.lat + to.lat) / 2, (from.lon + to.lon) / 2] : [from.lat, from.lon]} zoom={to ? (distM(from, to) > 8000 ? 10.5 : 11.5) : 13} markers={markers} me={gps.pos} onTap={tapMap} /></Suspense>
+      <div className="ride-top">
+        <div className="ride-brand"><Logo size={26} light /><span>택시 앱과 함께 쓰는 할증 도우미</span></div>
         <div className="route-box">
           <button className="route-row" onClick={() => setSheet('from')}><span className="dot-from" /><span className="sb-text"><small>출발</small><b>{from.name}</b></span></button>
           {dest && <button className="swap-btn" onClick={swap} aria-label="출발과 도착 바꾸기">⇅</button>}
           <button className="route-row" onClick={() => setSheet('to')}><span className="dot-to" /><span className="sb-text"><small>도착</small><b>{dest ? dest.name : '어디로 가세요?'}</b></span></button>
         </div>
-        {mapPick && <div className="map-hint">지도를 눌러 {mapPick === 'to' ? '도착지' : '출발지'}를 고르세요 <button onClick={() => setMapPick(null)}>취소</button></div>}
-        <button className={`locate-btn ${gps.state === 'on' ? 'on' : ''}`} onClick={useHere} aria-label="내 위치에서 출발"><Icon name="locate" size={22} /></button>
+        <div className="top-actions">
+          <button className="here-btn" onClick={useHere}><Icon name="locate" size={16} /> {gps.state === 'finding' ? '위치 찾는 중…' : '내 위치에서 출발'}</button>
+          <a className="here-btn" href={mapUrl(`출발: ${from.name}`, from.lat, from.lon)} target="_blank" rel="noreferrer"><Icon name="pin" size={16} /> 출발지 지도로 보기</a>
+        </div>
       </div>
 
       <div className="sheet">
@@ -274,7 +266,7 @@ export default function Ride({ account, onLogin }) {
               <div className="detail">
                 <b>탑승 전 안내</b>
                 {members.map((m, i) => <div key={m.user_id} className="seat"><span>{m.nickname}{m.user_id === me ? ' (나)' : ''}{m.user_id === r.host_id ? ' · 모집자' : ''}</span><span>{SEATS[i] ?? '뒷좌석'}</span></div>)}
-                <div style={{ marginTop: 6 }}>대표 1명이 택시를 부르고, 요금은 도착 후 나눠요.</div>
+                <div style={{ marginTop: 6 }}>대표 1명이 택시를 부르고, 요금은 도착 후 나눠요. {placeFromId(r.spot_id) && <a href={mapUrl(r.spot_name, placeFromId(r.spot_id).lat, placeFromId(r.spot_id).lon)} target="_blank" rel="noreferrer">만날 곳 지도로 보기 ›</a>}</div>
               </div>
               <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
                 {r.host_id === me
@@ -372,7 +364,7 @@ export default function Ride({ account, onLogin }) {
               <div key={r.id} className="ride-item">
                 <div>
                   <b>→ {r.dest_name}</b> {r.kind === 'roundtrip' ? <span className="tag">왕복 택시 · 할증 없음</span> : r.dest_zone === dest?.zoneId && <span className="tag">같은 방향</span>}
-                  <span className="meta">{r.spot_name.split(' · ')[0]}에서 · 걸어서 {Math.max(1, Math.round(distM(o, from) / 70))}분 · {hhmm(r.depart_at)} 출발 · {r.ride_members.length}/{r.max_people}명</span>
+                  <span className="meta"><a href={mapUrl(r.spot_name, o.lat, o.lon)} target="_blank" rel="noreferrer">{r.spot_name.split(' · ')[0]}</a>에서 · 걸어서 {Math.max(1, Math.round(distM(o, from) / 70))}분 · {hhmm(r.depart_at)} 출발 · {r.ride_members.length}/{r.max_people}명</span>
                 </div>
                 {joined ? <span className="tag">참여 중</span>
                   : <button className="pill-btn small" disabled={busy || r.status !== 'open'} onClick={() => act(() => joinRide(r.id, me, profile.nickname), r.kind === 'roundtrip' ? `참여했어요. ${hhmm(r.depart_at)}에 도착하는 택시를 타면 할증 없이 가요. 안 오면 노쇼 수수료 ${won(r.hold_won ?? 0)}가 부과돼요(시범).` : '참여했어요. 탑승 전 안내를 확인해 주세요.')}>{r.status !== 'open' ? '마감' : '참여'}</button>}
@@ -424,7 +416,6 @@ export default function Ride({ account, onLogin }) {
           near={from} gpsState={gps.state}
           onPick={sheet === 'from' ? setFromPlace : setToPlace}
           onHere={sheet === 'from' ? () => { setSheet(null); useHere() } : null}
-          onMap={() => { setMapPick(sheet); setSheet(null) }}
           onClose={() => setSheet(null)}
         />
       )}

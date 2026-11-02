@@ -3,7 +3,7 @@ import { placeAt } from '../data.js'
 
 async function vworld(q) {
   try {
-    const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+    const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`, { signal: AbortSignal.timeout(5000) })
     if (!(res.headers.get('content-type') || '').includes('json')) return []
     const j = await res.json()
     return j.ok ? j.items : []
@@ -13,7 +13,7 @@ async function vworld(q) {
 async function photon(q, c) {
   const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${c.lat}&lon=${c.lon}&limit=12`
   try {
-    const json = await fetch(url).then((r) => r.json())
+    const json = await fetch(url, { signal: AbortSignal.timeout(5000) }).then((r) => r.json())
     return (json.features ?? []).map((f) => {
       const p = f.properties
       return { name: p.name ?? p.street, sub: [p.district, p.street, p.housenumber].filter(Boolean).join(' '), lat: f.geometry.coordinates[1], lon: f.geometry.coordinates[0] }
