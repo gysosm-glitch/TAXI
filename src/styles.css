@@ -304,3 +304,6 @@ a { color: var(--teal-dark); }
 .ride .sheet .grabber { display: none; }
 .top-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .top-actions .here-btn { text-decoration: none; font-size: 13px; }
+.rt-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.rt-price { font-size: 17px; font-weight: 800; color: var(--teal-dark); white-space: nowrap; }
+.rt-price s { font-size: 12px; font-weight: 500; color: var(--muted); margin-right: 4px; }

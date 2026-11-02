@@ -312,16 +312,15 @@ export default function Ride({ account, onLogin }) {
               {ret && <div className="fare-row policy"><span>귀로 할증 면제 시 1인</span><b>{won(round100(solo.fareDongRate / people))}</b><small>정책 제안</small></div>}
             </div>
             <div className="seg small">{[2, 3].map((v) => <button key={v} className={people === v ? 'on' : ''} onClick={() => setPeople(v)}>{v}명</button>)}</div>
-            {ret && <p className="sub" style={{ marginTop: 10 }}>이 방향은 이 지역에 손님을 내려 준 택시가 빈 차로 돌아가는 길이에요. 모집을 열면 기사님 화면에 귀로 손님으로 보여요.</p>}
           </section>
         )}
 
         {outbound && (
           <section className="card rt-card">
-            <p className="card-title">할증 없이 가는 방법 <small>시내 → 읍·면</small></p>
+            <p className="card-title">할증 없이 가기</p>
             <div className="rt-opt">
-              <b>① 왕복 매칭 <span className="tag">양쪽 할증 없음</span></b>
-              <p className="sub">{dest.name}에서 시내로 갈 손님을 미리 구해요. 택시가 갈 때도 올 때도 손님을 태우니 할증 이유가 없어요. 합승이 아니라 성별 제한도 없어요.</p>
+              <div className="rt-head"><b>왕복 매칭</b><span className="rt-price">{won(solo.fareDongRate)}</span></div>
+              <p className="sub">{dest.name}에서 시내 갈 손님을 미리 구하면 양쪽 다 할증 없음</p>
               {canUse && !rt && <button className="btn" style={{ marginTop: 8 }} onClick={() => setRt({ arrive: Math.max(10, Math.round(solo.km * 2.5)), seats: 1 })}>왕복 매칭 열기</button>}
               {canUse && rt && (
                 <div className="new-ride">
@@ -331,7 +330,7 @@ export default function Ride({ account, onLogin }) {
                   <div className="field"><span>돌아올 때 태울 손님</span>
                     <div className="seg">{[1, 2].map((v) => <button key={v} className={rt.seats === v ? 'on' : ''} onClick={() => setRt({ ...rt, seats: v })}>{v}명</button>)}</div>
                   </div>
-                  <p className="sub">상대가 안 오면(노쇼) 할증분 <b>{won(solo.fare - solo.fareDongRate)}</b>을 안 온 쪽이 내서 기사님의 빈 차 손실을 메워요. (시범: 실제 결제 없음)</p>
+                  <p className="sub">노쇼하면 할증분 {won(solo.fare - solo.fareDongRate)}을 안 온 쪽이 부담 (시범)</p>
                   <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
                     <button className="btn ghost" onClick={() => setRt(null)}>취소</button>
                     <button className="btn" disabled={busy} onClick={submitRoundtrip}>열기</button>
@@ -340,11 +339,9 @@ export default function Ride({ account, onLogin }) {
               )}
             </div>
             <div className="rt-opt">
-              <b>② 귀로 연계 결제 <span className="tag gray">모의</span></b>
-              <p className="sub">앱으로 부르면 할증 포함 <b>{won(solo.fare)}</b>을 먼저 가승인해요. 내린 뒤 30분 안에 그 택시가 귀로 손님을 태우면 할증을 뺀 <b>{won(solo.fareDongRate)}</b>만 최종 결제돼요. 귀로 손님도 할증 없이 가요.</p>
-              {chance && <p className="chance">지금 {zoneById[dest.zoneId].name}에서 30분 안에 귀로 손님을 만날 확률 <b>약 {Math.round(chance.p * 100)}%</b><small>TIMS 2025 승차 × 시내행 비율 × 앱 이용 30% 가정</small></p>}
+              <div className="rt-head"><b>귀로 연계 결제 <span className="tag gray">모의</span></b><span className="rt-price"><s>{won(solo.fare)}</s> {won(solo.fareDongRate)}</span></div>
+              <p className="sub">내린 뒤 30분 안에 그 택시가 귀로 손님을 태우면 할증 빼고 결제{chance ? ` · 가능성 약 ${Math.round(chance.p * 100)}%` : ''}</p>
             </div>
-            <p className="sub" style={{ marginTop: 6 }}>③ 앱 없이 현장에서 타면 지금처럼 미터기 요금(할증 포함)이에요.</p>
           </section>
         )}
 
@@ -407,7 +404,6 @@ export default function Ride({ account, onLogin }) {
           )}
         </section>
 
-        <p className="foot">요금은 직선거리 × 1.3으로 추정 · 자료: TIMS 2025, 청주시 요금(보도 기준) · 장소 검색 © OpenStreetMap</p>
       </div>
 
       {sheet && (

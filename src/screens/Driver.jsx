@@ -19,8 +19,6 @@ const emZones = zones.filter((z) => z.is_eupmyeon)
 // 손익분기 결과 (앱 이용 30%, 할증 전액 면제 기준)
 const pick = (a, e) => analysis.grid.find((g) => g.appShare === a && g.exemptRatio === e)
 const full30 = pick(0.3, 1)
-const noExempt30 = pick(0.3, 0)
-const maxEx30 = analysis.maxExempt.find((m) => m.appShare === 0.3)
 const joined30 = adoption.drivers.find((d) => d.appShare === 0.3)   // 앱을 쓰는 기사만 본 수입 변화
 
 export default function Driver({ account, onLogin }) {
@@ -66,8 +64,7 @@ export default function Driver({ account, onLogin }) {
   return (
     <>
       <h1 className="page-title">기사님 화면 <span className="tag gray">시범</span></h1>
-      <p className="page-sub">손님을 내려준 곳에서 빈 차로 돌아가지 말고, 시내 방향 손님을 태워 가세요</p>
-      <p className="form-msg">운전 중에는 보지 마세요. 손님을 내리고 <b>정차한 뒤</b> 확인하세요. 배차는 쓰시던 호출 앱으로 받아요.</p>
+      <p className="form-msg"><b>정차한 뒤</b> 확인하세요 · 배차는 쓰시던 호출 앱으로</p>
 
       <p className="label" style={{ margin: '0 0 6px' }}>방금 손님을 내려준 곳</p>
       <div className="chips">
@@ -125,12 +122,7 @@ export default function Driver({ account, onLogin }) {
       </div>
 
       <div className="card">
-        <p className="card-title">귀로 매칭이 할증을 바꾸는 방법 <small>시뮬레이션</small></p>
-        <div className="row-item"><span>쉐어택 참여 기사 하루 수입<span className="meta">앱 이용 30% · 할증 그대로 · 전체 평균 {noExempt30.revChangePct >= 0 ? '+' : ''}{noExempt30.revChangePct}%</span></span><span className="r">+{won(joined30.appDriverWonPerDay)} (+{joined30.appDriverRevChangePct}%)</span></div>
-        <div className="row-item"><span>귀로 매칭 운행 할증 전액 면제<span className="meta">보전 없을 때</span></span><span className="r off">기사 수입 {full30.revChangePct}%</span></div>
-        <div className="row-item"><span>손해 없이 면제할 수 있는 폭<span className="meta">보전 0원</span></span><span className="r">할증의 {Math.round(maxEx30.maxExemptRatio * 100)}%까지</span></div>
-        <div className="row-item"><span>전액 면제 + 귀로 1건당 보전<span className="meta">기사 수입 현행 유지에 필요한 금액</span></span><span className="r">{won(full30.breakEvenFeePerTrip)}</span></div>
-        <p className="sub" style={{ marginTop: 8 }}>청주 택시 2,956대·하루 5.8만 건을 TIMS 2025 실측(공차거리 46.5%)에 맞춰 재현한 결과예요.</p>
+        <div className="row-item"><span>쉐어택 참여 기사 하루 수입<span className="meta">시뮬레이션 · 앱 이용 30%</span></span><span className="r">+{won(joined30.appDriverWonPerDay)}</span></div>
       </div>
     </>
   )
