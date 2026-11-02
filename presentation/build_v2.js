@@ -25,8 +25,8 @@ const pill = (s, x, y, w, text, fill, color) => { s.addShape(pres.ShapeType.roun
 function head(s, no, title, msg, dark) {
   s.addShape(pres.ShapeType.roundRect, { x: 0.55, y: 0.4, w: 0.62, h: 0.62, rectRadius: 0.16, fill: { color: C.amber }, line: { color: C.amber, width: 0 }, shadow: shadow() })
   T(s, no, { x: 0.55, y: 0.4, w: 0.62, h: 0.62, fontSize: 18, bold: true, color: C.dark, align: 'center', valign: 'middle' })
-  T(s, title, { x: 1.35, y: 0.36, w: 11.3, h: 0.5, fontSize: 26, bold: true, color: dark ? C.white : C.ink, valign: 'middle' })
-  T(s, msg, { x: 1.35, y: 0.86, w: 11.3, h: 0.36, fontSize: 14, color: dark ? C.soft : C.muted, valign: 'middle' })
+  T(s, title, { x: 1.35, y: 0.32, w: 11.3, h: 0.55, fontSize: 30, bold: true, color: dark ? C.white : C.ink, valign: 'middle' })
+  T(s, msg, { x: 1.35, y: 0.88, w: 11.3, h: 0.38, fontSize: 15, color: dark ? C.soft : C.muted, valign: 'middle' })
 }
 const foot = (s, text, dark) => null && T(s, text, { x: 0.55, y: 7.02, w: 11.6, h: 0.32, fontSize: 10.5, color: dark ? C.soft : C.muted, valign: 'middle' })
 const pageNo = (s, n, dark) => T(s, `${n} / 8`, { x: 12.1, y: 7.02, w: 0.7, h: 0.32, fontSize: 10.5, color: dark ? C.soft : C.muted, align: 'right', valign: 'middle' })
@@ -76,7 +76,7 @@ const bgLight = (s) => s.addImage({ path: IMG('bg_light.png'), x: 0, y: 0, w: 13
     T(s, pains.map((p, i) => ({ text: p, options: { bullet: true, breakLine: i < pains.length - 1 } })), { x: x + 0.3, y: 3.12, w: 5.5, h: 0.85, fontSize: 12.5, color: C.ink })
   }
   persona(0.55, '👩‍🔬', '손님 · 팀원의 경험', '충북대 학생 · KTX 타러 오송역을 오가는 길', '"같은 청주인데 오송역만 가면 택시비가 확 뛰어요"', ['😣 35% 할증, 막차 끊기면 대안 없음', '😶 혼자 타기 부담, 같은 방향 사람을 못 찾음'], C.sand)
-  persona(6.78, '🧑‍✈️', '기사 · 귀로의 현실', '시내 ↔ 오송·오창을 오가는 택시', '"오송에 손님 내려 주면, 돌아올 땐 빈 차일 때가 많죠"', ['읍·면 하차 후 빈 차 귀로 = 연료·시간 손해', '📱 호출 앱 수수료는 그대로'], C.mint)
+  persona(6.78, '🧑‍✈️', '기사 · 귀로의 현실', '시내 ↔ 오송·오창을 오가는 택시', '"오송에 손님 내려 주면, 돌아올 땐 빈 차일 때가 많죠"', ['🛣️ 읍·면 하차 후 빈 차 귀로 = 연료·시간 손해', '📱 호출 앱 수수료는 그대로'], C.mint)
   // 고객 여정
   card(s, 0.55, 4.2, 12.23, 2.65)
   T(s, '손님 여정  (지금 → 쉐어택)', { x: 0.8, y: 4.32, w: 6, h: 0.35, fontSize: 13, bold: true, color: C.teal })
