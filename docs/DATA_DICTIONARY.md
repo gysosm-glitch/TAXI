@@ -34,6 +34,7 @@ KTDB 여객 OD는 이용 조건상 재배포할 수 없어 저장소에 올리�
 | | `zone_shapes.json` | 앱용 가벼운 경계(소수 3자리). GPS 위치 → 읍면동 판정 | ✅ |
 | `02_fare_rules` | `fare_rules.json` | 동·읍면 요율, 9/28 개편 할증 규칙 (보도 기준) | ✅ |
 | `03_demand` | `zone_top_dest.json` | 존별 자주 가는 목적지 상위 3곳 (OD 순위만) | ✅ |
+| | `zone_city_share.json` | 읍·면별 시내행 비율(오송 0.30·오창 0.26). 귀로 손님 확률 계산 | ✅ |
 | `10_tims` | `tims_app.json` | 청주 승차 요약·격자·시간대 보정 (앱용 묶음) | ✅ |
 | | `tims_pickups_by_zone_2025.csv`, `tims_pickups_by_cell_2025.csv` | 존별·500m 격자별 2025 승차 | 📊 |
 | | `tims_region_compare_2025.csv`, `tims_cheongju_yearly.csv` | 지자체 공차율 비교, 청주 연도별(공차 46.5%) | 📊 |

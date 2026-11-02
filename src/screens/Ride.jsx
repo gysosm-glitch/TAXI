@@ -2,7 +2,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 const MapView = lazy(() => import('../components/MapView.jsx'))   // 지도 라이브러리는 첫 화면 뒤에 불러온다
 import Icon from '../components/Icon.jsx'
-import { spots, zoneById, won, spotZoneId, placeFromId, isReturnRoute, placeAt, originId, quoteBetween, tripQuote, distM, defaultDest, destChoices } from '../data.js'
+import { spots, zoneById, won, spotZoneId, placeFromId, isReturnRoute, placeAt, originId, quoteBetween, tripQuote, distM, defaultDest, destChoices, returnChance } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { askNotify } from '../lib/alerts.js'
 import { useMyPosition } from '../lib/geo.js'
@@ -94,6 +94,7 @@ export default function Ride({ account, onLogin }) {
   const [busy, setBusy] = useState(false)
   const [rating, setRating] = useState(null)
   const [busOpen, setBusOpen] = useState(false)
+  const [rt, setRt] = useState(null)              // 왕복 매칭 열기 폼 { arrive: 분 뒤, seats }
 
   const dest = to ?? (defaultDest(from.zoneId) ? zonePlace(defaultDest(from.zoneId)) : null)
   const setFromPlace = (p) => { setFrom(p); setTo(null); setForm(null); setMsg(null); setSheet(null); if (p.name !== '현재 위치') saveRecent(p) }
@@ -135,6 +136,8 @@ export default function Ride({ account, onLogin }) {
   const solo = dest ? quoteBetween(from, dest, 1) : null
   const shared = dest ? quoteBetween(from, dest, people) : null
   const ret = dest && isReturnRoute(from.zoneId, dest.zoneId)
+  const outbound = dest && solo?.surcharged && isReturnRoute(dest.zoneId, from.zoneId)   // 시내 → 읍·면 (돌아올 때 빈 차가 되는 방향)
+  const chance = outbound ? returnChance(dest.zoneId) : null
   const price = (r, n) => tripQuote(spotZoneId(placeFromId(r.spot_id) ?? from), r.dest_zone, n)
 
   // 내 주변(1.5km) 모집
@@ -162,6 +165,17 @@ export default function Ride({ account, onLogin }) {
     if (!r.error) setForm(null)
     return r
   }, '모집을 열었어요. 같은 방향 손님이 참여하면 바로 알려 드려요.')
+
+  // 왕복 매칭: 내가 탄 택시가 도착지에 닿는 시각에, 그곳에서 시내로 갈 손님을 미리 구한다 (양쪽 할증 없음)
+  const submitRoundtrip = () => act(async () => {
+    const r = await createRide({
+      host_id: me, kind: 'roundtrip', spot_id: originId(dest), spot_name: `${dest.name} · 왕복 택시 도착`, out_from: from.name,
+      dest_zone: from.zoneId, dest_name: from.name, depart_at: new Date(Date.now() + rt.arrive * 60000).toISOString(),
+      max_people: rt.seats + 1, gender: profile.gender, hold_won: Math.round(solo.fare - solo.fareDongRate),
+    })
+    if (!r.error) setRt(null)
+    return r
+  }, '왕복 매칭을 열었어요. 도착지에서 시내로 갈 손님이 참여하면 알려 드려요.')
 
   const arrived = async (r) => {
     const n = r.ride_members.length
@@ -214,6 +228,7 @@ export default function Ride({ account, onLogin }) {
         {rating && (
           <section className="card mine">
             <p className="card-title">같이 탄 분은 어땠나요?</p>
+            {rating.ride.kind === 'roundtrip' && <p className="sub" style={{ marginBottom: 6 }}>'안 왔어요'를 고르면 노쇼 수수료 {won(rating.ride.hold_won ?? 0)}가 그 사람에게 부과돼 기사님 손실을 메워요 (시범).</p>}
             {rating.others.map((m) => (
               <div key={m.user_id} className="rate-row">
                 <span>{m.nickname}</span>
@@ -290,6 +305,38 @@ export default function Ride({ account, onLogin }) {
           </section>
         )}
 
+        {outbound && (
+          <section className="card rt-card">
+            <p className="card-title">할증 없이 가는 방법 <small>시내 → 읍·면</small></p>
+            <div className="rt-opt">
+              <b>① 왕복 매칭 <span className="tag">양쪽 할증 없음</span></b>
+              <p className="sub">{dest.name}에서 시내로 갈 손님을 미리 구해요. 택시가 갈 때도 올 때도 손님을 태우니 할증 이유가 없어요. 합승이 아니라 성별 제한도 없어요.</p>
+              {canUse && !rt && <button className="btn" style={{ marginTop: 8 }} onClick={() => setRt({ arrive: Math.max(10, Math.round(solo.km * 2.5)), seats: 1 })}>왕복 매칭 열기</button>}
+              {canUse && rt && (
+                <div className="new-ride">
+                  <div className="field"><span>{dest.name} 도착 예정</span>
+                    <div className="seg wrap">{[rt.arrive, rt.arrive + 15, rt.arrive + 30].map((v) => <button key={v} className={rt.arrive === v ? 'on' : ''} onClick={() => setRt({ ...rt, arrive: v })}>{new Date(Date.now() + v * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</button>)}</div>
+                  </div>
+                  <div className="field"><span>돌아올 때 태울 손님</span>
+                    <div className="seg">{[1, 2].map((v) => <button key={v} className={rt.seats === v ? 'on' : ''} onClick={() => setRt({ ...rt, seats: v })}>{v}명</button>)}</div>
+                  </div>
+                  <p className="sub">상대가 안 오면(노쇼) 할증분 <b>{won(solo.fare - solo.fareDongRate)}</b>을 안 온 쪽이 내서 기사님의 빈 차 손실을 메워요. (시범: 실제 결제 없음)</p>
+                  <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
+                    <button className="btn ghost" onClick={() => setRt(null)}>취소</button>
+                    <button className="btn" disabled={busy} onClick={submitRoundtrip}>열기</button>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="rt-opt">
+              <b>② 귀로 연계 결제 <span className="tag gray">모의</span></b>
+              <p className="sub">앱으로 부르면 할증 포함 <b>{won(solo.fare)}</b>을 먼저 가승인해요. 내린 뒤 30분 안에 그 택시가 귀로 손님을 태우면 할증을 뺀 <b>{won(solo.fareDongRate)}</b>만 최종 결제돼요. 귀로 손님도 할증 없이 가요.</p>
+              {chance && <p className="chance">지금 {zoneById[dest.zoneId].name}에서 30분 안에 귀로 손님을 만날 확률 <b>약 {Math.round(chance.p * 100)}%</b><small>TIMS 2025 승차 × 시내행 비율 × 앱 이용 30% 가정</small></p>}
+            </div>
+            <p className="sub" style={{ marginTop: 6 }}>③ 앱 없이 현장에서 타면 지금처럼 미터기 요금(할증 포함)이에요.</p>
+          </section>
+        )}
+
         <section className="card">
           <p className="card-title">내 주변 모집 <small>{canUse ? `반경 1.5km · ${nearby.length}건` : ''}</small></p>
           {!canUse && (
@@ -305,11 +352,11 @@ export default function Ride({ account, onLogin }) {
             return (
               <div key={r.id} className="ride-item">
                 <div>
-                  <b>→ {r.dest_name}</b> {r.dest_zone === dest?.zoneId && <span className="tag">같은 방향</span>}
+                  <b>→ {r.dest_name}</b> {r.kind === 'roundtrip' ? <span className="tag">왕복 택시 · 할증 없음</span> : r.dest_zone === dest?.zoneId && <span className="tag">같은 방향</span>}
                   <span className="meta">{r.spot_name.split(' · ')[0]}에서 · 걸어서 {Math.max(1, Math.round(distM(o, from) / 70))}분 · {hhmm(r.depart_at)} 출발 · {r.ride_members.length}/{r.max_people}명</span>
                 </div>
                 {joined ? <span className="tag">참여 중</span>
-                  : <button className="pill-btn small" disabled={busy || r.status !== 'open'} onClick={() => act(() => joinRide(r.id, me, profile.nickname), '참여했어요. 탑승 전 안내를 확인해 주세요.')}>{r.status !== 'open' ? '마감' : '참여'}</button>}
+                  : <button className="pill-btn small" disabled={busy || r.status !== 'open'} onClick={() => act(() => joinRide(r.id, me, profile.nickname), r.kind === 'roundtrip' ? `참여했어요. ${hhmm(r.depart_at)}에 도착하는 택시를 타면 할증 없이 가요. 안 오면 노쇼 수수료 ${won(r.hold_won ?? 0)}가 부과돼요(시범).` : '참여했어요. 탑승 전 안내를 확인해 주세요.')}>{r.status !== 'open' ? '마감' : '참여'}</button>}
               </div>
             )
           })}

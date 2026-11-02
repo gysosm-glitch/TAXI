@@ -49,6 +49,7 @@ export default function Driver({ account, onLogin }) {
     return r.status === 'open' && z === zone && isReturnRoute(z, r.dest_zone)
   }), [open, zone])
   const people = waiting.reduce((a, r) => a + r.ride_members.length, 0)
+  const roundtrips = waiting.filter((r) => r.kind === 'roundtrip').length   // 왕복 매칭으로 귀로가 이미 확정된 운행
 
   // 평소 이 시간 이 지역 택시 승차 (TIMS 2025)
   const hour = new Date().getHours()
@@ -81,7 +82,7 @@ export default function Driver({ account, onLogin }) {
       <div className="hero driver-hero">
         <p className="label">지금 {place.name}에서 시내 방향</p>
         <h2>{live ? `귀로 손님 ${people}명 대기 중` : '귀로 손님 대기 현황'}</h2>
-        <p className="sub">{live ? (people ? `${waiting.length}개 모집 · 가장 빠른 출발 ${new Date(waiting[0].depart_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '지금 열린 모집이 없어요. 평소 이 시간 수요를 참고하세요.') : '로그인하면 실제 모집이 보여요.'}</p>
+        <p className="sub">{live ? (people ? `${waiting.length}개 모집${roundtrips ? ` (왕복 확정 ${roundtrips})` : ''} · 가장 빠른 출발 ${new Date(waiting[0].depart_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '지금 열린 모집이 없어요. 평소 이 시간 수요를 참고하세요.') : '로그인하면 실제 모집이 보여요.'}</p>
         {!live && <button className="pill-btn" style={{ marginTop: 10 }} onClick={onLogin}>로그인 · 체험 계정</button>}
       </div>
 

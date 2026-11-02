@@ -299,3 +299,8 @@ a { color: var(--teal-dark); }
 .map-loading { background: #eef0ec; }
 .page-head { display: flex; justify-content: space-between; align-items: center; }
 .logout-btn { border: 1px solid var(--line); background: var(--card); color: var(--ink-2); border-radius: 999px; padding: 7px 14px; font-size: 13px; font-weight: 600; }
+.rt-card .rt-opt { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.rt-card .rt-opt b { font-size: 15px; }
+.rt-card .rt-opt .sub { margin-top: 4px; line-height: 1.55; }
+.chance { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--teal-soft); color: var(--teal-ink); font-size: 13px; }
+.chance small { display: block; font-size: 11px; opacity: .8; margin-top: 2px; }
