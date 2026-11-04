@@ -67,7 +67,7 @@ function Buses() {
             <b>{s.name}</b>
             {s.list.map((a, i) => (
               <div key={i} className="stop-row">
-                <span>{a.route}번{a.toward ? <small> {a.toward} 방면</small> : null}</span>
+                <span>{a.route}번{a.next ? <small> {a.next === '종점' ? '여기가 종점' : `→ ${a.next}`}</small> : null}</span>
                 {a.min === null ? <span className="stop-none">도착 정보 없음</span> : <span>{left(a.min)}</span>}
               </div>
             ))}

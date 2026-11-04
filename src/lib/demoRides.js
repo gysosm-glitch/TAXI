@@ -20,8 +20,8 @@ const ROUTES = [
   { id: 'osong-term', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, meets: ['택시 승강장 앞', '서편 출구', '동편 출구'], maxes: [3, 2, 4], every: 20, train: true },
   { id: 'osong-term-rt', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, every: 45, phase: 13, maxes: [2], roundtrip: true, outFrom: '가경동' },
   { id: 'ochang-term', from: 'ochang_lake', to: 'bus_terminal', toName: TERMINAL, meets: ['호수공원 정문', '공원 주차장 입구'], maxes: [3, 4, 2], every: 20, phase: 7 },
-  { id: 'term-cbnu', from: 'bus_terminal', fromName: TERMINAL, to: 'cbnu', toName: '충북대학교 중문', meets: ['택시 승강장', '터미널 정문'], maxes: [4, 3, 2], every: 15, phase: 4 },
-  { id: 'cbnu-osong', from: 'cbnu', fromName: '충북대학교 중문', to: 'osong_stn', meets: ['중문 앞', '중문 버스정류장'], maxes: [2, 3, 4], every: 25, phase: 9 },
+  { id: 'term-cbnu', from: 'bus_terminal', fromName: TERMINAL, to: 'cbnu', meets: ['택시 승강장', '터미널 정문'], maxes: [4, 3, 2], every: 15, phase: 4 },
+  { id: 'cbnu-osong', from: 'cbnu', to: 'osong_stn', meets: ['정문 앞', '정문 버스정류장'], maxes: [2, 3, 4], every: 25, phase: 9 },
   { id: 'down-ochang', from: 'downtown', to: 'ochang_lake', meets: ['성안길 입구', '청주대교 앞'], maxes: [3, 2, 4], every: 30, phase: 14 },
 ]
 export const CONDITIONS = ['캐리어 OK', '조용히 이동', '5분 대기']
@@ -68,7 +68,9 @@ export function demoRooms(now, trains, gender = 'F') {
   return out.sort((a, b) => a.depart_at.localeCompare(b.depart_at))
 }
 
-const load = () => { try { return JSON.parse(store.getItem(KEY)) ?? [] } catch { return [] } }
+// 시연 기록은 서버에 쌓이지 않고, 이 기기에서도 1시간이 지나면 사라진다
+const HOUR = 60 * MIN
+const load = () => { try { return (JSON.parse(store.getItem(KEY)) ?? []).filter((j) => Date.now() - j.joinedAt < HOUR) } catch { return [] } }
 const save = (list) => { try { store.setItem(KEY, JSON.stringify(list)) } catch {} }
 
 const REPLIES = ['네, 좋아요!', '알겠습니다. 거기서 봬요.', '넵, 천천히 오세요.', '확인했어요. 고맙습니다!']
