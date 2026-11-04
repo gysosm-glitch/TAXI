@@ -62,7 +62,7 @@ async function expressCode(key, name, exact) {
   return (cache[id] = hit?.tmnCd ?? null)
 }
 
-async function expressArrivals(key) {
+async function expressArrivals(key, nowStamp) {
   const arr = await expressCode(key, '청주', true)
   const out = []
   let error = null
@@ -72,8 +72,10 @@ async function expressArrivals(key) {
       if (!dep) return
       const json = await getJSON(`${EXPRESS}/GetExpBusArrPrdtInfo?serviceKey=${key}&depTmnCd=${dep}&arrTmnCd=${arr}&numOfRows=30&pageNo=1&_type=json`)
       for (const t of items(json)) {
-        if (String(t.rmnTm).includes('완료') || String(t.curLocNm).includes('도착')) continue
-        out.push({ from: t.depTmnNm ?? name, dep: t.depTm ?? '', arrive: String(t.arrPrdtTm ?? '').slice(0, 16), remain: t.rmnTm ?? '', loc: t.curLocNm ?? '', grade: t.busGrdNm ?? '' })
+        const arrive = String(t.arrPrdtTm ?? '').slice(0, 16)
+        // 도착 완료이거나 예정 시각이 지난 버스는 뺀다 (예측값이 늦게 갱신될 때가 있다)
+        if (String(t.rmnTm).includes('완료') || String(t.curLocNm).includes('도착') || arrive <= nowStamp) continue
+        out.push({ from: t.depTmnNm ?? name, dep: t.depTm ?? '', arrive, loc: t.curLocNm ?? '', grade: t.busGrdNm ?? '' })
       }
     } catch (e) { error = short(e) }
   }))
@@ -85,7 +87,7 @@ export default async function handler(req, res) {
   const sk = suburbKey(), ek = expressKey()
   const [su, ex] = await Promise.all([
     sk ? suburbDepartures(encodeURIComponent(sk), day, now).catch((e) => ({ next: [], error: short(e) })) : { next: [], error: 'no_key' },
-    ek ? expressArrivals(encodeURIComponent(ek)).catch((e) => ({ arrivals: [], error: short(e) })) : { arrivals: [], error: 'no_key' },
+    ek ? expressArrivals(encodeURIComponent(ek), `${d.toISOString().slice(0, 10)} ${now}`).catch((e) => ({ arrivals: [], error: short(e) })) : { arrivals: [], error: 'no_key' },
   ])
   res.setHeader('Cache-Control', 's-maxage=120, stale-while-revalidate=120')
   return res.status(200).json({ ok: true, now, next: su.next, arrivals: ex.arrivals, errors: { suburb: su.error, express: ex.error } })

@@ -63,7 +63,7 @@ function Terminal({ onRide }) {
         {data && kind === 'depart' && depart.length === 0 && <p className="sub">{error ? '시외 출발 정보 준비 중' : '오늘 남은 버스 없음'}</p>}
         {kind === 'arrive' && arrive.map((t, i) => (
           <div key={`${t.from}-${t.arrive}-${i}`} className="info-row">
-            <div className="info-time"><b>{t.arrive.slice(11)}</b><small>{t.remain}</small></div>
+            <div className="info-time"><b>{t.arrive.slice(11)}</b><small>{left(minutesUntil(t.arrive.slice(11)))}</small></div>
             <div className="info-main"><b>{t.from}</b><small>{t.dep} 출발 · {t.grade}{t.loc ? ` · ${t.loc}` : ''}</small></div>
           </div>
         ))}
@@ -75,7 +75,7 @@ function Terminal({ onRide }) {
         ))}
         {(kind === 'arrive' ? arrive : depart).length > 0 && <button className="btn ghost" style={{ marginTop: 12 }} onClick={onRide}>같이 탈 사람 찾기</button>}
       </div>
-      <Source at={data?.at} note="2분마다 확인">국토교통부 TAGO 고속버스도착정보, 시외버스정보. 주요 노선 위주예요.</Source>
+      <Source at={data?.at} note="2분마다 확인">국토교통부 TAGO 고속버스도착정보, 시외버스정보. 주요 노선 위주이고, 도착 시각은 예측값이에요.</Source>
     </>
   )
 }
