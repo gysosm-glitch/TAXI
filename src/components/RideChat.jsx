@@ -23,12 +23,12 @@ function ChatView({ ride, me, messages, onSend, failed }) {
     setSending(true); setErr(null)
     const { error } = await onSend(clean)
     setSending(false)
-    if (error) return setErr('보내지 못했어요. 잠시 후 다시 시도해 주세요.')
+    if (error) return setErr('전송 실패')
     setText('')
   }
 
-  if (ride.ride_members.length < 2) return <p className="chat-empty">참여하면 대화할 수 있어요.</p>
-  if (failed) return <p className="chat-empty">채팅을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>
+  if (ride.ride_members.length < 2) return <p className="chat-empty">참여하면 대화 가능</p>
+  if (failed) return <p className="chat-empty">채팅 연결 실패</p>
 
   return (
     <div className="chat">

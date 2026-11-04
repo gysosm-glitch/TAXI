@@ -17,9 +17,9 @@ const ROUTES = [
   { id: 'osong-term', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, meets: ['택시 승강장 앞', '서편 출구', '동편 출구'], maxes: [3, 2, 4], every: 20, train: true },
   { id: 'osong-term-rt', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, every: 45, phase: 13, maxes: [2], roundtrip: true, outFrom: '가경동' },
   { id: 'ochang-term', from: 'ochang_lake', to: 'bus_terminal', toName: TERMINAL, meets: ['호수공원 정문', '공원 주차장 입구'], maxes: [3, 4, 2], every: 20, phase: 7, bus: true },
-  { id: 'term-cbnu', from: 'bus_terminal', to: 'cbnu', toName: '충북대학교 중문', meets: ['택시 승강장', '터미널 정문'], maxes: [4, 3, 2], every: 15, phase: 4 },
+  { id: 'term-cbnu', from: 'bus_terminal', to: 'cbnu', toName: '충북대학교 중문', meets: ['택시 승강장', '터미널 정문'], maxes: [4, 3, 2], every: 15, phase: 4, arrive: true },
 ]
-const CONDS = ['캐리어 있어도 괜찮아요', '조용히 가요', '5분까지 기다려요', '바로 출발해요', '짐은 적게요', '중간 하차 없어요']
+const CONDS = ['캐리어 OK', '조용히', '5분 대기', '바로 출발', '짐 적게', '중간 하차 없음']
 
 function room(r, departMs, gender, note) {
   const key = `${r.id}-${departMs}`
@@ -65,7 +65,21 @@ export function demoRooms(now, trains, gender = 'F', buses = null) {
         const dep = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hh, mm).getTime()
         const meetAt = dep - 45 * MIN
         if (meetAt < now + 3 * MIN || meetAt - lastAt < 15 * MIN) continue
-        out.push(room(r, meetAt, gender, `${t.to}행 ${t.time} ${t.kind}버스 타러`))
+        out.push(room(r, meetAt, gender, `${t.to}행 ${t.time} 시외버스`))
+        lastAt = meetAt
+        if (++n === 3) break
+      }
+      if (n) continue
+    }
+    // 터미널 출발: 실제 고속버스 도착 10분 뒤
+    const arrivals = r.arrive && buses?.arrivals?.length ? buses.arrivals : null
+    if (arrivals) {
+      let lastAt = 0, n = 0
+      for (const t of arrivals) {
+        const at = new Date(`${t.arrive.replace(' ', 'T')}:00+09:00`).getTime()
+        const meetAt = at + 10 * MIN
+        if (!at || meetAt < now + 3 * MIN || meetAt - lastAt < 10 * MIN) continue
+        out.push(room(r, meetAt, gender, `${t.from} 고속 ${t.arrive.slice(11)} 도착`))
         lastAt = meetAt
         if (++n === 3) break
       }

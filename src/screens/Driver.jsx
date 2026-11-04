@@ -56,17 +56,17 @@ export default function Driver({ account }) {
   return (
     <>
       <h1 className="page-title">기사님 화면 <span className="tag gray">시범</span></h1>
-      <p className="page-sub">지금은 방장이 호출 앱으로 불러요. 제휴 후 모습을 미리 체험해요.</p>
+      <p className="page-sub">제휴 후 모습 체험 · 지금은 방장이 호출</p>
 
-      <p className="step-label"><i>1</i>방금 손님을 내려준 곳</p>
+      <p className="step-label"><i>1</i>하차 지점</p>
       <div className="chips">
         {PLACES.map((s) => <button key={s.id} className={`chip ${s.id === sel ? 'on' : ''}`} onClick={() => { setSel(s.id); setResult(null) }}>{s.name}</button>)}
       </div>
 
-      <p className="step-label"><i>2</i>돌아가는 길에 태울 손님</p>
+      <p className="step-label"><i>2</i>귀로 손님</p>
       <div className="hero driver-hero">
-        <p className="label">지금 {place.name}에서 시내 방향</p>
-        <h2>귀로 손님 {people}명 대기 중</h2>
+        <p className="label">{place.name} → 시내</p>
+        <h2>귀로 손님 {people}명</h2>
         <p className="sub">{nextTrain ? `다음 열차 ${nextTrain.time} · ` : ''}평소 이 시간 승차 약 {perHour}명</p>
       </div>
 
@@ -83,15 +83,15 @@ export default function Driver({ account }) {
           ))}
         </div>
       )}
-      {waiting.length === 0 && <p className="sub" style={{ margin: '0 0 12px' }}>지금 이곳에 시내로 가는 모집이 없어요.</p>}
+      {waiting.length === 0 && <p className="sub" style={{ margin: '0 0 12px' }}>모집 없음</p>}
 
       {result && (
         <>
-          <p className="step-label"><i>3</i>태우면 이렇게 달라져요</p>
+          <p className="step-label"><i>3</i>수입 비교</p>
           <div className="card">
             <div className="compare">
-              <div className="opt bad-opt"><span>빈 차로 돌아가면</span><b>−{won(result.fuel)}</b><small>연료비 가정</small></div>
-              <div className="opt good-opt"><span>이 손님을 태우면</span><b>+{won(result.fare)}</b><small>{result.dest}행 {result.people}명</small></div>
+              <div className="opt bad-opt"><span>빈 차</span><b>−{won(result.fuel)}</b><small>연료비 가정</small></div>
+              <div className="opt good-opt"><span>귀로 손님</span><b>+{won(result.fare)}</b><small>{result.dest}행 {result.people}명</small></div>
             </div>
             <p className="sub" style={{ marginTop: 10 }}>할증 면제 정책안 적용 시 기사 몫 약 {won(result.policy)}</p>
           </div>
@@ -106,14 +106,14 @@ export default function Driver({ account }) {
       )}
 
       <div className="card">
-        <button className="row-btn" onClick={() => setMore(!more)}><span>손님이 없거나 안 오면?</span><span className="r">{more ? '▴' : '▾'}</span></button>
+        <button className="row-btn" onClick={() => setMore(!more)}><span>손님이 없을 때</span><span className="r">{more ? '▴' : '▾'}</span></button>
         {more && <div style={{ marginTop: 12 }}><DriverSim fuelPerKm={FUEL_WON_PER_KM} feePerTrip={fee} /></div>}
       </div>
 
       <div className="card">
-        <div className="row-item"><span>쉐어택 참여 기사 하루 수입<span className="meta">시뮬레이션 · 앱 이용 30%</span></span><span className="r">+{won(joined30.appDriverWonPerDay)}</span></div>
+        <div className="row-item"><span>참여 기사 하루 수입<span className="meta">시뮬레이션</span></span><span className="r">+{won(joined30.appDriverWonPerDay)}</span></div>
       </div>
-      <p className="sub">금액은 앱 계산값, 연료비는 km당 {FUEL_WON_PER_KM}원 가정이에요.</p>
+      <p className="sub">앱 계산값 · 연료비 km당 {FUEL_WON_PER_KM}원 가정</p>
     </>
   )
 }

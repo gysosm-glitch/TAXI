@@ -28,17 +28,17 @@ export default function Welcome({ onBrowse, onDemo }) {
     <div className="welcome">
       <div className="welcome-top">
         <Logo size={40} />
-        <h1>같은 방향이면,<br />택시비를 나눠요</h1>
-        <p>오송·오창 35% 할증 부담을 줄이고, 빈 차로 돌아가는 택시도 줄여요</p>
+        <h1>같은 방향<br />택시비 절반</h1>
+        <div className="welcome-chips"><span className="hue-blue">오송역</span><span className="hue-orange">오창</span><span className="hue-violet">터미널</span><span className="hue-pink">충북대</span></div>
       </div>
       <div className="welcome-body">
-        {busy ? <p className="sub welcome-busy">들어가는 중…</p> : (
+        {busy ? <p className="sub welcome-busy">들어가는 중</p> : (
           <>
-            {supabase && <button className="btn" onClick={() => enterDemo('A')}>바로 시작하기</button>}
+            {supabase && <button className="btn" onClick={() => enterDemo('A')}>시작</button>}
             {err && <p className="form-msg bad" style={{ marginTop: 10 }}>{err}</p>}
-            <button className="more" style={{ width: '100%', marginTop: 8 }} onClick={() => onBrowse('ride')}>로그인 없이 둘러보기</button>
-            {supabase && <button className="more" style={{ width: '100%' }} onClick={() => enterDemo('B')}>두 번째 체험 계정으로 시작</button>}
-            <button className="more" style={{ width: '100%' }} onClick={() => setEmailOpen(!emailOpen)}>이메일로 로그인</button>
+            <button className="more" style={{ width: '100%', marginTop: 8 }} onClick={() => onBrowse('ride')}>둘러보기</button>
+            {supabase && <button className="more" style={{ width: '100%' }} onClick={() => enterDemo('B')}>체험 계정 B</button>}
+            <button className="more" style={{ width: '100%' }} onClick={() => setEmailOpen(!emailOpen)}>이메일 로그인</button>
             {emailOpen && <div style={{ marginTop: 10 }}><Login /></div>}
           </>
         )}

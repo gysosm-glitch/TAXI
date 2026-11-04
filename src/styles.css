@@ -404,3 +404,30 @@ details.source summary { cursor: pointer; color: var(--muted); font-variant-nume
 details.source p { margin: 6px 0 0; }
 .guide-more { margin-bottom: 12px; }
 .guide-more summary { cursor: pointer; padding: 12px 4px; font-size: 14px; font-weight: 600; color: var(--ink-2); }
+
+/* 색: 경로·교통수단마다 다르게 */
+.hue-green { --hue: #1d9e75; --hue-soft: #e1f5ee; }
+.hue-blue { --hue: #2563eb; --hue-soft: #e8f0fe; }
+.hue-orange { --hue: #e2711d; --hue-soft: #fff0e2; }
+.hue-violet { --hue: #7c3aed; --hue-soft: #f1eafe; }
+.hue-pink { --hue: #db2777; --hue-soft: #fde8f1; }
+.route-card { padding-top: 0; overflow: hidden; }
+.route-card .route-head { margin: 0 -16px; width: calc(100% + 32px); padding: 12px 16px; background: var(--hue-soft); border-bottom: 0; }
+.route-card .route-head b, .route-card .route-head small { color: var(--hue); }
+.route-card .room-time b { color: var(--hue); }
+.route-card .pill-btn.small { background: var(--hue); }
+.route-card .cond-chips span { border: 0; background: var(--hue-soft); color: var(--hue); }
+.route-card .room-count { color: var(--ink); }
+.transit-seg button.on { border-color: var(--hue); background: var(--hue-soft); color: var(--hue); }
+[class*="hue-"] .ibadge { background: var(--hue-soft); color: var(--hue); }
+[class*="hue-"] .chip.on { background: var(--hue); }
+[class*="hue-"] .info-time small, [class*="hue-"] .stop-row span:last-child { color: var(--hue); }
+[class*="hue-"] .btn.ghost { background: var(--hue-soft); color: var(--hue); }
+.welcome-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.welcome-chips span { padding: 6px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; background: var(--hue-soft); color: var(--hue); }
+.step-label:nth-of-type(2) i { background: #e2711d; }
+.step-label i { background: var(--teal); }
+.driver-hero { background: #e2711d; }
+.driver-hero .label, .driver-hero .sub { color: #fff3e8; }
+.banner { font-weight: 600; }
+.sb-text b { font-size: 16px; }
