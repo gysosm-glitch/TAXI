@@ -63,7 +63,7 @@ export default function App() {
       )}
       <main className={`content ${tab === 'ride' ? 'flush' : ''}`}>
         {tab === 'ride' && <Ride account={account} route={route} setRoute={setRoute} onLogin={() => setBrowsing(false)} />}
-        {tab === 'transit' && <Transit onRide={(to) => { setRoute(to === 'terminal' ? { from: null, to: spotPlace('bus_terminal') } : { from: spotPlace('osong_stn'), to: null }); setTab('ride') }} />}
+        {tab === 'transit' && <Transit onRide={() => { setRoute({ from: spotPlace('osong_stn'), to: null }); setTab('ride') }} />}
         {tab === 'driver' && <Driver account={account} onLogin={() => setBrowsing(false)} />}
         {tab === 'me' && <Me account={account} onLogin={() => setBrowsing(false)} />}
       </main>

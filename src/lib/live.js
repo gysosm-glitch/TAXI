@@ -83,19 +83,6 @@ export function useTrains(enabled) {
   return data
 }
 
-// 청주 터미널 고속·시외버스 출발 (5분마다 갱신)
-export function useTerminal() {
-  const [data, setData] = useState(null)
-  useEffect(() => {
-    let alive = true
-    const load = () => getJSON('/api/terminal', 15000).then((d) => { if (alive) setData({ ...d, at: new Date() }) })
-    load()
-    const t = setInterval(load, 300000)
-    return () => { alive = false; clearInterval(t) }
-  }, [])
-  return data
-}
-
 // "17:42" → 지금부터 몇 분 뒤
 export function minutesUntil(hhmm, now = new Date()) {
   const [h, m] = hhmm.split(':').map(Number)

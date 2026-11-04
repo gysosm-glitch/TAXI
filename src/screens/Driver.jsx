@@ -4,7 +4,7 @@ import DriverSim from '../components/DriverSim.jsx'
 import { spots, zoneById, won, spotZoneId, placeFromId, placeAt, quoteBetween, isReturnRoute } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { listAllOpen, useRidesLive } from '../lib/rides.js'
-import { useTrains, useTerminal, minutesUntil } from '../lib/live.js'
+import { useTrains, minutesUntil } from '../lib/live.js'
 import { demoRooms, useNow } from '../lib/demoRides.js'
 import { HOUR_PROFILE } from '../lib/hours.js'
 import analysis from '../../data/web/12_simulation/return_matching.json'
@@ -26,7 +26,6 @@ export default function Driver({ account }) {
   const [more, setMore] = useState(false)
   const now = useNow()
   const trains = useTrains(true)
-  const buses = useTerminal()
   const live = !!(supabase && account?.session && account?.profile)
   useRidesLive(async () => { if (live) setReal(await listAllOpen()) }, [live])
 
@@ -36,9 +35,9 @@ export default function Driver({ account }) {
   const quoteOf = (r) => quoteBetween(start, r.dest_place ?? zonePlace(r.dest_zone), 1)
 
   // 지금 이곳에서 시내로 가려고 모인 손님 (실제 모집 + 시연 모집)
-  const waiting = useMemo(() => [...real, ...demoRooms(now, trains, account?.profile?.gender, buses)]
+  const waiting = useMemo(() => [...real, ...demoRooms(now, trains, account?.profile?.gender)]
     .filter((r) => { const o = placeFromId(r.spot_id); return o && spotZoneId(o) === zone && isReturnRoute(zone, r.dest_zone) && !taken[r.id] })
-    .sort((a, b) => a.depart_at.localeCompare(b.depart_at)), [real, now, trains, buses, zone, taken, account?.profile?.gender])
+    .sort((a, b) => a.depart_at.localeCompare(b.depart_at)), [real, now, trains, zone, taken, account?.profile?.gender])
   const people = waiting.reduce((a, r) => a + r.ride_members.length, 0)
 
   const take = (r) => {

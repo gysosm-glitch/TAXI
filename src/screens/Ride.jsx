@@ -10,7 +10,7 @@ import { sendMessage } from '../lib/chat.js'
 import { askNotify } from '../lib/alerts.js'
 import { useMyPosition } from '../lib/geo.js'
 import { searchPlaces } from '../lib/search.js'
-import { useLastBus, lastBusState, useTrains, useTerminal, minutesUntil } from '../lib/live.js'
+import { useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
 import { demoRooms, useDemoJoined, useNow } from '../lib/demoRides.js'
 import { listAllOpen, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError, saveTrip } from '../lib/rides.js'
 
@@ -279,7 +279,6 @@ export default function Ride({ account, route, setRoute, onLogin }) {
   const busSpot = from ? { id: `${from.lat.toFixed(3)},${from.lon.toFixed(3)}`, lat: from.lat, lon: from.lon } : null
   const last = lastBusState(useLastBus(busSpot))
   const trains = useTrains(true)
-  const buses = useTerminal()
   const nearOsong = !!from && distM(from, OSONG) < 3000
   const ktx = nearOsong && trains?.ok ? trains.next.filter((t) => minutesUntil(t.time) >= 0 && minutesUntil(t.time) <= 90).slice(0, 3) : []
   const now = useNow()
@@ -307,7 +306,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
   }, [canUse, me])
   const similar = (r) => !!dest && (r.dest_zone === dest.zoneId || distM(zonePlace(r.dest_zone), dest) <= SIMILAR_M)
   const joinedIds = new Set([...mine, ...demo.rides].map((r) => r.id))
-  const rooms = [...open, ...demoRooms(now, trains, profile?.gender, buses)]
+  const rooms = [...open, ...demoRooms(now, trains, profile?.gender)]
     .filter((r) => !joinedIds.has(r.id))
     .sort((a, b) => a.depart_at.localeCompare(b.depart_at))
   const toMine = () => setTimeout(() => document.querySelector('.card.mine')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150)

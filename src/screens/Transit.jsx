@@ -2,14 +2,14 @@
 import { useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { spots } from '../data.js'
-import { useLive, useLastBus, lastBusState, useTrains, useTerminal, minutesUntil } from '../lib/live.js'
+import { useLive, useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
 import { useNow } from '../lib/demoRides.js'
 import { useMyPosition } from '../lib/geo.js'
 
 const clock = (d) => d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 const DIRS = [['all', '전체', []], ['seoul', '서울', ['서울', '용산']], ['busan', '부산·대구', ['부산', '동대구']], ['honam', '호남', ['광주송정', '목포', '익산']]]
 const BUS_PLACES = ['osong_stn', 'bus_terminal', 'cbnu', 'ochang_lake', 'downtown'].map((id) => spots.find((s) => s.id === id))
-const HUE = { train: 'blue', terminal: 'violet', bus: 'green' }
+const HUE = { train: 'blue', bus: 'green' }
 const left = (m) => (m <= 0 ? '곧 도착' : m < 60 ? `${m}분 후` : `${Math.floor(m / 60)}시간 ${m % 60}분 후`)
 
 function Source({ at, note, children }) {
@@ -43,39 +43,6 @@ function Trains({ onRide }) {
         {list.length > 0 && <button className="btn ghost" style={{ marginTop: 12 }} onClick={onRide}>같이 탈 사람 찾기</button>}
       </div>
       <Source at={data?.at} note="5분마다 확인">국토교통부 TAGO 열차정보의 예정 시각이에요. 지연은 반영되지 않아요.</Source>
-    </>
-  )
-}
-
-function Terminal({ onRide }) {
-  const data = useTerminal()
-  const [kind, setKind] = useState('arrive')
-  const depart = data?.next?.filter((t) => minutesUntil(t.time) >= 0).slice(0, 10) ?? []
-  const arrive = data?.arrivals?.slice(0, 10) ?? []
-  const error = kind === 'arrive' ? data?.errors?.express : data?.errors?.suburb
-  return (
-    <>
-      <div className="card">
-        <p className="card-title"><span className="with-badge"><span className="ibadge"><Icon name="bus" size={16} /></span>청주 터미널</span></p>
-        <div className="chips">{[['arrive', '고속 도착'], ['depart', '시외 출발']].map(([k, l]) => <button key={k} className={`chip ${kind === k ? 'on' : ''}`} onClick={() => setKind(k)}>{l}</button>)}</div>
-        {!data && <p className="sub">불러오는 중</p>}
-        {data && kind === 'arrive' && arrive.length === 0 && <p className="sub">{error ? '고속 도착 정보 준비 중' : '도착 예정 없음'}</p>}
-        {data && kind === 'depart' && depart.length === 0 && <p className="sub">{error ? '시외 출발 정보 준비 중' : '오늘 남은 버스 없음'}</p>}
-        {kind === 'arrive' && arrive.map((t, i) => (
-          <div key={`${t.from}-${t.arrive}-${i}`} className="info-row">
-            <div className="info-time"><b>{t.arrive.slice(11)}</b><small>{left(minutesUntil(t.arrive.slice(11)))}</small></div>
-            <div className="info-main"><b>{t.from}</b><small>{t.dep} 출발 · {t.grade}{t.loc ? ` · ${t.loc}` : ''}</small></div>
-          </div>
-        ))}
-        {kind === 'depart' && depart.map((t, i) => (
-          <div key={`${t.to}-${t.time}-${i}`} className="info-row">
-            <div className="info-time"><b>{t.time}</b><small>{left(minutesUntil(t.time))}</small></div>
-            <div className="info-main"><b>{t.to}</b><small>{t.grade}{t.charge ? ` · ${t.charge.toLocaleString()}원` : ''}</small></div>
-          </div>
-        ))}
-        {(kind === 'arrive' ? arrive : depart).length > 0 && <button className="btn ghost" style={{ marginTop: 12 }} onClick={onRide}>같이 탈 사람 찾기</button>}
-      </div>
-      <Source at={data?.at} note="2분마다 확인">국토교통부 TAGO 고속버스도착정보, 시외버스정보. 주요 노선 위주이고, 도착 시각은 예측값이에요.</Source>
     </>
   )
 }
@@ -121,10 +88,9 @@ export default function Transit({ onRide }) {
       </div>
       <div className={`seg transit-seg hue-${HUE[mode]}`} style={{ marginBottom: 12 }}>
         <button className={mode === 'train' ? 'on' : ''} onClick={() => setMode('train')}>열차</button>
-        <button className={mode === 'terminal' ? 'on' : ''} onClick={() => setMode('terminal')}>터미널</button>
         <button className={mode === 'bus' ? 'on' : ''} onClick={() => setMode('bus')}>시내버스</button>
       </div>
-      <div className={`hue-${HUE[mode]}`}>{mode === 'train' ? <Trains onRide={() => onRide('osong')} /> : mode === 'terminal' ? <Terminal onRide={() => onRide('terminal')} /> : <Buses />}</div>
+      <div className={`hue-${HUE[mode]}`}>{mode === 'train' ? <Trains onRide={onRide} /> : <Buses />}</div>
     </>
   )
 }
