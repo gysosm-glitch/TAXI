@@ -8,6 +8,7 @@ import topDest from '../data/web/03_demand/zone_top_dest.json'
 import tims from '../data/web/10_tims/tims_app.json'
 import spots from '../data/web/13_spots/spots.json'
 import { quote, splitFare, haversineM } from './lib/fare.js'
+import { tsZone } from './lib/ts.js'
 
 export { tims, spots }
 export const rules = fareRules.regions.cheongju
@@ -135,12 +136,18 @@ export const isReturnRoute = (originZoneId, destZoneId) =>
   !!(zoneById[originZoneId]?.is_eupmyeon && zoneById[destZoneId] && !zoneById[destZoneId].is_eupmyeon)
 
 // 하차 후 N분 안에 같은 읍·면에서 시내행 귀로 손님(앱 이용)을 만날 확률 (추정)
-// 시간당 승차(TIMS 2025 × 시간대 비중) × 시내행 비율(KTDB 2024) × 앱 이용률(가정 30%), 포아송 도착 가정
+// 그 시간대 시내행 승차(한국교통안전공단 2026.4~9 실측, 하루 평균) × 앱 이용률(가정 30%), 포아송 도착 가정
+// 실측 자료에 없는 곳은 예전 방식(TIMS 2025 × 시간대 비중 가정 × KTDB 2024 시내행 비율)으로 계산
 const HOUR_SUM = HOUR_PROFILE.reduce((a, b) => a + b, 0)
 export function returnChance(zoneId, minutes = 30, appShare = 0.3, hour = new Date().getHours()) {
-  const t = tims.zones.find((z) => z.zone_id === zoneId)
-  const share = cityShare[zoneId]
-  if (!t || share == null) return null
-  const perHour = t.rides_per_day * HOUR_PROFILE[hour] / HOUR_SUM * share * appShare
+  const z = tsZone(zoneId)
+  let perHour
+  if (z) perHour = z.to_city_by_hour[hour] * appShare
+  else {
+    const t = tims.zones.find((x) => x.zone_id === zoneId)
+    const share = cityShare[zoneId]
+    if (!t || share == null) return null
+    perHour = t.rides_per_day * HOUR_PROFILE[hour] / HOUR_SUM * share * appShare
+  }
   return { p: 1 - Math.exp(-perHour * minutes / 60), perHour }
 }

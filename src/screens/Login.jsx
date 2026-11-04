@@ -9,7 +9,7 @@ export default function Login() {
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
 
-  if (!supabase) return <div className="card"><p className="sub">서버 연결 설정(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)이 필요해요.</p></div>
+  if (!supabase) return <div className="card"><p className="caption">서버 연결 설정(VITE_SUPABASE_URL, VITE_SUPABASE_ANON_KEY)이 필요해요.</p></div>
 
   const submit = async (e) => {
     e.preventDefault()
@@ -29,10 +29,10 @@ export default function Login() {
 
   return (
     <div className="card">
-      <p className="card-title">{mode === 'login' ? '로그인' : '회원가입'}</p>
+      <p className="card-title">{mode === 'login' ? '이메일로 로그인' : '이메일로 회원가입'}</p>
       <form onSubmit={submit}>
         <label className="field"><span>이메일</span>
-          <input type="email" autoComplete="email" placeholder="name@chungbuk.ac.kr" value={email} onChange={(e) => { setEmail(e.target.value); setMsg(null) }} />
+          <input type="email" autoComplete="email" inputMode="email" placeholder="name@chungbuk.ac.kr" value={email} onChange={(e) => { setEmail(e.target.value); setMsg(null) }} />
         </label>
         <label className="field"><span>비밀번호</span>
           <input type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} placeholder="6자 이상" value={pw} onChange={(e) => { setPw(e.target.value); setMsg(null) }} />
@@ -40,7 +40,7 @@ export default function Login() {
         {msg && <p className={`form-msg ${msg.bad ? 'bad' : ''}`}>{msg.text}</p>}
         <button className="btn" type="submit" disabled={busy}>{busy ? '잠시만요…' : mode === 'login' ? '로그인' : '가입하기'}</button>
       </form>
-      <button className="more" style={{ width: '100%' }} onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg(null) }}>
+      <button className="text-btn small" style={{ width: '100%', marginTop: 6 }} onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg(null) }}>
         {mode === 'login' ? '처음이세요? 이메일로 회원가입' : '이미 계정이 있어요. 로그인'}
       </button>
     </div>

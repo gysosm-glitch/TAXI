@@ -5,7 +5,7 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()))
 // 서버 푸시(추후 Supabase Edge Function + VAPID 연동) 수신
 self.addEventListener('push', (e) => {
   const data = e.data ? e.data.json() : { title: '쉐어택', body: '새 알림이 있어요' }
-  e.waitUntil(self.registration.showNotification(data.title, { body: data.body, icon: '/icon.svg', badge: '/icon.svg', vibrate: [120, 60, 120] }))
+  e.waitUntil(self.registration.showNotification(data.title, { body: data.body, icon: '/icon-192.png', badge: '/icon-192.png', vibrate: [120, 60, 120] }))
 })
 
 self.addEventListener('notificationclick', (e) => {

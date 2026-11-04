@@ -11,7 +11,7 @@ async function vworld(q) {
 }
 
 async function photon(q, c) {
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${c.lat}&lon=${c.lon}&limit=12`
+  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&lat=${c.lat}&lon=${c.lon}&limit=12&lang=default`
   try {
     const json = await fetch(url, { signal: AbortSignal.timeout?.(5000) }).then((r) => r.json())
     return (json.features ?? []).map((f) => {

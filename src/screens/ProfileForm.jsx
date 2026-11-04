@@ -46,28 +46,28 @@ export default function ProfileForm({ session, profile, onSaved, onCancel }) {
     <form onSubmit={submit}>
       <div className="card">
         <p className="card-title">{profile ? '정보 수정' : '거의 다 됐어요'} <small>{session.user.email}</small></p>
-        <label className="field"><span>닉네임 <b className="req">*</b></span>
+        <label className="field"><span>닉네임 <b className="req">필수</b></span>
           <input value={f.nickname} maxLength={12} placeholder="동승자에게 보이는 이름" onChange={(e) => set('nickname', e.target.value)} />
           {errs.nickname && <em className="err">{errs.nickname}</em>}
         </label>
-        <div className="field"><span>성별 <b className="req">*</b></span>
-          <div className="seg">
-            {[['F', '여성'], ['M', '남성']].map(([v, l]) => <button type="button" key={v} className={f.gender === v ? 'on' : ''} onClick={() => set('gender', v)}>{l}</button>)}
+        <div className="field"><span>성별 <b className="req">필수</b></span>
+          <div className="opts">
+            {[['F', '여성'], ['M', '남성']].map(([v, l]) => <button type="button" key={v} className={`opt ${f.gender === v ? 'on' : ''}`} onClick={() => set('gender', v)}>{l}</button>)}
           </div>
           {errs.gender && <em className="err">{errs.gender}</em>}
         </div>
-        <label className="field"><span>휴대폰 번호 <b className="req">*</b></span>
+        <label className="field"><span>휴대폰 번호 <b className="req">필수</b></span>
           <input type="tel" inputMode="numeric" placeholder="010-1234-5678" value={f.phone} onChange={(e) => set('phone', e.target.value)} />
           <small className="hint">동승자에게는 보이지 않아요. 정식 서비스에서는 문자 인증과 안심번호로 연결돼요.</small>
           {errs.phone && <em className="err">{errs.phone}</em>}
         </label>
         <div className="field"><span>연령대 <small className="hint">선택</small></span>
-          <div className="seg wrap">
-            {AGES.map(([v, l]) => <button type="button" key={v} className={f.age_group === v ? 'on' : ''} onClick={() => set('age_group', f.age_group === v ? '' : v)}>{l}</button>)}
+          <div className="opts">
+            {AGES.map(([v, l]) => <button type="button" key={v} className={`opt ${f.age_group === v ? 'on' : ''}`} onClick={() => set('age_group', f.age_group === v ? '' : v)}>{l}</button>)}
           </div>
         </div>
-        <label className="field"><span>학교·직장 이메일 <small className="hint">선택 · 인증 배지</small></span>
-          <input type="email" placeholder="name@chungbuk.ac.kr" value={f.org_email} onChange={(e) => set('org_email', e.target.value)} />
+        <label className="field" style={{ marginBottom: 0 }}><span>학교·직장 이메일 <small className="hint">선택 · 인증 배지</small></span>
+          <input type="email" inputMode="email" placeholder="name@chungbuk.ac.kr" value={f.org_email} onChange={(e) => set('org_email', e.target.value)} />
           {errs.org_email && <em className="err">{errs.org_email}</em>}
         </label>
       </div>
@@ -75,15 +75,15 @@ export default function ProfileForm({ session, profile, onSaved, onCancel }) {
       <div className="card">
         <label className="check all">
           <input type="checkbox" checked={allOn} onChange={(e) => { const v = e.target.checked; setF({ ...f, ...Object.fromEntries(CONSENTS.map((c) => [c.id, v])) }); setErrs({ ...errs, consent: null }) }} />
-          <b>전체 동의</b>
+          <span>전체 동의</span>
         </label>
         {CONSENTS.map((c) => (
-          <div key={c.id}>
+          <div key={c.id} className="check-wrap">
             <div className="check">
-              <label><input type="checkbox" checked={f[c.id]} onChange={(e) => set(c.id, e.target.checked)} /> {c.required ? <b className="req">[필수]</b> : <span className="hint">[선택]</span>} {c.label}</label>
-              <button type="button" className="more" style={{ padding: 0 }} onClick={() => setOpen(open === c.id ? null : c.id)}>보기</button>
+              <label><input type="checkbox" checked={f[c.id]} onChange={(e) => set(c.id, e.target.checked)} /><span>{c.required ? <span className="tag blue">필수</span> : <span className="tag">선택</span>} {c.label}</span></label>
+              <button type="button" className="text-btn small" onClick={() => setOpen(open === c.id ? null : c.id)}>{open === c.id ? '닫기' : '보기'}</button>
             </div>
-            {open === c.id && <p className="detail">{c.detail}</p>}
+            {open === c.id && <p className="form-msg" style={{ marginLeft: 36 }}>{c.detail}</p>}
           </div>
         ))}
         {errs.consent && <em className="err">{errs.consent}</em>}
@@ -91,7 +91,7 @@ export default function ProfileForm({ session, profile, onSaved, onCancel }) {
 
       {errs.form && <p className="form-msg bad">{errs.form}</p>}
       <button className="btn" type="submit" disabled={busy}>{busy ? '저장 중…' : profile ? '저장' : '가입 완료'}</button>
-      {onCancel && <button type="button" className="btn ghost" style={{ marginTop: 8 }} onClick={onCancel}>취소</button>}
+      {onCancel && <button type="button" className="btn gray" style={{ marginTop: 10 }} onClick={onCancel}>취소</button>}
     </form>
   )
 }

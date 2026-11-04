@@ -1,4 +1,4 @@
-// 타기: 지도 + 출발·도착(검색·GPS·지도 누르기) → 요금 비교 → 주변 모집 참여·모집 열기 → 버스·막차·KTX
+// 타기: 출발·도착(검색·GPS) → 요금 비교 → 할증 없이 가기 → 주변 모집 참여·모집 열기 → 버스·막차·KTX
 import { useEffect, useRef, useState } from 'react'
 import Logo from '../components/Logo.jsx'
 import Icon from '../components/Icon.jsx'
@@ -20,6 +20,7 @@ const NEAR_M = 1500   // 이 거리 안의 모집을 '내 주변 모집'으로
 const OSONG = spots.find((s) => s.id === 'osong_stn')
 const fromSpot = (s) => placeAt(s.lat, s.lon, s.name)
 const zonePlace = (z) => placeAt(zoneById[z].centroid_lat, zoneById[z].centroid_lon, zoneById[z].name) ?? { lat: zoneById[z].centroid_lat, lon: zoneById[z].centroid_lon, zoneId: z, name: zoneById[z].name }
+const [wonNum, wonUnit] = [(n) => Math.round(n).toLocaleString('ko-KR'), '원']
 
 // 탑승 사실을 지인에게 알리기 (공유 시트, 안 되면 문자)
 function shareTrip(r, me) {
@@ -60,33 +61,63 @@ function PlaceSheet({ title, near, onPick, onHere, onClose, gpsState }) {
     const t = setTimeout(async () => setRes(await searchPlaces(q.trim(), near) ?? 'error'), 350)
     return () => clearTimeout(t)
   }, [q])
+  const recent = loadRecent()
   return (
     <div className="modal" onClick={onClose}>
-      <div className="modal-sheet" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-sheet" role="dialog" aria-label={title} onClick={(e) => e.stopPropagation()}>
         <div className="grabber" />
-        <h2 className="sheet-title">{title}</h2>
-        <input className="search-input" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="주소·장소 검색 (예: 오창읍 양청리, 가로수로 1234, 충북대학교)" />
-        {res === 'error' && <p className="sub" style={{ marginTop: 8 }}>검색이 잠시 안 돼요. 지도에서 골라 주세요.</p>}
-        {Array.isArray(res) && res.length === 0 && <p className="sub" style={{ marginTop: 8 }}>청주 안에서 찾지 못했어요.</p>}
-        {Array.isArray(res) && res.map((p, i) => (
-          <button key={i} className="pick-row" onClick={() => onPick(p)}>
-            <Icon name="pin" size={18} /><span><b>{p.name}</b><small>{zoneById[p.zoneId].name}{p.sub ? ` · ${p.sub}` : ''}</small></span>
-            <i className="save-as" onClick={(e) => { e.stopPropagation(); keep('home', p) }}>집</i><i className="save-as" onClick={(e) => { e.stopPropagation(); keep('work', p) }}>회사</i>
-          </button>
-        ))}
+        <div className="sheet-head">
+          <h2>{title}</h2>
+          <button className="icon-btn" onClick={onClose} aria-label="닫기"><Icon name="close" size={18} /></button>
+        </div>
+        <label className="search">
+          <Icon name="search" size={18} />
+          <input autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="주소·장소 검색" enterKeyHint="search" />
+          {q && <button className="text-btn small" style={{ padding: 0, minHeight: 0 }} onClick={() => setQ('')} aria-label="지우기"><Icon name="close" size={16} /></button>}
+        </label>
+        {!q && <p className="fine" style={{ margin: '0 4px 8px' }}>예: 오창읍 양청리, 가로수로 1234, 충북대학교</p>}
+        {res === 'error' && <p className="note"><Icon name="info" size={18} />검색이 잠시 안 돼요. 아래 자주 찾는 곳에서 골라 주세요.</p>}
+        {Array.isArray(res) && res.length === 0 && <p className="note"><Icon name="info" size={18} />청주 안에서 찾지 못했어요.</p>}
+        {Array.isArray(res) && res.length > 0 && (
+          <div className="group">
+            {res.map((p, i) => (
+              <div key={i} className="cell-wrap">
+                <div className="cell with-icon">
+                  <button className="pick-btn" onClick={() => onPick(p)}>
+                    <span className="cell-icon gray"><Icon name="pin" size={18} /></span>
+                    <span className="grow"><b>{p.name}</b><small>{zoneById[p.zoneId].name}{p.sub ? ` · ${p.sub}` : ''}</small></span>
+                  </button>
+                  <button className="save-as" style={{ border: 0 }} onClick={() => keep('home', p)}>집</button>
+                  <button className="save-as" style={{ border: 0 }} onClick={() => keep('work', p)}>회사</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
         {!res && (
           <>
-            <div className="grid2" style={{ marginTop: 12 }}>
-              {onHere && <button className="pick-tile" onClick={onHere}><Icon name="locate" size={20} /><b>현재 위치</b><small>{gpsState === 'finding' ? '찾는 중…' : 'GPS'}</small></button>}
-              {[['home', '🏠 집'], ['work', '🏢 회사']].map(([k, l]) => (
-                <button key={k} className="pick-tile" disabled={!saved[k]} onClick={() => saved[k] && onPick(saved[k])}><b>{l}</b><small>{saved[k] ? saved[k].name : '검색 결과에서 저장'}</small></button>
+            <div className="quick-grid">
+              {onHere && <button className="quick" onClick={onHere}><span className="q-icon"><Icon name="locate" size={18} /></span><b>현재 위치</b><small>{gpsState === 'finding' ? '찾는 중…' : 'GPS'}</small></button>}
+              {[['home', 'home', '집'], ['work', 'work', '회사']].map(([k, ic, l]) => (
+                <button key={k} className={`quick ${saved[k] ? '' : 'off'}`} disabled={!saved[k]} onClick={() => saved[k] && onPick(saved[k])}>
+                  <span className="q-icon"><Icon name={ic} size={18} /></span><b>{l}</b><small>{saved[k] ? saved[k].name : '검색 후 저장'}</small>
+                </button>
               ))}
             </div>
-            {loadRecent().length > 0 && <p className="label" style={{ margin: '14px 0 2px' }}>최근</p>}
-            {loadRecent().map((p, i) => (
-              <button key={i} className="pick-row" onClick={() => onPick(p)}><Icon name="pin" size={18} /><span><b>{p.name}</b><small>{zoneById[p.zoneId]?.name}</small></span></button>
-            ))}
-            <p className="label" style={{ margin: '14px 0 4px' }}>자주 찾는 곳</p>
+            {recent.length > 0 && (
+              <>
+                <p className="group-label">최근</p>
+                <div className="group">
+                  {recent.map((p, i) => (
+                    <button key={i} className="cell with-icon" onClick={() => onPick(p)}>
+                      <span className="cell-icon gray"><Icon name="clock" size={18} /></span>
+                      <span className="grow"><b>{p.name}</b><small>{zoneById[p.zoneId]?.name}</small></span>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+            <p className="group-label">자주 찾는 곳</p>
             <div className="chips wrap">{spots.slice(0, 6).map((s) => <button key={s.id} className="chip" onClick={() => onPick(fromSpot(s))}>{s.name}</button>)}</div>
           </>
         )}
@@ -135,8 +166,6 @@ export default function Ride({ account, onLogin }) {
     const p = placeAt(gps.pos.lat, gps.pos.lon, '현재 위치')
     if (p) setFrom(p)
   }, [gps.pos?.lat])
-
-
 
   // 버스·막차·KTX (출발지 기준)
   const busSpot = { id: `${from.lat.toFixed(3)},${from.lon.toFixed(3)}`, lat: from.lat, lon: from.lon }
@@ -210,35 +239,44 @@ export default function Ride({ account, onLogin }) {
     setMsg(error ? { bad: true, text: rideError(error) } : { text: '평가를 남겼어요. 다음 매칭의 신뢰 점수에 반영돼요.' })
   }
 
-  const banner = last?.ended ? { tone: 'red', title: '버스가 끊긴 시간이에요', body: '같은 방향 손님과 택시를 나눠 타세요.' }
-    : ktx[0] ? { tone: 'blue', title: `KTX ${ktx[0].time} 도착 (${minutesUntil(ktx[0].time)}분 후)`, body: '도착 시각에 맞춰 모집을 열면 같이 탈 사람이 가장 많아요.' }
-    : last?.soon ? { tone: 'amber', title: `막차까지 ${last.left}분`, body: `${last.latest.route}번 ${last.latest.last} · 놓치면 같이 타기로` }
+  const banner = last?.ended ? { icon: 'moon', title: '버스가 끊긴 시간이에요', body: '같은 방향 손님과 택시를 나눠 타세요.' }
+    : ktx[0] ? { icon: 'train', title: `KTX ${ktx[0].time} 도착 · ${minutesUntil(ktx[0].time)}분 후`, body: '도착 시각에 맞춰 모집을 열면 같이 탈 사람이 가장 많아요.' }
+    : last?.soon ? { icon: 'bus', title: `막차까지 ${last.left}분`, body: `${last.latest.route}번 ${last.latest.last} · 놓치면 같이 타기로` }
     : null
 
   return (
     <div className="ride">
-      <div className="ride-top">
-        <div className="ride-brand"><Logo size={26} light /><span>택시 앱과 함께 쓰는 할증 도우미</span></div>
-        <div className="route-box">
-          <button className="route-row" onClick={() => setSheet('from')}><span className="dot-from" /><span className="sb-text"><small>출발</small><b>{from.name}</b></span></button>
-          {dest && <button className="swap-btn" onClick={swap} aria-label="출발과 도착 바꾸기">⇅</button>}
-          <button className="route-row" onClick={() => setSheet('to')}><span className="dot-to" /><span className="sb-text"><small>도착</small><b>{dest ? dest.name : '어디로 가세요?'}</b></span></button>
+      <header className="ride-head">
+        <div className="nav-top">
+          <Logo size={30} />
+          <button className="icon-btn" onClick={useHere} aria-label="내 위치에서 출발"><Icon name="locate" size={20} /></button>
         </div>
-        <div className="top-actions">
-          <button className="here-btn" onClick={useHere}><Icon name="locate" size={16} /> {gps.state === 'finding' ? '위치 찾는 중…' : '내 위치에서 출발'}</button>
-          <a className="here-btn" href={mapUrl(`출발: ${from.name}`, from.lat, from.lon)} target="_blank" rel="noreferrer"><Icon name="pin" size={16} /> 출발지 지도로 보기</a>
-        </div>
-      </div>
+        <h1 className="large-title">어디로 갈까요?</h1>
+        <p className="lead-sub" style={{ marginBottom: 14 }}>택시 앱과 함께 쓰는 할증 도우미</p>
+      </header>
 
-      <div className="sheet">
-        <div className="grabber" />
-        {gps.state === 'denied' && <p className="form-msg bad">위치 권한이 꺼져 있어요. 출발지를 검색하거나 지도를 눌러 주세요.</p>}
-        {msg && <p className={`form-msg ${msg.bad ? 'bad' : ''}`}>{msg.text}</p>}
+      <div className="ride-body">
+        <section className="route-card" aria-label="출발과 도착">
+          <button className="route-row" onClick={() => setSheet('from')}>
+            <span className="r-dot from" /><span className="r-text"><small>출발</small><b>{from.name}</b></span>
+          </button>
+          <button className="route-row" onClick={() => setSheet('to')}>
+            <span className="r-dot to" /><span className="r-text"><small>도착</small><b className={dest ? '' : 'placeholder'}>{dest ? dest.name : '어디로 가세요?'}</b></span>
+          </button>
+          {dest && <button className="swap-btn" onClick={swap} aria-label="출발과 도착 바꾸기"><Icon name="swap" size={18} /></button>}
+          <div className="capsule-row">
+            <button className="capsule" onClick={useHere}><Icon name="locate" size={16} />{gps.state === 'finding' ? '찾는 중…' : '내 위치에서 출발'}</button>
+            <a className="capsule" href={mapUrl(`출발: ${from.name}`, from.lat, from.lon)} target="_blank" rel="noreferrer"><Icon name="map" size={16} />지도로 보기</a>
+          </div>
+        </section>
+
+        {gps.state === 'denied' && <p className="note bad"><Icon name="info" size={18} />위치 권한이 꺼져 있어요. 출발지를 검색해 주세요.</p>}
+        {msg && <p className={`note ${msg.bad ? 'bad' : 'ok'}`} role="status"><Icon name={msg.bad ? 'info' : 'check'} size={18} />{msg.text}</p>}
 
         {rating && (
-          <section className="card mine">
+          <section className="card selected">
             <p className="card-title">같이 탄 분은 어땠나요?</p>
-            {rating.ride.kind === 'roundtrip' && <p className="sub" style={{ marginBottom: 6 }}>'안 왔어요'를 고르면 노쇼 수수료 {won(rating.ride.hold_won ?? 0)}가 그 사람에게 부과돼 기사님 손실을 메워요 (시범).</p>}
+            {rating.ride.kind === 'roundtrip' && <p className="caption" style={{ marginBottom: 6 }}>'안 왔어요'를 고르면 노쇼 수수료 {won(rating.ride.hold_won ?? 0)}가 그 사람에게 부과돼 기사님 손실을 메워요 (시범).</p>}
             {rating.others.map((m) => (
               <div key={m.user_id} className="rate-row">
                 <span>{m.nickname}</span>
@@ -248,8 +286,8 @@ export default function Ride({ account, onLogin }) {
                 <label className="noshow"><input type="checkbox" checked={!!rating.noShow[m.user_id]} onChange={(e) => setRating({ ...rating, noShow: { ...rating.noShow, [m.user_id]: e.target.checked } })} /> 안 왔어요</label>
               </div>
             ))}
-            <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
-              <button className="btn ghost" onClick={() => setRating(null)}>건너뛰기</button>
+            <div className="btn-row">
+              <button className="btn gray" onClick={() => setRating(null)}>건너뛰기</button>
               <button className="btn" onClick={submitRating}>평가 남기기</button>
             </div>
           </section>
@@ -257,153 +295,182 @@ export default function Ride({ account, onLogin }) {
 
         {mine.map((r) => {
           const members = [...r.ride_members].sort((a, b) => a.joined_at.localeCompare(b.joined_at))
+          const o = placeFromId(r.spot_id)
           return (
-            <section key={r.id} className="card mine">
-              <p className="card-title"><span>내 모집</span>
-                <span className={`tag ${r.status === 'open' ? 'amber' : ''}`}>{r.status === 'open' ? `${members.length}/${r.max_people}명 모집 중` : r.status === 'full' ? '모집 완료' : '도착'}</span></p>
-              <p className="trip-line">{r.spot_name} <span>→</span> {r.dest_name}</p>
-              <p className="sub">{hhmm(r.depart_at)} 출발 ({when(r.depart_at)}) · {r.kind === 'roundtrip' ? `할증 없이 약 ${won(price(r, 1).fareDongRate)}` : `1인 약 ${won(price(r, members.length).share)}`}</p>
-              <div className="detail">
-                <b>탑승 전 안내</b>
-                {members.map((m, i) => <div key={m.user_id} className="seat"><span>{m.nickname}{m.user_id === me ? ' (나)' : ''}{m.user_id === r.host_id ? ' · 모집자' : ''}</span><span>{SEATS[i] ?? '뒷좌석'}</span></div>)}
-                <div style={{ marginTop: 6 }}>대표 1명이 택시를 부르고, 요금은 도착 후 나눠요. {placeFromId(r.spot_id) && <a href={mapUrl(r.spot_name, placeFromId(r.spot_id).lat, placeFromId(r.spot_id).lon)} target="_blank" rel="noreferrer">만날 곳 지도로 보기 ›</a>}</div>
+            <section key={r.id} className="card selected mine-card">
+              <div className="card-title" style={{ marginBottom: 4 }}>
+                <span className="caption strong" style={{ color: 'var(--primary)' }}>{r.kind === 'roundtrip' ? '내 왕복 매칭' : '내 모집'}</span>
+                <span className={`tag ${r.status === 'open' ? 'blue' : 'dark'}`}>{r.status === 'open' ? `${members.length}/${r.max_people}명 모집 중` : r.status === 'full' ? '모집 완료' : '도착'}</span>
               </div>
-              <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
+              <p className="trip">{r.spot_name}<span>→</span>{r.dest_name}</p>
+              <p className="caption">{hhmm(r.depart_at)} 출발 ({when(r.depart_at)}) · {r.kind === 'roundtrip' ? `할증 없이 약 ${won(price(r, 1).fareDongRate)}` : `1인 약 ${won(price(r, members.length).share)}`}</p>
+              <div className="seat-list">
+                <p className="fine" style={{ padding: '8px 0 2px' }}>탑승 전 안내 · 좌석</p>
+                {members.map((m, i) => <div key={m.user_id} className="seat"><span>{m.nickname}{m.user_id === me ? ' (나)' : ''}{m.user_id === r.host_id ? ' · 모집자' : ''}</span><span>{SEATS[i] ?? '뒷좌석'}</span></div>)}
+              </div>
+              <p className="seat-note">대표 1명이 택시를 부르고, 요금은 도착 후 나눠요.</p>
+              <div className="btn-row">
                 {r.host_id === me
-                  ? <button className="btn ghost" disabled={busy} onClick={() => act(() => setRideStatus(r.id, 'cancelled'), '모집을 취소했어요.')}>모집 취소</button>
-                  : <button className="btn ghost" disabled={busy} onClick={() => act(() => leaveRide(r.id, me), '모집에서 나왔어요.')}>나가기</button>}
+                  ? <button className="btn gray" disabled={busy} onClick={() => act(() => setRideStatus(r.id, 'cancelled'), '모집을 취소했어요.')}>모집 취소</button>
+                  : <button className="btn gray" disabled={busy} onClick={() => act(() => leaveRide(r.id, me), '모집에서 나왔어요.')}>나가기</button>}
                 <button className="btn" onClick={() => arrived(r)}>도착했어요</button>
               </div>
-              <div className="safety-row">
-                <a href="tel:112" className="sos">112 신고</a>
-                {r.status === 'open' && <button className="ghost-link" onClick={() => shareRide(r)}>모집 공유</button>}
-                <button className="ghost-link" onClick={() => shareTrip(r, profile.nickname)}>지인에게 탑승 알리기</button>
-                <a href="kakaot://" className="ghost-link">택시 부르기</a>
+              <div className="capsule-row">
+                {[
+                  <a key="call" href="kakaot://" className="capsule"><Icon name="taxi" size={16} />택시 부르기</a>,
+                  o && <a key="map" className="capsule" href={mapUrl(r.spot_name, o.lat, o.lon)} target="_blank" rel="noreferrer"><Icon name="map" size={16} />만날 곳 지도</a>,
+                  <button key="tell" className="capsule" onClick={() => shareTrip(r, profile.nickname)}><Icon name="bell" size={16} />지인에게 알리기</button>,
+                  r.status === 'open' && <button key="share" className="capsule" onClick={() => shareRide(r)}><Icon name="share" size={16} />모집 공유</button>,
+                ].filter(Boolean)}
               </div>
+              <a href="tel:112" className="btn secondary" style={{ marginTop: 10, color: 'var(--danger)', boxShadow: 'inset 0 0 0 1px var(--danger)' }}><Icon name="phone" size={18} />112 긴급 신고</a>
             </section>
           )
         })}
 
-        {banner && <div className={`banner ${banner.tone}`}><b>{banner.title}</b><span>{banner.body}</span></div>}
+        {banner && (
+          <div className="banner" role="status">
+            <span className="b-icon"><Icon name={banner.icon} size={20} /></span>
+            <div><b>{banner.title}</b><span>{banner.body}</span></div>
+          </div>
+        )}
 
         {!to && (
           <>
-            <h2 className="sheet-title">어디로 가세요?</h2>
+            <div className="section-head"><h2>어디로 가세요?</h2></div>
             <div className="chips">
               {destChoices(from.zoneId).slice(0, 3).map((d) => (
                 <button key={d} className={`chip ${d === dest?.zoneId ? 'on' : ''}`} onClick={() => setToPlace(zonePlace(d))}>
-                  {zoneById[d].name}{isReturnRoute(from.zoneId, d) && <i className="chip-dot" />}
+                  {zoneById[d].name}{isReturnRoute(from.zoneId, d) && <i className="dot-mark" aria-label="귀로 매칭 구간" />}
                 </button>
               ))}
-              <button className="chip" onClick={() => setSheet('to')}>🔍 검색</button>
+              <button className="chip" onClick={() => setSheet('to')}><Icon name="search" size={16} />검색</button>
             </div>
           </>
         )}
 
         {solo && (
-          <section className="card fare">
-            <div className="fare-head">
-              <p className="trip-line">{solo.km.toFixed(1)}km</p>
-              {ret ? <span className="tag">귀로 매칭 구간</span> : solo.surcharged ? <span className="tag amber">할증 구간</span> : null}
+          <section className="card fare-card" aria-label="요금 비교">
+            <div className="fare-top">
+              <span className="km">{from.name.split(' ')[0]} → {dest.name} · {solo.km.toFixed(1)}km</span>
+              {ret ? <span className="tag blue">귀로 매칭 구간</span> : solo.surcharged ? <span className="tag dark">할증 구간</span> : null}
             </div>
-            <div className="fare-rows">
-              <div className="fare-row"><span>혼자 타면</span><b className="off">{won(solo.fare)}</b>{solo.surcharged && <small>할증 포함</small>}</div>
-              <div className="fare-row main"><span>{people}명이 나눠 타면 1인</span><b>{won(shared.share)}</b><small>{won(solo.fare - shared.share)} 아낌</small></div>
-              {ret && <div className="fare-row policy"><span>귀로 할증 면제 시 1인</span><b>{won(round100(solo.fareDongRate / people))}</b><small>정책 제안</small></div>}
+            <div className="fare-hero">
+              <small>{people}명이 나눠 타면 1인</small>
+              <div className="big">{wonNum(shared.share)}<em>{wonUnit}</em></div>
+              <span className="tag blue save">혼자 탈 때보다 {won(solo.fare - shared.share)} 아낌</span>
             </div>
-            <div className="seg small">{[2, 3].map((v) => <button key={v} className={people === v ? 'on' : ''} onClick={() => setPeople(v)}>{v}명</button>)}</div>
+            <div className="fare-lines">
+              <div className="fare-line"><span>혼자 타면{solo.surcharged && <small>35% 할증 포함</small>}</span><b className="strike">{won(solo.fare)}</b></div>
+              {ret && <div className="fare-line policy"><span>귀로 할증 면제 시 1인<small>정책 제안</small></span><b>{won(round100(solo.fareDongRate / people))}</b></div>}
+            </div>
+            <div className="opts" role="group" aria-label="함께 타는 인원">{[2, 3].map((v) => <button key={v} className={`opt ${people === v ? 'on' : ''}`} onClick={() => setPeople(v)}>{v}명이 나눠 타기</button>)}</div>
           </section>
         )}
 
         {outbound && (
-          <section className="card rt-card">
-            <p className="card-title">할증 없이 가기</p>
-            <div className="rt-opt">
-              <div className="rt-head"><b>왕복 매칭</b><span className="rt-price">{won(solo.fareDongRate)}</span></div>
-              <p className="sub">{dest.name}에서 시내 갈 손님을 미리 구하면 양쪽 다 할증 없음</p>
-              {canUse && !rt && <button className="btn" style={{ marginTop: 8 }} onClick={() => setRt({ arrive: Math.max(10, Math.round(solo.km * 2.5)), seats: 1 })}>왕복 매칭 열기</button>}
+          <section className="card" aria-label="할증 없이 가기">
+            <p className="card-title">할증 없이 가기 <small>{dest.name}행</small></p>
+            <div className="way">
+              <div className="way-head"><b><span className="way-num">1</span>왕복 매칭</b><span className="way-price">{won(solo.fareDongRate)}</span></div>
+              <p>{dest.name}에서 시내 갈 손님을 미리 구하면 양쪽 다 할증이 없어요. 합승이 아니라 성별 제한도 없어요. 안 온 쪽이 할증분을 부담해 기사님 손실을 메워요(노쇼).</p>
+              {canUse && !rt && <button className="btn" style={{ marginTop: 12 }} onClick={() => setRt({ arrive: Math.max(10, Math.round(solo.km * 2.5)), seats: 1 })}>왕복 매칭 열기</button>}
+              {!canUse && <button className="pill secondary" style={{ marginTop: 12 }} onClick={onLogin}>로그인하고 열기</button>}
               {canUse && rt && (
-                <div className="new-ride">
+                <div className="subform">
                   <div className="field"><span>{dest.name} 도착 예정</span>
-                    <div className="seg wrap">{[rt.arrive, rt.arrive + 15, rt.arrive + 30].map((v) => <button key={v} className={rt.arrive === v ? 'on' : ''} onClick={() => setRt({ ...rt, arrive: v })}>{new Date(Date.now() + v * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</button>)}</div>
+                    <div className="opts">{[rt.arrive, rt.arrive + 15, rt.arrive + 30].map((v) => <button key={v} className={`opt ${rt.arrive === v ? 'on' : ''}`} onClick={() => setRt({ ...rt, arrive: v })}>{new Date(Date.now() + v * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}</button>)}</div>
                   </div>
                   <div className="field"><span>돌아올 때 태울 손님</span>
-                    <div className="seg">{[1, 2].map((v) => <button key={v} className={rt.seats === v ? 'on' : ''} onClick={() => setRt({ ...rt, seats: v })}>{v}명</button>)}</div>
+                    <div className="opts">{[1, 2].map((v) => <button key={v} className={`opt ${rt.seats === v ? 'on' : ''}`} onClick={() => setRt({ ...rt, seats: v })}>{v}명</button>)}</div>
                   </div>
-                  <p className="sub">노쇼하면 할증분 {won(solo.fare - solo.fareDongRate)}을 안 온 쪽이 부담 (시범)</p>
-                  <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
-                    <button className="btn ghost" onClick={() => setRt(null)}>취소</button>
+                  <p className="form-msg">노쇼하면 할증분 {won(solo.fare - solo.fareDongRate)}을 안 온 쪽이 부담해요 (시범).</p>
+                  <div className="btn-row">
+                    <button className="btn gray" onClick={() => setRt(null)}>취소</button>
                     <button className="btn" disabled={busy} onClick={submitRoundtrip}>열기</button>
                   </div>
                 </div>
               )}
             </div>
-            <div className="rt-opt">
-              <div className="rt-head"><b>귀로 연계 결제 <span className="tag gray">모의</span></b><span className="rt-price"><s>{won(solo.fare)}</s> {won(solo.fareDongRate)}</span></div>
-              <p className="sub">내린 뒤 30분 안에 그 택시가 귀로 손님을 태우면 할증 빼고 결제{chance ? ` · 가능성 약 ${Math.round(chance.p * 100)}%` : ''}</p>
+            <div className="way">
+              <div className="way-head"><b><span className="way-num">2</span>귀로 연계 결제 <span className="tag">모의</span></b><span className="way-price"><s>{won(solo.fare)}</s>{won(solo.fareDongRate)}</span></div>
+              <p>할증 포함 금액으로 가승인한 뒤, 내린 지 30분 안에 그 택시가 귀로 손님을 태우면 할증을 뺀 금액으로 결제해요.</p>
+              {chance && (
+                <div className="chance" aria-label={`귀로 손님을 만날 가능성 약 ${Math.round(chance.p * 100)}%`}>
+                  <span className="meter"><i style={{ width: `${Math.max(4, Math.round(chance.p * 100))}%` }} /></span>
+                  <b>가능성 약 {Math.round(chance.p * 100)}%</b>
+                </div>
+              )}
+              {chance && <p className="fine" style={{ marginTop: 6 }}>지금 시간 {dest.name} 시내행 승차(2026.4~9 실측) × 앱 이용 30% 가정</p>}
+            </div>
+            <div className="way">
+              <div className="way-head"><b><span className="way-num">3</span>앱 없이 현장 승차</b><span className="way-price">미터기</span></div>
+              <p>앱 없이 타면 미터기 요금 그대로예요.</p>
             </div>
           </section>
         )}
 
-        <section className="card">
-          <p className="card-title">내 주변 모집 <small>{canUse ? `반경 1.5km · ${nearby.length}건` : ''}</small></p>
+        <div className="section-head"><h2>내 주변 모집</h2><small>{canUse ? `반경 1.5km · ${nearby.length}건` : ''}</small></div>
+        <section className="card" style={{ paddingTop: canUse && nearby.length ? 6 : 20 }}>
           {!canUse && (
-            <div className="empty">
-              <p className="sub">{session ? '가입 정보를 먼저 입력해 주세요.' : '로그인하면 모집을 열거나 참여할 수 있어요.'}</p>
-              {!session && <button className="btn" style={{ marginTop: 10 }} onClick={onLogin}>로그인 · 체험 계정</button>}
+            <div style={{ textAlign: 'center' }}>
+              <p className="caption">{session ? '가입 정보를 먼저 입력해 주세요.' : '로그인하면 모집을 열거나 참여할 수 있어요.'}</p>
+              {!session && <button className="pill" style={{ marginTop: 12 }} onClick={onLogin}>로그인 · 체험 계정</button>}
             </div>
           )}
-          {canUse && nearby.length === 0 && !form && <p className="sub">주변에 열린 모집이 없어요. 첫 모집을 열어 보세요.</p>}
+          {canUse && nearby.length === 0 && !form && <p className="caption">주변에 열린 모집이 없어요. 첫 모집을 열어 보세요.</p>}
           {canUse && nearby.map((r) => {
             const joined = r.ride_members.some((m) => m.user_id === me)
             const o = placeFromId(r.spot_id)
             return (
               <div key={r.id} className="ride-item">
-                <div>
-                  <b>→ {r.dest_name}</b> {r.kind === 'roundtrip' ? <span className="tag">왕복 택시 · 할증 없음</span> : r.dest_zone === dest?.zoneId && <span className="tag">같은 방향</span>}
-                  <span className="meta"><a href={mapUrl(r.spot_name, o.lat, o.lon)} target="_blank" rel="noreferrer">{r.spot_name.split(' · ')[0]}</a>에서 · 걸어서 {Math.max(1, Math.round(distM(o, from) / 70))}분 · {hhmm(r.depart_at)} 출발 · {r.ride_members.length}/{r.max_people}명</span>
+                <div className="ri-main">
+                  <span className="ri-dest">{r.dest_name}행 {r.kind === 'roundtrip' ? <span className="tag blue">왕복 택시 · 할증 없음</span> : r.dest_zone === dest?.zoneId && <span className="tag">같은 방향</span>}</span>
+                  <span className="ri-meta"><a href={mapUrl(r.spot_name, o.lat, o.lon)} target="_blank" rel="noreferrer">{r.spot_name.split(' · ')[0]}</a>에서 · 걸어서 {Math.max(1, Math.round(distM(o, from) / 70))}분<br />{hhmm(r.depart_at)} 출발 · {r.ride_members.length}/{r.max_people}명</span>
                 </div>
-                {joined ? <span className="tag">참여 중</span>
-                  : <button className="pill-btn small" disabled={busy || r.status !== 'open'} onClick={() => act(() => joinRide(r.id, me, profile.nickname), r.kind === 'roundtrip' ? `참여했어요. ${hhmm(r.depart_at)}에 도착하는 택시를 타면 할증 없이 가요. 안 오면 노쇼 수수료 ${won(r.hold_won ?? 0)}가 부과돼요(시범).` : '참여했어요. 탑승 전 안내를 확인해 주세요.')}>{r.status !== 'open' ? '마감' : '참여'}</button>}
+                {joined ? <span className="tag blue">참여 중</span>
+                  : <button className="pill" disabled={busy || r.status !== 'open'} onClick={() => act(() => joinRide(r.id, me, profile.nickname), r.kind === 'roundtrip' ? `참여했어요. ${hhmm(r.depart_at)}에 도착하는 택시를 타면 할증 없이 가요. 안 오면 노쇼 수수료 ${won(r.hold_won ?? 0)}가 부과돼요(시범).` : '참여했어요. 탑승 전 안내를 확인해 주세요.')}>{r.status !== 'open' ? '마감' : '참여'}</button>}
               </div>
             )
           })}
-          {canUse && !form && <button className="btn" style={{ marginTop: 12 }} disabled={!dest} onClick={() => setForm({ leave: ktx[0] ? Math.max(5, minutesUntil(ktx[0].time) + 10) : 15, meet: '' })}>{dest ? `${dest.name}행 모집 열기` : '도착지를 골라 주세요'}</button>}
+          {canUse && !form && <button className="btn" style={{ marginTop: 14 }} disabled={!dest} onClick={() => setForm({ leave: ktx[0] ? Math.max(5, minutesUntil(ktx[0].time) + 10) : 15, meet: '' })}>{dest ? `${dest.name}행 모집 열기` : '도착지를 골라 주세요'}</button>}
           {canUse && form && (
-            <div className="new-ride">
+            <div className="subform">
               <div className="field"><span>언제 출발해요?</span>
-                <div className="seg wrap">
-                  {LEAVE.map(([v, l]) => <button key={v} type="button" className={form.leave === v ? 'on' : ''} onClick={() => setForm({ ...form, leave: v })}>{l}</button>)}
-                  {ktx.map((t) => { const v = Math.max(5, minutesUntil(t.time) + 10); return <button key={t.no} type="button" className={form.leave === v ? 'on' : ''} onClick={() => setForm({ ...form, leave: v })}>{t.grade} {t.time} 도착 후</button> })}
+                <div className="opts">
+                  {LEAVE.map(([v, l]) => <button key={v} type="button" className={`opt ${form.leave === v ? 'on' : ''}`} onClick={() => setForm({ ...form, leave: v })}>{l}</button>)}
+                  {ktx.map((t) => { const v = Math.max(5, minutesUntil(t.time) + 10); return <button key={t.no} type="button" className={`opt ${form.leave === v ? 'on' : ''}`} onClick={() => setForm({ ...form, leave: v })}>{t.grade} {t.time} 도착 후</button> })}
                 </div>
               </div>
               <label className="field"><span>어디서 만날까요? <small className="hint">선택</small></span>
                 <input value={form.meet} maxLength={30} placeholder="예: 택시 승차장, 정문 앞" onChange={(e) => setForm({ ...form, meet: e.target.value })} />
               </label>
-              <p className="sub">{from.name} → {dest.name} · {people}명 · {profile.gender === 'F' ? '여성' : '남성'} 회원에게만 보여요 (합승은 같은 성별끼리만 가능)</p>
-              <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
-                <button className="btn ghost" onClick={() => setForm(null)}>취소</button>
+              <p className="form-msg">{from.name} → {dest.name} · {people}명 · {profile.gender === 'F' ? '여성' : '남성'} 회원에게만 보여요 (합승은 같은 성별끼리만 가능)</p>
+              <div className="btn-row">
+                <button className="btn gray" onClick={() => setForm(null)}>취소</button>
                 <button className="btn" disabled={busy} onClick={submitNew}>모집 열기</button>
               </div>
             </div>
           )}
         </section>
 
-        <section className="card">
-          <button className="row-btn" onClick={() => setBusOpen(!busOpen)}>
-            <span className="with-badge"><span className="ibadge blue"><Icon name="bus" size={16} /></span>버스로 가면?</span>
-            <span className="r">{nb ? `${nb.route}번 ${nb.min}분 후` : last?.ended ? '운행 끝' : bus?.ok ? '도착 예정 없음' : bus ? '실시간 정보 없음' : '불러오는 중'} {busOpen ? '▴' : '▾'}</span>
+        <div className="group" style={{ marginTop: 12 }}>
+          <button className="cell with-icon" onClick={() => setBusOpen(!busOpen)} aria-expanded={busOpen}>
+            <span className="cell-icon gray"><Icon name="bus" size={18} /></span>
+            <span className="grow"><b>버스로 가면?</b><small>{nb ? `${nb.route}번 ${nb.min}분 후 도착` : last?.ended ? '오늘 운행 끝' : bus?.ok ? '도착 예정 없음' : bus ? '실시간 정보 없음' : '불러오는 중'}</small></span>
+            <span className="chev" style={{ transform: busOpen ? 'rotate(90deg)' : 'none', transition: 'transform .2s' }}><Icon name="chevron" size={18} /></span>
           </button>
           {busOpen && (
-            <div className="detail">
-              {bus?.ok && bus.stations.slice(0, 3).map((s) => <div key={s.id} className="seat"><span>{s.name}</span><span>{s.arrivals.slice(0, 2).map((a) => `${a.route}번 ${a.min}분`).join(' · ') || '없음'}</span></div>)}
-              {last && <div className="seat"><span>가장 늦은 막차</span><span>{last.latest.route}번 {last.latest.last}</span></div>}
-              {trains?.ok && trains.next.slice(0, 3).map((t) => <div key={t.no} className="seat"><span>{t.grade} {t.no} ({t.from})</span><span>{t.time} 도착</span></div>)}
-              {!bus?.ok && !last && <span>실시간 정보를 불러오지 못했어요.</span>}
+            <div style={{ padding: '0 16px 12px' }}>
+              <div className="seat-list" style={{ marginTop: 0 }}>
+                {bus?.ok && bus.stations.slice(0, 3).map((s) => <div key={s.id} className="seat"><span>{s.name}</span><span>{s.arrivals.slice(0, 2).map((a) => `${a.route}번 ${a.min}분`).join(' · ') || '없음'}</span></div>)}
+                {last && <div className="seat"><span>가장 늦은 막차</span><span>{last.latest.route}번 {last.latest.last}</span></div>}
+                {trains?.ok && trains.next.slice(0, 3).map((t) => <div key={t.no} className="seat"><span>{t.grade} {t.no} ({t.from})</span><span>{t.time} 도착</span></div>)}
+                {!bus?.ok && !last && <div className="seat"><span>실시간 정보를 불러오지 못했어요.</span></div>}
+              </div>
             </div>
           )}
-        </section>
-
+        </div>
       </div>
 
       {sheet && (
