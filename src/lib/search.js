@@ -23,7 +23,10 @@ async function photon(q, c) {
 
 export async function searchPlaces(q, near) {
   const c = near ?? { lat: 36.64, lon: 127.45 }
-  const [addr, osm] = await Promise.all([vworld(q), photon(q, c)])
+  // Photon이 느릴 때가 많아 2.5초만 기다리고, 브이월드 결과가 있으면 먼저 보여 준다
+  const slow = photon(q, c)
+  const addr = await vworld(q)
+  const osm = await Promise.race([slow, new Promise((r) => setTimeout(() => r(addr.length ? [] : undefined), 2500))]) ?? await slow
   if (osm === null && addr.length === 0) return null
   const out = []
   for (const r of [...addr, ...(osm ?? [])]) {

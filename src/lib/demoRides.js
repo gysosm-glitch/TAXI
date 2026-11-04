@@ -15,10 +15,9 @@ const hash = (s) => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >
 // 하루 택시 승차가 많은 핵심 스팟 5곳 (TIMS 2025): 터미널 4,439 · 성안길 2,022 · 오송역 1,793 · 충북대 1,482 · 오창 호수공원 718건
 export const CORE_SPOTS = ['bus_terminal', 'downtown', 'osong_stn', 'cbnu', 'ochang_lake'].map(spot)
 
-// 시범 경로. every: 몇 분마다 모이는지, train: 실제 열차 도착에 맞춘 모집
+// 시범 경로 5개, 경로마다 2건씩 항상 10건을 보여 준다. every: 몇 분마다 모이는지, train: 실제 열차 도착에 맞춘 모집
 const ROUTES = [
   { id: 'osong-term', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, meets: ['택시 승강장 앞', '서편 출구', '동편 출구'], maxes: [3, 2, 4], every: 20, train: true },
-  { id: 'osong-term-rt', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, every: 45, phase: 13, maxes: [2], roundtrip: true, outFrom: '가경동' },
   { id: 'ochang-term', from: 'ochang_lake', to: 'bus_terminal', toName: TERMINAL, meets: ['호수공원 정문', '공원 주차장 입구'], maxes: [3, 4, 2], every: 20, phase: 7 },
   { id: 'term-cbnu', from: 'bus_terminal', fromName: TERMINAL, to: 'cbnu', meets: ['택시 승강장', '터미널 정문'], maxes: [4, 3, 2], every: 15, phase: 4 },
   { id: 'cbnu-osong', from: 'cbnu', to: 'osong_stn', meets: ['정문 앞', '정문 버스정류장'], maxes: [2, 3, 4], every: 25, phase: 9 },
@@ -57,7 +56,7 @@ export function demoRooms(now, trains, gender = 'F') {
         if (arrive - lastAt < 10 * MIN || arrive + 10 * MIN < now + 3 * MIN) continue
         out.push(room(r, arrive + 10 * MIN, gender, `${t.grade.split('(')[0]} ${t.time} 도착 후`))
         lastAt = arrive
-        if (++n === 3) break
+        if (++n === 2) break
       }
       if (n) continue
     }
@@ -140,7 +139,7 @@ export function useDemoJoined(me, myNick) {
   const [list, setList] = useState(load)
   const now = useNow(list.length ? 1000 : 30000)
   const update = (next) => { save(next); setList(next) }
-  const host = (ride) => update([...list, { ride: { ...ride, id: `mine-${Date.now()}`, virtual: true, kind: 'pool', status: 'open', ride_members: [] }, joinedAt: Date.now(), mine: [], own: true }])
+  const host = (ride) => update([...list, { ride: { ...ride, id: `mine-${Date.now()}`, virtual: true, kind: ride.kind ?? 'pool', status: 'open', ride_members: [] }, joinedAt: Date.now(), mine: [], own: true }])
   const close = (id) => update(list.map((j) => (j.ride.id === id ? { ...j, closedAt: Date.now() } : j)))
   const join = (ride) => update([...list.filter((j) => j.ride.id !== ride.id), { ride, joinedAt: Date.now(), mine: [] }])
   const leave = (id) => update(list.filter((j) => j.ride.id !== id))

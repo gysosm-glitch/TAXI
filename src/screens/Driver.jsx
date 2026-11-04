@@ -64,7 +64,7 @@ export default function Driver({ account }) {
 
       <p className="step-label"><i>2</i>귀로 손님</p>
       <div className="hero driver-hero">
-        <p className="label">{place.name} → 시내</p>
+        <p className="label">{place.name} → 시내 · 다음 단계 체험</p>
         <h2>귀로 손님 {people}명</h2>
         <p className="sub">{nextTrain ? `다음 열차 ${nextTrain.time} · ` : ''}평소 이 시간 승차 약 {perHour}명</p>
       </div>

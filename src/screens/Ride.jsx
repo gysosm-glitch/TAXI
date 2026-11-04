@@ -1,5 +1,5 @@
 // 타기: 지금 모집 중인 경로별 칸 → 출발·도착을 고르면 좁혀지고 요금 비교 → 참여 또는 모집 열기
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Logo from '../components/Logo.jsx'
 import Icon from '../components/Icon.jsx'
 import RideChat from '../components/RideChat.jsx'
@@ -26,6 +26,7 @@ const loadPaid = () => { try { return JSON.parse(store.getItem(PAID)) ?? [] } ca
 const markPaid = (id) => { try { store.setItem(PAID, JSON.stringify([id, ...loadPaid()].slice(0, 20))) } catch {} }
 const WINDOWS = [[0, '전체'], [15, '15분 안'], [30, '30분 안']]
 const LEAVE = [[5, '5분 뒤'], [15, '15분 뒤'], [30, '30분 뒤'], [60, '1시간 뒤']]
+const SHOW_RETURN = false   // 왕복 매칭은 제휴 이후 단계라 시연 화면에서 뺀다 (true로 켜면 다시 보임)
 const round100 = (n) => Math.ceil(n / 100) * 100
 const NEAR_M = 1000   // 출발지를 고르면 가볍게 걸어갈 수 있는 거리(약 15분) 안의 모집만 보여 준다
 const SIMILAR_M = 3000   // 도착지가 이 거리 안이면 '비슷한 방향'
@@ -202,7 +203,7 @@ function RideBoard({ rooms, from, dest, similar, price, now, onJoin, onRoute, bu
         return (
           <section key={g.key} className={`card route-card hue-${HUE[first.spot_id] ?? 'green'}`}>
             <button className="route-head" onClick={() => onRoute(first)}>
-              <b>{g.key}</b><small>{first.virtual && <span className="tag gray">시연</span>} {g.rooms.length}건 ›</small>
+              <b>{g.key}</b><small>{price(first, 1)?.surcharged && <span className="tag amber">할증 35%</span>} {first.virtual && <span className="tag gray">시연</span>} {g.rooms.length}건 ›</small>
             </button>
             {g.rooms.map((r) => {
               const o = placeFromId(r.spot_id)
@@ -264,13 +265,6 @@ export default function Ride({ account, route, setRoute, onLogin }) {
     setFromPlace(p)
   }
   useEffect(() => { if (wantHere && gps.pos) useHere() }, [wantHere, gps.pos?.lat])
-  const autoHere = useRef(true)
-  useEffect(() => {
-    if (!autoHere.current || !gps.pos) return
-    autoHere.current = false
-    const p = placeAt(gps.pos.lat, gps.pos.lon, '현재 위치')
-    if (p) setRoute({ from: p, to })
-  }, [gps.pos?.lat])
 
 
 
@@ -349,6 +343,11 @@ export default function Ride({ account, route, setRoute, onLogin }) {
 
   // 왕복 매칭: 내가 탄 택시가 도착지에 닿는 시각에, 그곳에서 시내로 갈 손님을 미리 구한다 (양쪽 할증 없음)
   const submitRoundtrip = () => act(async () => {
+    if (demoTab) {
+      demo.host({ kind: 'roundtrip', spot_id: originId(dest), spot_name: `${dest.name} · 왕복 택시 도착`, out_from: from.name, conds: [], dest_zone: from.zoneId, dest_name: from.name, dest_place: from, depart_at: new Date(Date.now() + rt.arrive * 60000).toISOString(), max_people: rt.seats + 1, gender: profile.gender, hold_won: Math.round(solo.fare - solo.fareDongRate) })
+      setRt(null); toMine()
+      return {}
+    }
     const r = await createRide({
       host_id: me, kind: 'roundtrip', spot_id: originId(dest), spot_name: `${dest.name} · 왕복 택시 도착`, out_from: from.name,
       dest_zone: from.zoneId, dest_name: from.name, depart_at: new Date(Date.now() + rt.arrive * 60000).toISOString(),
@@ -401,6 +400,18 @@ export default function Ride({ account, route, setRoute, onLogin }) {
 
         {banner && <div className={`banner ${banner.tone}`}><b>{banner.title}</b>{banner.body && <span>{banner.body}</span>}</div>}
 
+        {!from && !dest && mine.length + demo.rides.length === 0 && (
+          <section className="card effect">
+            <p className="card-title"><span>복합할증 35%, 이렇게 줄여요</span></p>
+            <p className="sub effect-route">오송역 → 터미널 {sample.km.toFixed(1)}km</p>
+            <div className="effect-row">
+              <div className="effect-now"><small>혼자</small><b>{won(sample.fare)}</b><span>할증 포함</span></div>
+              <div className="effect-share"><small>2명</small><b>{won(sample2.share)}</b><span>1인</span></div>
+              <div className="effect-return"><small>귀로</small><b>{won(sample.fareDongRate)}</b><span>할증 면제 · 다음 단계</span></div>
+            </div>
+          </section>
+        )}
+
         {from && !to && (
           <>
             <h2 className="sheet-title">도착지</h2>
@@ -429,7 +440,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
           </section>
         )}
 
-        {outbound && (
+        {SHOW_RETURN && outbound && (
           <section className="card rt-card">
             <p className="card-title">할증 없이 가기</p>
             <div className="rt-opt">
