@@ -27,12 +27,12 @@ function ChatView({ ride, me, messages, onSend, failed }) {
     setText('')
   }
 
-  if (ride.ride_members.length < 2) return <p className="chat-empty">동승자가 참여하면 여기서 대화할 수 있어요.</p>
+  if (ride.ride_members.length < 2) return <p className="chat-empty">참여하면 대화할 수 있어요.</p>
   if (failed) return <p className="chat-empty">채팅을 불러오지 못했어요. 잠시 후 다시 시도해 주세요.</p>
 
   return (
     <div className="chat">
-      <p className="chat-title">동승자 대화 <small>휴대폰 번호 없이 대화해요</small></p>
+      <p className="chat-title">대화 <small>번호 비공개</small></p>
       {messages.length > 0 && (
         <div className="chat-list" ref={list}>
           {messages.map((m) => (

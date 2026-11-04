@@ -29,6 +29,7 @@ npm run dev
 |---|---|---|---|
 | `TAGO_API_KEY` | 공공데이터포털 일반 인증키(Decoding) | 15098534 버스정류소정보 | 안 됨 (서버 함수 전용) |
 | `VWORLD_API_KEY` | 브이월드(vworld.kr) 검색 API 인증키. 서비스 URL에 `taxi-woad-seven.vercel.app` 등록 | 주소 검색(도로명·지번). 없으면 장소 이름 검색만 됨 | 안 됨 (서버 함수 전용) |
+| 고속·시외 키 | 공공데이터포털 일반 인증키(Decoding) | 15098522 고속버스정보, 15098541 시외버스정보 (이름에 EXPRESS·SUBURB가 있으면 자동으로 찾고, 없으면 `TAGO_API_KEY` 사용) | 안 되면 터미널 정보만 빠짐 |
 | `TAGO_ARRIVAL_API_KEY` | 공공데이터포털 일반 인증키(Decoding) | 15098530 버스도착정보 (없으면 위 키 사용) | 안 됨 (서버 함수 전용) |
 | `VITE_SUPABASE_URL` | Supabase Project URL | Supabase › Project Settings › API | 됨 (공개용) |
 | `VITE_SUPABASE_ANON_KEY` | Supabase anon public 키 | 위와 같음 | 됨 (RLS로 보호) |

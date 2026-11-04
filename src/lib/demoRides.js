@@ -16,7 +16,7 @@ const hash = (s) => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >
 const ROUTES = [
   { id: 'osong-term', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, meets: ['택시 승강장 앞', '서편 출구', '동편 출구'], maxes: [3, 2, 4], every: 20, train: true },
   { id: 'osong-term-rt', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, every: 45, phase: 13, maxes: [2], roundtrip: true, outFrom: '가경동' },
-  { id: 'ochang-term', from: 'ochang_lake', to: 'bus_terminal', toName: TERMINAL, meets: ['호수공원 정문', '공원 주차장 입구'], maxes: [3, 4, 2], every: 20, phase: 7 },
+  { id: 'ochang-term', from: 'ochang_lake', to: 'bus_terminal', toName: TERMINAL, meets: ['호수공원 정문', '공원 주차장 입구'], maxes: [3, 4, 2], every: 20, phase: 7, bus: true },
   { id: 'term-cbnu', from: 'bus_terminal', to: 'cbnu', toName: '충북대학교 중문', meets: ['택시 승강장', '터미널 정문'], maxes: [4, 3, 2], every: 15, phase: 4 },
 ]
 const CONDS = ['캐리어 있어도 괜찮아요', '조용히 가요', '5분까지 기다려요', '바로 출발해요', '짐은 적게요', '중간 하차 없어요']
@@ -39,7 +39,7 @@ function room(r, departMs, gender, note) {
 }
 
 // 지금 시각 기준 앞으로의 시연 모집 (실제 열차 정보가 있으면 그 시각에 맞춘다)
-export function demoRooms(now, trains, gender = 'F') {
+export function demoRooms(now, trains, gender = 'F', buses = null) {
   const out = []
   const today = new Date(now)
   for (const r of ROUTES) {
@@ -50,8 +50,23 @@ export function demoRooms(now, trains, gender = 'F') {
         const [hh, mm] = t.time.split(':').map(Number)
         const arrive = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hh, mm).getTime()
         if (arrive - lastAt < 10 * MIN || arrive + 10 * MIN < now + 3 * MIN) continue
-        out.push(room(r, arrive + 10 * MIN, gender, `${t.grade} ${t.time} 도착 후 (${t.from} 출발)`))
+        out.push(room(r, arrive + 10 * MIN, gender, `${t.grade.split('(')[0]} ${t.time} 도착 후`))
         lastAt = arrive
+        if (++n === 3) break
+      }
+      if (n) continue
+    }
+    // 터미널행: 실제 버스 출발 45분 전에 모인다
+    const trips = r.bus && buses?.ok ? buses.next : null
+    if (trips?.length) {
+      let lastAt = 0, n = 0
+      for (const t of trips) {
+        const [hh, mm] = t.time.split(':').map(Number)
+        const dep = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hh, mm).getTime()
+        const meetAt = dep - 45 * MIN
+        if (meetAt < now + 3 * MIN || meetAt - lastAt < 15 * MIN) continue
+        out.push(room(r, meetAt, gender, `${t.to}행 ${t.time} ${t.kind}버스 타러`))
+        lastAt = meetAt
         if (++n === 3) break
       }
       if (n) continue

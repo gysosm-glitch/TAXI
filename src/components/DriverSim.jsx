@@ -76,7 +76,7 @@ export default function DriverSim({ fuelPerKm, feePerTrip }) {
           <p>{r.note}</p>
         </div>
       )}
-      <p className="sub" style={{ marginTop: 10 }}>실제 손님·배차가 아니에요. 요금은 {m.place}→{m.dest} 앱 계산값, 연료비는 km당 {fuelPerKm}원 가정이에요.</p>
+      <p className="sub" style={{ marginTop: 10 }}>가상 상황 · {m.place}→{m.dest} 기준</p>
     </div>
   )
 }

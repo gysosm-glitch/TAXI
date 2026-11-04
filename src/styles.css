@@ -3,13 +3,10 @@
 :root {
   --teal: #1d9e75; --teal-dark: #0f6e56; --teal-ink: #085041; --teal-soft: #e1f5ee; --teal-mid: #9fe1cb;
   --ink: #1c1c1e; --ink-2: #636366; --muted: #a1a1a6; --line: #ececf0;
-  --bg: #f2f2f6; --card: #ffffff;
+  --bg: #f5f6f4; --card: #ffffff;
   --green: #3b6d11; --amber: #b45309; --amber-soft: #fff4e5; --red: #c62828; --red-soft: #fdecec;
   --r-card: 20px;
   --brand: #0f2a22; --brand-2: #163a2f; --sun: #f2a93b;
-}
-@media (prefers-color-scheme: dark) {
-  :root { --ink: #f2f2f7; --ink-2: #aeaeb2; --muted: #8e8e93; --line: #2c2c2e; --bg: #000000; --card: #1c1c1e; --teal-soft: #0b3a2e; --teal-ink: #9fe1cb; --amber-soft: #3a2a12; --red-soft: #3a1717; }
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body, #root { height: 100%; }
@@ -135,7 +132,7 @@ a { color: var(--teal-dark); }
 .ibadge { width: 34px; height: 34px; border-radius: 12px; display: inline-grid; place-items: center; margin-bottom: 8px; background: var(--teal-soft); color: var(--teal-dark); flex: none; }
 .ibadge.blue { background: #e6f1fb; color: #185fa5; }
 .ibadge.amber { background: #faeeda; color: #854f0b; }
-@media (prefers-color-scheme: dark) { .ibadge.blue { background: #0c2c4a; color: #85b7eb; } .ibadge.amber { background: #3a2a12; color: #ef9f27; } }
+
 .with-badge { display: inline-flex; align-items: center; gap: 10px; }
 .with-badge .ibadge { width: 30px; height: 30px; border-radius: 10px; margin: 0; }
 .empty { text-align: center; padding: 6px 0 2px; }
@@ -245,11 +242,7 @@ a { color: var(--teal-dark); }
 .pick-row em { font-style: normal; font-size: 12px; color: var(--muted); }
 .pick-row.on b { color: var(--teal-dark); }
 .pick-row.primary { background: var(--teal-soft); border-radius: 14px; padding: 12px 14px; color: var(--teal-dark); }
-@media (prefers-color-scheme: dark) {
-  .here-row, .banner.blue { background: #10233f; color: #8db6f7; }
-  .banner.red { background: #3a1717; color: #f09595; } .banner.amber { background: #3a2a12; color: #f2c27b; }
-  .logo b { color: #fff; }
-}
+
 
 /* 출발·도착 상자, 장소 검색 */
 .route-box { position: absolute; top: calc(12px + env(safe-area-inset-top)); left: 12px; right: 12px; z-index: 5; background: #fff; border-radius: 16px; box-shadow: 0 4px 16px rgba(15,42,34,.18); overflow: hidden; }
@@ -389,3 +382,25 @@ a { color: var(--teal-dark); }
 .cond-chips span { font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-2); }
 .join-rules { margin: 0; padding: 12px 12px 12px 28px; border-radius: 12px; background: var(--bg); font-size: 13px; line-height: 1.6; color: var(--ink-2); }
 .join-rules li + li { margin-top: 4px; }
+
+/* 밝은 화면 */
+:root { color-scheme: light; }
+.ride-top { background: var(--card); padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+.ride-brand { color: var(--ink-2); margin-bottom: 12px; }
+.ride-top .route-box { background: var(--bg); box-shadow: none; }
+.ride-top .here-btn { color: var(--ink-2); border-color: var(--line); background: var(--card); }
+.ride .sheet { background: var(--bg); }
+.logo b { color: var(--ink); }
+.welcome { background: var(--card); }
+.welcome-top { background: var(--card); color: var(--ink); padding: 56px 24px 28px; }
+.welcome-top p { color: var(--ink-2); }
+.welcome-body { margin-top: 0; padding: 0 24px 32px; }
+.welcome-busy { text-align: center; padding: 20px 0; }
+.card { box-shadow: 0 1px 2px rgba(15, 42, 34, .04); }
+.sim-result { background: var(--bg); }
+.opt.bad-opt { background: var(--bg); }
+details.source { padding: 2px 4px 12px; display: block; }
+details.source summary { cursor: pointer; color: var(--muted); font-variant-numeric: tabular-nums; }
+details.source p { margin: 6px 0 0; }
+.guide-more { margin-bottom: 12px; }
+.guide-more summary { cursor: pointer; padding: 12px 4px; font-size: 14px; font-weight: 600; color: var(--ink-2); }

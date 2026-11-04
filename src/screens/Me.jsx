@@ -136,7 +136,7 @@ export default function Me({ account, onLogin }) {
       <button className="btn" style={{ marginBottom: 12 }} onClick={onLogin}>로그인 · 회원가입</button>
       <Savings />
       <Feedback />
-      <Guide />
+      <details className="guide-more"><summary>이용 기준·개인정보</summary><Guide /></details>
     </>
   )
 
@@ -189,7 +189,7 @@ export default function Me({ account, onLogin }) {
         )}
       </div>
       <Feedback userId={session.user.id} />
-      <Guide />
+      <details className="guide-more"><summary>이용 기준·개인정보</summary><Guide /></details>
     </>
   )
 }

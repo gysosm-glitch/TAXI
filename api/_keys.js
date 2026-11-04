@@ -9,4 +9,7 @@ export const tagoKey = () => find(['TAGO_API_KEY'], /^TAGO.*KEY$/i)
 export const arrivalKey = () => find(['TAGO_ARRIVAL_API_KEY'], /ARRIV/i) ?? tagoKey()
 export const routeKey = () => find(['TAGO_ROUTE_API_KEY'], /ROUTE/i) ?? tagoKey()
 export const trainKey = () => find(['TAGO_TRAIN_API_KEY'], /TRAIN|KTX|RAIL/i) ?? tagoKey()
+// 고속·시외버스 키: 이름에 EXPRESS·SUBURB 등이 있으면 찾고, 없으면 같은 계정의 TAGO 키로 시도한다
+export const expressKey = () => find(['TAGO_EXPRESS_API_KEY', 'TAGO_EXPBUS_API_KEY'], /EXPRESS|EXP_?BUS|GOSOK|KOBUS|HIGHWAY/i) ?? tagoKey()
+export const suburbKey = () => find(['TAGO_SUBURB_API_KEY', 'TAGO_SUBURBS_API_KEY'], /SUBURB|SUBERB|INTERCITY|SIOE|SIWOE|SIHOE/i) ?? tagoKey()
 export const vworldKey = () => find(['VWORLD_API_KEY'], /VWORLD/i)

@@ -8,7 +8,6 @@ import Transit from './screens/Transit.jsx'
 import Me from './screens/Me.jsx'
 import { useAccount, signOut } from './lib/auth.js'
 import { useRideAlerts } from './lib/alerts.js'
-import { useDemoIdleLogout } from './lib/demo.js'
 import { demoTab, isDemoEmail } from './lib/store.js'
 import { spots, placeAt } from './data.js'
 
@@ -28,7 +27,6 @@ export default function App() {
   const account = useAccount()
   const { session, profile, loading, setProfile } = account
   const { toast, close } = useRideAlerts(profile ? session?.user?.id : null, tab)
-  useDemoIdleLogout(!!session)
   // 로그아웃하면 첫 화면(로그인)으로, 타기 탭부터 다시 시작
   useEffect(() => { if (!session) { setBrowsing(false); setTab('ride') } }, [session])
   // 예전 방식으로 기기에 남아 있던 체험 로그인은 자동으로 정리
@@ -65,7 +63,7 @@ export default function App() {
       )}
       <main className={`content ${tab === 'ride' ? 'flush' : ''}`}>
         {tab === 'ride' && <Ride account={account} route={route} setRoute={setRoute} onLogin={() => setBrowsing(false)} />}
-        {tab === 'transit' && <Transit onRide={() => { setRoute({ from: spotPlace('osong_stn'), to: null }); setTab('ride') }} />}
+        {tab === 'transit' && <Transit onRide={(to) => { setRoute(to === 'terminal' ? { from: null, to: spotPlace('bus_terminal') } : { from: spotPlace('osong_stn'), to: null }); setTab('ride') }} />}
         {tab === 'driver' && <Driver account={account} onLogin={() => setBrowsing(false)} />}
         {tab === 'me' && <Me account={account} onLogin={() => setBrowsing(false)} />}
       </main>

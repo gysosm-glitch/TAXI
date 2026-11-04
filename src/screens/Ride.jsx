@@ -10,7 +10,7 @@ import { sendMessage } from '../lib/chat.js'
 import { askNotify } from '../lib/alerts.js'
 import { useMyPosition } from '../lib/geo.js'
 import { searchPlaces } from '../lib/search.js'
-import { useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
+import { useLastBus, lastBusState, useTrains, useTerminal, minutesUntil } from '../lib/live.js'
 import { demoRooms, useDemoJoined, useNow } from '../lib/demoRides.js'
 import { listAllOpen, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError, saveTrip } from '../lib/rides.js'
 
@@ -100,11 +100,11 @@ function guideOf(r, stage, isHost, n, paid, share) {
   }
   if (r.status === 'done') return [`${hostName}님이 도착을 알렸어요`, '내리면 아래 버튼을 눌러 주세요.']
   if (stage === 'waiting') return ['같이 탈 사람을 기다려요', '누가 참여하면 바로 알려 드려요.']
-  if (stage === 'gathered') return isHost ? [`${n}명이 모였어요`, '더 기다리거나 이 인원으로 출발할 수 있어요.'] : ['인원을 기다려요', `모이면 ${hostName}님이 택시를 불러요.`]
-  if (isHost) return ['1인 금액을 받은 뒤 택시를 불러 주세요', `동승자가 1인 약 ${won(share)}을 보내면 대화에 표시돼요. 앱은 돈을 보관하지 않아요.`]
-  if (!paid) return [`1인 약 ${won(share)}을 방장에게 보내 주세요`, '택시를 부르기 전에 먼저 보내요. 계좌나 송금 방법은 대화로 정하고, 앱은 돈을 보관하지 않아요.']
+  if (stage === 'gathered') return isHost ? [`${n}명이 모였어요`, '이 인원으로 출발할 수 있어요.'] : ['인원을 기다려요', `모이면 ${hostName}님이 택시를 불러요.`]
+  if (isHost) return ['1인 금액을 받은 뒤 택시를 불러 주세요', `1인 약 ${won(share)}씩 받아요. 앱은 돈을 보관하지 않아요.`]
+  if (!paid) return [`1인 약 ${won(share)}을 방장에게 보내 주세요`, '택시를 부르기 전에 보내요. 방법은 대화로 정해요.']
   if (r.virtual && !r.taxi) return [`${hostName}님이 택시를 부르고 있어요`, '금액을 확인하면 바로 호출해요.']
-  return ['택시가 오고 있어요', '실제 요금과 차이가 나면 내린 뒤 대화로 맞춰요.']
+  return ['택시가 오고 있어요', '요금 차이는 내린 뒤 대화로 맞춰요.']
 }
 
 function MyRide({ r, me, busy, act, arrived, price, leaveDemo }) {
@@ -195,7 +195,6 @@ function RideBoard({ rooms, from, dest, similar, price, now, onJoin, onRoute, bu
         <h2 className="sheet-title">지금 모집 중</h2>
         <span className="live-clock"><i />{new Date(now).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })} 기준</span>
       </div>
-      <p className="sub board-note">시연용 가상 모집이 함께 보여요. 출발 시각은 지금 시각에 맞춰 계속 바뀌어요.</p>
       <div className="seg small board-win">{WINDOWS.map(([v, l]) => <button key={v} className={win === v ? 'on' : ''} onClick={() => setWin(v)}>{l}</button>)}</div>
       {groups.length === 0 && <p className="sub" style={{ margin: '4px 0 12px' }}>{from || dest ? '이 조건에 맞는 모집이 없어요. 첫 모집을 열어 보세요.' : '지금 열린 모집이 없어요.'}</p>}
       {groups.map((g) => {
@@ -203,7 +202,7 @@ function RideBoard({ rooms, from, dest, similar, price, now, onJoin, onRoute, bu
         return (
           <section key={g.key} className="card route-card">
             <button className="route-head" onClick={() => onRoute(first)}>
-              <b>{g.key}</b><small>{g.rooms.length}건 ›</small>
+              <b>{g.key}</b><small>{first.virtual && <span className="tag gray">시연</span>} {g.rooms.length}건 ›</small>
             </button>
             {g.rooms.map((r) => {
               const o = placeFromId(r.spot_id)
@@ -215,13 +214,12 @@ function RideBoard({ rooms, from, dest, similar, price, now, onJoin, onRoute, bu
                   <div className="room-main">
                     <div className="room-tags">
                       <span className="room-count">{n}/{r.max_people}명</span>
-                      {r.kind === 'roundtrip' && <span className="tag">왕복 택시 · 할증 없음</span>}
-                      {r.virtual && <span className="tag gray">시연</span>}
+                      {r.kind === 'roundtrip' && <span className="tag">왕복 · 할증 없음</span>}
                     </div>
-                    <span className="room-fare">{r.kind === 'roundtrip' ? `할증 없이 약 ${won(price(r, 1).fareDongRate)}` : `합류하면 1인 약 ${won(price(r, n + 1).share)}`}</span>
+                    <span className="room-fare">{r.kind === 'roundtrip' ? `약 ${won(price(r, 1).fareDongRate)}` : `1인 약 ${won(price(r, n + 1).share)}`}</span>
                     {r.note && <span className="room-note">{r.note}</span>}
-                    {condsOf(r).length > 0 && <div className="cond-chips">{condsOf(r).map((c) => <span key={c}>{c}</span>)}</div>}
-                    {r.kind !== 'roundtrip' && meet && <span className="room-note">만날 곳: {meet}{from && ` · 걸어서 ${Math.max(1, Math.round(distM(o, from) / 70))}분`}</span>}
+                    {r.kind !== 'roundtrip' && meet && <span className="room-note">{meet}{from && ` · 걸어서 ${Math.max(1, Math.round(distM(o, from) / 70))}분`}</span>}
+                    {condsOf(r).length > 0 && <div className="cond-chips"><span>{condsOf(r)[0]}</span></div>}
                   </div>
                   <button className="pill-btn small" disabled={busy || r.status !== 'open'} onClick={() => onJoin(r)}>{r.status !== 'open' ? '마감' : joinLabel}</button>
                 </div>
@@ -280,6 +278,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
   const busSpot = from ? { id: `${from.lat.toFixed(3)},${from.lon.toFixed(3)}`, lat: from.lat, lon: from.lon } : null
   const last = lastBusState(useLastBus(busSpot))
   const trains = useTrains(true)
+  const buses = useTerminal()
   const nearOsong = !!from && distM(from, OSONG) < 3000
   const ktx = nearOsong && trains?.ok ? trains.next.filter((t) => minutesUntil(t.time) >= 0 && minutesUntil(t.time) <= 90).slice(0, 3) : []
   const now = useNow()
@@ -307,14 +306,14 @@ export default function Ride({ account, route, setRoute, onLogin }) {
   }, [canUse, me])
   const similar = (r) => !!dest && (r.dest_zone === dest.zoneId || distM(zonePlace(r.dest_zone), dest) <= SIMILAR_M)
   const joinedIds = new Set([...mine, ...demo.rides].map((r) => r.id))
-  const rooms = [...open, ...demoRooms(now, trains, profile?.gender)]
+  const rooms = [...open, ...demoRooms(now, trains, profile?.gender, buses)]
     .filter((r) => !joinedIds.has(r.id))
     .sort((a, b) => a.depart_at.localeCompare(b.depart_at))
   const toMine = () => setTimeout(() => document.querySelector('.card.mine')?.scrollIntoView({ block: 'start', behavior: 'smooth' }), 150)
   const askJoin = (r) => { if (!canUse) return onLogin(); setConfirm(r) }
   const joinRoom = async (r) => {
     setConfirm(null)
-    const ok = r.kind === 'roundtrip' ? `참여했어요. ${hhmm(r.depart_at)}에 도착하는 택시를 타면 할증 없이 가요. 안 오면 노쇼 수수료로 ${won(r.hold_won ?? Math.round(price(r, 1).fare - price(r, 1).fareDongRate))}이 부과돼요(시범).` : '참여했어요. 아래 대화로 시간과 만날 곳을 맞춰 주세요.'
+    const ok = r.kind === 'roundtrip' ? `참여했어요. ${hhmm(r.depart_at)}에 오는 택시를 타요.` : '참여했어요.'
     if (r.virtual) { demo.join(r); setMsg({ text: ok }) } else await act(() => joinRide(r.id, me, profile.nickname), ok)
     toMine()
   }
@@ -340,7 +339,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
     })
     if (!r.error) setForm(null)
     return r
-  }, '모집을 열었어요. 비슷한 방향의 사람이 참여하면 바로 알려 드려요.')
+  }, '모집을 열었어요.')
 
   // 왕복 매칭: 내가 탄 택시가 도착지에 닿는 시각에, 그곳에서 시내로 갈 손님을 미리 구한다 (양쪽 할증 없음)
   const submitRoundtrip = () => act(async () => {
@@ -351,7 +350,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
     })
     if (!r.error) setRt(null)
     return r
-  }, '왕복 매칭을 열었어요. 도착지에서 시내로 갈 손님이 참여하면 알려 드려요.')
+  }, '왕복 매칭을 열었어요.')
 
   const arrived = async (r) => {
     const n = r.ride_members.length
@@ -367,15 +366,15 @@ export default function Ride({ account, route, setRoute, onLogin }) {
     setMsg({ text: `기록했어요. 이번에 ${won(saving)} 아꼈어요.` })
   }
 
-  const banner = last?.ended ? { tone: 'red', title: '버스가 끊긴 시간이에요', body: '같은 방향 손님과 택시를 나눠 타세요.' }
-    : ktx[0] ? { tone: 'blue', title: `KTX ${ktx[0].time} 도착 (${minutesUntil(ktx[0].time)}분 후)`, body: '도착 시각에 맞춰 모집을 열면 같이 탈 사람이 가장 많아요.' }
-    : last?.soon ? { tone: 'amber', title: `막차까지 ${last.left}분`, body: `${last.latest.route}번 ${last.latest.last} · 놓치면 같이 타기로` }
+  const banner = last?.ended ? { tone: 'red', title: '버스가 끊긴 시간이에요', body: '' }
+    : ktx[0] ? { tone: 'blue', title: `KTX ${ktx[0].time} 도착 · ${minutesUntil(ktx[0].time)}분 후`, body: '' }
+    : last?.soon ? { tone: 'amber', title: `막차까지 ${last.left}분`, body: `${last.latest.route}번 ${last.latest.last}` }
     : null
 
   return (
     <div className="ride">
       <div className="ride-top">
-        <div className="ride-brand"><Logo size={26} light /><span>택시 앱과 함께 쓰는 할증 도우미</span></div>
+        <div className="ride-brand"><Logo size={26} /></div>
         <div className="route-box">
           <button className="route-row" onClick={() => setSheet('from')}><span className="dot-from" /><span className="sb-text"><small>출발</small><b className={from ? '' : 'route-empty'}>{from ? from.name : '어디서 출발하세요?'}</b></span></button>
           {both && <button className="swap-btn" onClick={swap} aria-label="출발과 도착 바꾸기">⇅</button>}
@@ -394,7 +393,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
 
         {[...mine, ...demo.rides].map((r) => <MyRide key={r.id} r={r} me={me} busy={busy} act={act} arrived={arrived} price={price} leaveDemo={demo.leave} />)}
 
-        {banner && <div className={`banner ${banner.tone}`}><b>{banner.title}</b><span>{banner.body}</span></div>}
+        {banner && <div className={`banner ${banner.tone}`}><b>{banner.title}</b>{banner.body && <span>{banner.body}</span>}</div>}
 
         {from && !to && (
           <>
@@ -429,7 +428,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
             <p className="card-title">할증 없이 가기</p>
             <div className="rt-opt">
               <div className="rt-head"><b>왕복 매칭</b><span className="rt-price">{won(solo.fareDongRate)}</span></div>
-              <p className="sub">{dest.name}에서 시내 갈 손님을 미리 구하면 양쪽 다 할증 없음</p>
+              <p className="sub">돌아올 손님을 미리 구하면 양쪽 할증 없음</p>
               {canUse && !rt && <button className="btn" style={{ marginTop: 8 }} onClick={() => setRt({ arrive: Math.max(10, Math.round(solo.km * 2.5)), seats: 1 })}>왕복 매칭 열기</button>}
               {canUse && rt && (
                 <div className="new-ride">
@@ -449,7 +448,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
             </div>
             <div className="rt-opt">
               <div className="rt-head"><b>귀로 연계 결제 <span className="tag gray">모의</span></b><span className="rt-price"><s>{won(solo.fare)}</s> {won(solo.fareDongRate)}</span></div>
-              <p className="sub">내린 뒤 30분 안에 그 택시가 귀로 손님을 태우면 할증 빼고 결제{chance ? ` · 가능성 약 ${Math.round(chance.p * 100)}%` : ''}</p>
+              <p className="sub">30분 안에 귀로 손님을 태우면 할증 제외{chance ? ` · 가능성 약 ${Math.round(chance.p * 100)}%` : ''}</p>
             </div>
           </section>
         )}
@@ -457,14 +456,13 @@ export default function Ride({ account, route, setRoute, onLogin }) {
         <RideBoard rooms={rooms} from={from} dest={dest} similar={similar} price={price} now={now} onJoin={askJoin} onRoute={pickRoute} busy={busy} joinLabel={canUse ? '참여' : '로그인'} />
 
         <section className="card">
-          <p className="card-title">원하는 칸이 없나요?</p>
           {!canUse && (
             <div className="empty">
-              <p className="sub">{session ? '가입 정보를 먼저 입력해 주세요.' : '로그인하면 모집을 열거나 참여할 수 있어요.'}</p>
-              {!session && <button className="btn" style={{ marginTop: 10 }} onClick={onLogin}>로그인 · 체험 계정</button>}
+              {session && <p className="sub">가입 정보를 먼저 입력해 주세요.</p>}
+              {!session && <button className="btn" style={{ marginTop: 10 }} onClick={onLogin}>시작하기</button>}
             </div>
           )}
-          {canUse && !form && <button className="btn" disabled={!both} onClick={() => setForm({ leave: ktx[0] ? Math.max(5, minutesUntil(ktx[0].time) + 10) : 15, meet: '' })}>{both ? `${dest.name}행 모집 열기` : '출발지와 도착지를 고르면 직접 열 수 있어요'}</button>}
+          {canUse && !form && <button className="btn" disabled={!both} onClick={() => setForm({ leave: ktx[0] ? Math.max(5, minutesUntil(ktx[0].time) + 10) : 15, meet: '' })}>{both ? `${dest.name}행 모집 열기` : '경로를 고르면 직접 모집할 수 있어요'}</button>}
           {canUse && form && (
             <div className="new-ride">
               <label className="field"><span>어디서 만날까요? <small className="hint">대화로 바꿔도 돼요</small></span>
@@ -482,7 +480,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
               <div className="field"><span>모집 조건 <small className="hint">선택</small></span>
                 <div className="chips wrap">{CONDITIONS.map((c) => { const on = form.conds?.includes(c); return <button key={c} type="button" className={`chip ${on ? 'on' : ''}`} onClick={() => setForm({ ...form, conds: on ? form.conds.filter((x) => x !== c) : [...(form.conds ?? []), c] })}>{c}</button> })}</div>
               </div>
-              <p className="sub">{from.name} → {dest.name} · {people}명이면 1인 약 {won(shared.share)} · 같은 성별 회원에게만 보여요</p>
+              <p className="sub">{from.name} → {dest.name} · {people}명이면 1인 약 {won(shared.share)} · 같은 성별에게만 보여요</p>
               <div className="grid2" style={{ marginTop: 10, marginBottom: 0 }}>
                 <button className="btn ghost" onClick={() => setForm(null)}>취소</button>
                 <button className="btn" disabled={busy} onClick={submitNew}>모집 열기</button>
@@ -503,8 +501,8 @@ export default function Ride({ account, route, setRoute, onLogin }) {
             {condsOf(confirm).length > 0 && <div className="cond-chips" style={{ marginBottom: 10 }}>{condsOf(confirm).map((c) => <span key={c}>{c}</span>)}</div>}
             <ul className="join-rules">
               {confirm.kind === 'roundtrip'
-                ? <><li>요금은 택시에서 기사님께 직접 내요.</li><li>약속하고 안 오면 노쇼 수수료를 부담해요 (시범).</li></>
-                : <><li>1인 금액은 택시를 부르기 전에 방장에게 먼저 보내요.</li><li>실제 요금과 차이가 나면 내린 뒤 대화로 맞춰요.</li><li>약속 시간에 늦거나 술에 많이 취했으면 방장이 탑승을 거절할 수 있어요.</li></>}
+                ? <><li>요금은 기사님께 직접 내요.</li><li>안 오면 노쇼 수수료를 부담해요 (시범).</li></>
+                : <><li>택시 부르기 전 방장에게 먼저 송금</li><li>요금 차이는 내린 뒤 대화로</li><li>지각·만취 시 탑승 거절 가능</li></>}
             </ul>
             <div className="grid2" style={{ marginTop: 12, marginBottom: 0 }}>
               <button className="btn ghost" onClick={() => setConfirm(null)}>취소</button>
