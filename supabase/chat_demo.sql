@@ -46,10 +46,9 @@ declare me uuid := auth.uid();
 begin
   if me is null or not is_demo_user(me) then raise exception '체험 계정만 초기화할 수 있어요'; end if;
   delete from ride_messages where user_id = me;
-  delete from ratings where rater_id = me or ratee_id = me;
   delete from trips where user_id = me;
   delete from ride_members where user_id = me and ride_id not in (select id from rides where host_id = me);
-  delete from rides where host_id = me;   -- 그 모집의 참여자·채팅·평가도 함께 지워진다
+  delete from rides where host_id = me;   -- 그 모집의 참여자·채팅도 함께 지워진다
 end $$;
 revoke execute on function reset_demo() from public, anon;
 grant execute on function reset_demo() to authenticated;

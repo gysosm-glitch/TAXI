@@ -1,5 +1,5 @@
 -- 시범 운영용 (Supabase SQL Editor에서 1회 실행, rides.sql 다음에)
--- 이용 기록·동승 평가·의견을 서버에 쌓고, 개인정보 없이 통계만 공개한다.
+-- 이용 기록·의견을 서버에 쌓고, 개인정보 없이 통계만 공개한다.
 
 -- 1) 이용 기록: '도착했어요'를 누르면 1건
 create table if not exists trips (
@@ -16,18 +16,6 @@ create table if not exists trips (
   unique (ride_id, user_id)
 );
 
--- 2) 동승 평가: 같이 탄 사람끼리 별점·노쇼
-create table if not exists ratings (
-  ride_id    uuid not null references rides(id) on delete cascade,
-  rater_id   uuid not null references auth.users(id) on delete cascade,
-  ratee_id   uuid not null references auth.users(id) on delete cascade,
-  score      int  not null check (score between 1 and 5),
-  no_show    boolean not null default false,
-  created_at timestamptz default now(),
-  primary key (ride_id, rater_id, ratee_id),
-  check (rater_id <> ratee_id)
-);
-
 -- 3) 의견 보내기
 create table if not exists feedback (
   id         bigint generated always as identity primary key,
@@ -37,22 +25,14 @@ create table if not exists feedback (
 );
 
 alter table trips enable row level security;
-alter table ratings enable row level security;
 alter table feedback enable row level security;
 
 drop policy if exists "본인 이용 기록 추가" on trips;
 drop policy if exists "본인 이용 기록 조회" on trips;
-drop policy if exists "같이 탄 사람 평가" on ratings;
 drop policy if exists "의견 보내기" on feedback;
 
 create policy "본인 이용 기록 추가" on trips for insert to authenticated with check (user_id = auth.uid());
 create policy "본인 이용 기록 조회" on trips for select to authenticated using (user_id = auth.uid());
--- 평가는 둘 다 그 모집의 참여자일 때만
-create policy "같이 탄 사람 평가" on ratings for insert to authenticated with check (
-  rater_id = auth.uid()
-  and exists (select 1 from ride_members m where m.ride_id = ratings.ride_id and m.user_id = auth.uid())
-  and exists (select 1 from ride_members m where m.ride_id = ratings.ride_id and m.user_id = ratings.ratee_id)
-);
 create policy "의견 보내기" on feedback for insert to anon, authenticated with check (user_id is null or user_id = auth.uid());
 
 -- 4) 공개 통계 (개인정보 없이 합계만)
@@ -71,14 +51,6 @@ language sql stable security definer set search_path = public as $$
   )
 $$;
 grant execute on function public_stats() to anon, authenticated;
-
--- 5) 사용자 평점 (평균·횟수·노쇼)
-create or replace function user_rating(uid uuid) returns json
-language sql stable security definer set search_path = public as $$
-  select json_build_object('avg', coalesce(round(avg(score)::numeric, 1), 0), 'count', count(*), 'no_show', count(*) filter (where no_show))
-  from ratings where ratee_id = uid
-$$;
-grant execute on function user_rating(uuid) to authenticated;
 
 -- 6) 지난 모집 자동 정리 (매일 Vercel이 호출): 출발 2시간이 지난 모집을 마감
 create or replace function close_stale_rides() returns int

@@ -119,4 +119,3 @@ export function useDemoJoined(me, myNick) {
   return { rides, join, leave }
 }
 
-export const clearDemoJoined = () => store.removeItem(KEY)

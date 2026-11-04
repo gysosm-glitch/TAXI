@@ -32,7 +32,7 @@ export async function startDemo(d) {
   const uid = data.session.user.id
   const { data: existing } = await supabase.from('profiles').select('*').eq('id', uid).maybeSingle()
   if (existing && existing.nickname !== d.nickname) {
-    const renamed = await saveProfile(uid, { nickname: d.nickname })
+    const renamed = await supabase.from('profiles').update({ nickname: d.nickname }).eq('id', uid).select().single()
     if (!renamed.error) return { profile: renamed.data }
   }
   if (existing) return { profile: existing }

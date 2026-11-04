@@ -9,12 +9,6 @@ const SELECT = '*, ride_members(user_id, nickname, joined_at)'
 // 출발 15분 전까지 지난 모집도 잠깐 보여 준다 (늦게 온 사람)
 const since = () => new Date(Date.now() - 15 * 60000).toISOString()
 
-export async function listRides(spotId) {
-  const { data, error } = await supabase.from('rides').select(SELECT)
-    .eq('spot_id', spotId).in('status', ACTIVE).gte('depart_at', since()).order('depart_at')
-  return { data: data ?? [], error }
-}
-
 export async function listAllOpen() {
   const { data } = await supabase.from('rides').select(SELECT).in('status', ACTIVE).gte('depart_at', since()).order('depart_at').limit(30)
   return data ?? []

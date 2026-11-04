@@ -1,6 +1,5 @@
 // 실시간 버스 도착 (Vercel 서버 함수 api/bus) 불러오기 + 1분마다 갱신
 import { useEffect, useState } from 'react'
-import { HOUR_PROFILE } from './hours.js'
 
 async function getJSON(url, ms = 8000) {
   try {
@@ -28,21 +27,7 @@ export function useLive(spot) {
   return { bus, at }
 }
 
-// 가장 빨리 오는 버스 1대
-export function nextBus(bus) {
-  if (!bus?.ok) return null
-  const all = bus.stations.flatMap((s) => s.arrivals.map((a) => ({ ...a, station: s.name })))
-  return all.sort((a, b) => a.min - b.min)[0] ?? null
-}
-
 // 지금 시각 이 스팟의 평소 택시 수요 (하루 승차 × 시간대 비중)
-const PROFILE_SUM = HOUR_PROFILE.reduce((a, b) => a + b, 0)
-export function taxiDemandNow(spot, hour = new Date().getHours()) {
-  const perHour = Math.round(spot.pickups_per_day * HOUR_PROFILE[hour] / PROFILE_SUM)
-  const avg = spot.pickups_per_day / 24
-  return { perHour, level: perHour >= avg * 1.15 ? '많음' : perHour >= avg * 0.7 ? '보통' : '적음' }
-}
-
 // 막차: 스팟 주변 노선의 막차 시간 (시간표라 한 번만 불러온다)
 export function useLastBus(spot) {
   const [data, setData] = useState(null)
