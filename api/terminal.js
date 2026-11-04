@@ -21,11 +21,20 @@ const ymd = (d) => d.toISOString().slice(0, 10).replace(/-/g, '')
 const hm = (v) => { const s = String(v); return `${s.slice(8, 10)}:${s.slice(10, 12)}` }
 
 const cache = {}   // 터미널 ID는 잘 안 바뀌므로 함수 인스턴스가 살아 있는 동안 재사용
+const apiMessage = (json) => json?.response?.header?.resultMsg ?? json?.OpenAPI_ServiceResponse?.cmmMsgHeader?.returnAuthMsg ?? json?.OpenAPI_ServiceResponse?.cmmMsgHeader?.errMsg ?? null
 async function terminalId(base, op, key, name, exact) {
   const id = `${base}|${name}`
-  if (id in cache) return cache[id]
-  const list = items(await getJSON(`${base}/${op}?serviceKey=${key}&terminalNm=${encodeURIComponent(name)}&numOfRows=50&pageNo=1&_type=json`))
-  const hit = (exact && list.find((t) => t.terminalNm === name)) || list.find((t) => t.terminalNm?.includes(name))
+  if (cache[id]) return cache[id]
+  const pick = (list) => (exact && list.find((t) => t.terminalNm === name)) || list.find((t) => t.terminalNm?.includes(name))
+  const url = `${base}/${op}?serviceKey=${key}&numOfRows=500&pageNo=1&_type=json`
+  const named = await getJSON(`${url}&terminalNm=${encodeURIComponent(name)}`)
+  let hit = pick(items(named))
+  if (!hit) {
+    // 이름 검색이 비면 전체 목록에서 찾는다
+    const all = await getJSON(url)
+    hit = pick(items(all))
+    if (!hit && exact) throw new Error(`터미널 없음(${items(all).length}건, ${apiMessage(all) ?? apiMessage(named) ?? '응답 없음'})`)
+  }
   return (cache[id] = hit?.terminalId ?? null)
 }
 
