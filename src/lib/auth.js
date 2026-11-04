@@ -47,7 +47,7 @@ export async function signOut() {
   await wait(supabase.auth.signOut({ scope: 'local' }).catch(() => {}))
   try {
     sessionStorage.removeItem('demo_tab')
-    for (const k of ['history_v1', 'recent_places_v1']) sessionStorage.removeItem(k)
+    for (const k of ['history_v1', 'recent_places_v1', 'demo_joined_v1', 'paid_v1']) sessionStorage.removeItem(k)
     for (const k of Object.keys(localStorage)) if (k.startsWith('sb-') && k.endsWith('-auth-token')) localStorage.removeItem(k)
   } catch {}
   window.location.replace('/')

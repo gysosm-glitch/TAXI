@@ -3,7 +3,7 @@ import Icon from '../components/Icon.jsx'
 import ProfileForm from './ProfileForm.jsx'
 import { FIELDS, NOT_COLLECTED, RULES } from '../privacy.js'
 import { signOut, deleteProfile } from '../lib/auth.js'
-import { getMyRating, sendFeedback, getStats, myTripsThisMonth } from '../lib/rides.js'
+import { sendFeedback, getStats, myTripsThisMonth } from '../lib/rides.js'
 import { supabase } from '../lib/supabase.js'
 import { store, demoTab } from '../lib/store.js'
 import { resetDemo } from '../lib/demo.js'
@@ -47,6 +47,15 @@ function savedLocal() {
   } catch { return { won: 0, count: 0 } }
 }
 
+// 시연 모집은 서버에 쌓지 않으므로 이 기기 기록에서 더한다
+function savedDemo() {
+  try {
+    const m = new Date().toISOString().slice(0, 7)
+    const mine = (JSON.parse(store.getItem('history_v1')) ?? []).filter((h) => h.virtual && h.at?.startsWith(m))
+    return { won: mine.reduce((a, h) => a + (h.saving || 0), 0), count: mine.length }
+  } catch { return { won: 0, count: 0 } }
+}
+
 function Ring({ ratio }) {
   const c = 2 * Math.PI * 31
   return (
@@ -67,7 +76,7 @@ function Savings({ userId }) {
     if (userId) myTripsThisMonth(userId).then((t) => t && setServer({ won: t.reduce((a, x) => a + x.saving, 0), count: t.length }))
     if (supabase) getStats().then(setStats)
   }, [userId])
-  const saved = server ?? savedLocal()
+  const saved = server ? { won: server.won + savedDemo().won, count: server.count + savedDemo().count } : savedLocal()
   return (
     <>
       <div className="card ring-card">
@@ -116,8 +125,6 @@ export default function Me({ account, onLogin }) {
   const { session, profile, loading, setProfile } = account
   const [editing, setEditing] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
-  const [rate, setRate] = useState(null)
-  useEffect(() => { if (session && profile) getMyRating(session.user.id).then(setRate) }, [session, profile])
 
   if (loading) return <p className="sub">불러오는 중…</p>
 
@@ -158,7 +165,6 @@ export default function Me({ account, onLogin }) {
           <p className="sub">{profile.gender === 'F' ? '여성' : '남성'}{profile.age_group ? ` · ${AGE[profile.age_group]}` : ''}</p>
           <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
             <span className="tag">본인확인 예정</span>
-            {rate && <span className="tag amber">★ {rate.count ? `${rate.avg} (${rate.count}회 평가)` : '아직 평가 없음'}</span>}
             {profile.org_email && <span className="tag">{profile.org_email.split('@')[1]} 인증 예정</span>}
           </div>
         </div>

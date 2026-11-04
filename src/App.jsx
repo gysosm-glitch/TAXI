@@ -4,14 +4,19 @@ import Welcome from './screens/Welcome.jsx'
 import ProfileForm from './screens/ProfileForm.jsx'
 import Ride from './screens/Ride.jsx'
 import Driver from './screens/Driver.jsx'
+import Transit from './screens/Transit.jsx'
 import Me from './screens/Me.jsx'
 import { useAccount, signOut } from './lib/auth.js'
 import { useRideAlerts } from './lib/alerts.js'
 import { useDemoIdleLogout } from './lib/demo.js'
 import { demoTab, isDemoEmail } from './lib/store.js'
+import { spots, placeAt } from './data.js'
+
+const spotPlace = (id) => { const s = spots.find((x) => x.id === id); return placeAt(s.lat, s.lon, s.name) }
 
 const TABS = [
   ['ride', 'taxi', '타기'],
+  ['transit', 'train', '교통'],
   ['driver', 'car', '기사'],
   ['me', 'user', '내 정보'],
 ]
@@ -19,6 +24,7 @@ const TABS = [
 export default function App() {
   const [tab, setTab] = useState('ride')
   const [browsing, setBrowsing] = useState(false)
+  const [route, setRoute] = useState({ from: null, to: null })   // 탭을 옮겨도 고른 경로를 유지
   const account = useAccount()
   const { session, profile, loading, setProfile } = account
   const { toast, close } = useRideAlerts(profile ? session?.user?.id : null, tab)
@@ -58,7 +64,8 @@ export default function App() {
         </button>
       )}
       <main className={`content ${tab === 'ride' ? 'flush' : ''}`}>
-        {tab === 'ride' && <Ride account={account} onLogin={() => setBrowsing(false)} />}
+        {tab === 'ride' && <Ride account={account} route={route} setRoute={setRoute} onLogin={() => setBrowsing(false)} />}
+        {tab === 'transit' && <Transit onRide={() => { setRoute({ from: spotPlace('osong_stn'), to: null }); setTab('ride') }} />}
         {tab === 'driver' && <Driver account={account} onLogin={() => setBrowsing(false)} />}
         {tab === 'me' && <Me account={account} onLogin={() => setBrowsing(false)} />}
       </main>

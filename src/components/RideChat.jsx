@@ -1,4 +1,4 @@
-// 모집 카드 안의 동승자 채팅
+// 모집 카드 안의 동승자 채팅 (실제 모집은 서버, 시연 모집은 이 기기에서만)
 import { useEffect, useRef, useState } from 'react'
 import { sendMessage, useRideMessages } from '../lib/chat.js'
 
@@ -8,8 +8,7 @@ const QUICK = {
 }
 const hhmm = (iso) => new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
 
-export default function RideChat({ ride, me }) {
-  const { messages, failed, merge } = useRideMessages(ride.id)
+function ChatView({ ride, me, messages, onSend, failed }) {
   const [text, setText] = useState('')
   const [sending, setSending] = useState(false)
   const [err, setErr] = useState(null)
@@ -22,10 +21,10 @@ export default function RideChat({ ride, me }) {
     const clean = body.trim()
     if (!clean || sending) return
     setSending(true); setErr(null)
-    const { data, error } = await sendMessage(ride.id, me, clean)
+    const { error } = await onSend(clean)
     setSending(false)
     if (error) return setErr('보내지 못했어요. 잠시 후 다시 시도해 주세요.')
-    merge([data]); setText('')
+    setText('')
   }
 
   if (ride.ride_members.length < 2) return <p className="chat-empty">동승자가 참여하면 여기서 대화할 수 있어요.</p>
@@ -46,7 +45,7 @@ export default function RideChat({ ride, me }) {
         </div>
       )}
       <div className="chat-quick">
-        {QUICK[ride.kind === 'roundtrip' ? 'roundtrip' : 'pool'].map((q) => <button key={q} type="button" disabled={sending} onClick={() => send(q)}>{q}</button>)}
+        {QUICK[ride.kind === 'roundtrip' ? 'roundtrip' : 'pool'].filter((q) => q !== '택시 불렀어요' || ride.host_id === me).map((q) => <button key={q} type="button" disabled={sending} onClick={() => send(q)}>{q}</button>)}
       </div>
       <form className="chat-form" onSubmit={(e) => { e.preventDefault(); send(text) }}>
         <input value={text} maxLength={200} placeholder="메시지 입력" aria-label="메시지 입력" onChange={(e) => setText(e.target.value)} />
@@ -55,4 +54,19 @@ export default function RideChat({ ride, me }) {
       {err && <p className="form-msg bad" style={{ margin: '8px 0 0' }}>{err}</p>}
     </div>
   )
+}
+
+function LiveChat({ ride, me }) {
+  const { messages, failed, merge } = useRideMessages(ride.id)
+  const onSend = async (body) => {
+    const { data, error } = await sendMessage(ride.id, me, body)
+    if (!error) merge([data])
+    return { error }
+  }
+  return <ChatView ride={ride} me={me} messages={messages} failed={failed} onSend={onSend} />
+}
+
+export default function RideChat({ ride, me }) {
+  if (ride.virtual) return <ChatView ride={ride} me={me} messages={ride.messages} onSend={async (body) => { ride.sendDemo(body); return {} }} />
+  return <LiveChat ride={ride} me={me} />
 }

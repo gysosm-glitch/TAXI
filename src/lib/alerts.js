@@ -46,7 +46,7 @@ export function useRideAlerts(userId, tab) {
           if (!old) continue
           for (const [uid, nick] of cur.members) if (uid !== userId && !old.members.has(uid)) say('쉐어택 · 새 동승자', `${nick}님이 참여했어요 (${cur.members.size}/${r.max_people}명)`)
           for (const [uid, nick] of old.members) if (!cur.members.has(uid)) say('쉐어택 · 동승자 변경', `${nick}님이 나갔어요 (${cur.members.size}/${r.max_people}명)`)
-          if (old.status !== 'full' && cur.status === 'full') say('쉐어택 · 모집 완료', r.kind === 'roundtrip' ? `왕복 매칭이 정해졌어요. ${r.spot_name.split(' · ')[0]} → ${r.dest_name}` : `${r.spot_name.replace(' · ', ' ')}에서 만나요. ${r.dest_name}행`)
+          if (old.status !== 'full' && cur.status === 'full') say('쉐어택 · 모집 완료', r.kind === 'roundtrip' ? `왕복 매칭이 정해졌어요. ${r.spot_name.split(' · ')[0]} → ${r.dest_name}` : `${r.spot_name.split(' · ').slice(0, 2).join(' ')}에서 만나요. ${r.dest_name}행`)
         }
         for (const [id, old] of Object.entries(before)) {
           if (now[id] || old.r.host_id === userId) continue

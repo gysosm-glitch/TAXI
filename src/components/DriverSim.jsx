@@ -1,14 +1,15 @@
 // 기사 화면의 가상 상황: 실제 배차 없이, 시범 운영에서 겪을 만한 판단을 눌러 본다.
 // 금액은 앱의 요금 계산값과 정책안 보전액만 쓰고, 실측값처럼 말하지 않는다.
 import { useState } from 'react'
-import { spots, spotZoneId, tripQuote, cityDest, zoneById, won } from '../data.js'
+import { spots, spotZoneId, quoteBetween, placeAt, cityDest, zoneById, won } from '../data.js'
 
 const spotById = (id) => spots.find((s) => s.id === id)
 
 function money(spotId, fuelPerKm, feePerTrip) {
   const zone = spotZoneId(spotById(spotId))
   const dest = cityDest(zone)
-  const q = tripQuote(zone, dest, 1)
+  const s = spotById(spotId), z = zoneById[dest]
+  const q = quoteBetween(placeAt(s.lat, s.lon, s.name), placeAt(z.centroid_lat, z.centroid_lon, z.name), 1)
   return {
     place: spotById(spotId).name, dest: zoneById[dest].name, fare: q.fare, base: q.fareDongRate,
     fuel: Math.round(q.km * fuelPerKm), hold: q.fare - q.fareDongRate, policy: q.fareDongRate + feePerTrip, fee: feePerTrip,
@@ -60,8 +61,7 @@ export default function DriverSim({ fuelPerKm, feePerTrip }) {
   const r = pick != null ? s.choices[pick].result(m) : null
 
   return (
-    <div className="card sim">
-      <p className="card-title"><span>가상 상황으로 해 보기</span><span className="tag gray">가상</span></p>
+    <div className="sim">
       <div className="chips wrap">
         {SCENARIOS.map((x) => <button key={x.id} className={`chip ${x.id === id ? 'on' : ''}`} onClick={() => { setId(x.id); setPick(null) }}>{x.chip}</button>)}
       </div>

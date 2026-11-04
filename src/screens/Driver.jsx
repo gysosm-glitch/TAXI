@@ -1,132 +1,118 @@
+// 기사: 손님을 내려준 곳 → 돌아가는 길의 손님 → 태우면 얼마나 달라지는지. 실제 배차는 없는 시범 화면이다.
 import { useMemo, useState } from 'react'
-import Icon from '../components/Icon.jsx'
-import { Badge } from '../components/Illust.jsx'
 import DriverSim from '../components/DriverSim.jsx'
-import { spots, zones, zoneById, tripQuote, won, spotZoneId, placeFromId, isReturnRoute, cityDest, locate } from '../data.js'
-import { useMyPosition } from '../lib/geo.js'
+import { spots, zoneById, won, spotZoneId, placeFromId, placeAt, quoteBetween, isReturnRoute } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { listAllOpen, useRidesLive } from '../lib/rides.js'
-import { HOUR_PROFILE } from '../lib/hours.js'
 import { useTrains, minutesUntil } from '../lib/live.js'
+import { demoRooms, useNow } from '../lib/demoRides.js'
+import { HOUR_PROFILE } from '../lib/hours.js'
 import analysis from '../../data/web/12_simulation/return_matching.json'
 import adoption from '../../data/web/12_simulation/adoption.json'
 
 const SUM = HOUR_PROFILE.reduce((a, b) => a + b, 0)
 const FUEL_WON_PER_KM = 130   // LPG 택시 km당 연료비 (가정)
-// 기사 화면에서 고를 수 있는 곳: 읍·면의 추천 스팟 + 13개 읍·면
-const emSpots = spots.filter((s) => zoneById[spotZoneId(s)]?.is_eupmyeon)
-const emZones = zones.filter((z) => z.is_eupmyeon)
-
-// 손익분기 결과 (앱 이용 30%, 할증 전액 면제 기준)
-const pick = (a, e) => analysis.grid.find((g) => g.appShare === a && g.exemptRatio === e)
-const full30 = pick(0.3, 1)
+const PLACES = ['osong_stn', 'ochang_lake', 'ochang_tech', 'osong_bio'].map((id) => spots.find((s) => s.id === id))
+const fee = analysis.grid.find((g) => g.appShare === 0.3 && g.exemptRatio === 1).breakEvenFeePerTrip   // 앱 이용 30%, 전액 면제 때 보전액
 const joined30 = adoption.drivers.find((d) => d.appShare === 0.3)   // 앱을 쓰는 기사만 본 수입 변화
+const zonePlace = (z) => placeAt(zoneById[z].centroid_lat, zoneById[z].centroid_lon, zoneById[z].name)
+const mins = (iso, now) => Math.max(0, Math.round((new Date(iso) - now) / 60000))
 
-export default function Driver({ account, onLogin }) {
-  const [sel, setSel] = useState(emSpots.find((s) => s.id === 'osong_stn')?.id ?? `zone:${emZones[0].zone_id}`)
-  const [open, setOpen] = useState([])
-  const [accepted, setAccepted] = useState(null)
-  const place = placeFromId(sel)
-  const zone = spotZoneId(place)
+export default function Driver({ account }) {
+  const [sel, setSel] = useState(PLACES[0].id)
+  const [real, setReal] = useState([])
+  const [taken, setTaken] = useState({})     // 받은 손님: 모집 id → 금액 (이 화면에서만)
+  const [result, setResult] = useState(null)
+  const [more, setMore] = useState(false)
+  const now = useNow()
+  const trains = useTrains(true)
   const live = !!(supabase && account?.session && account?.profile)
-  useRidesLive(async () => { if (live) setOpen(await listAllOpen()) }, [live])
-  const trains = useTrains(sel === 'osong_stn' || sel === 'osong_bio')
-  // 내 위치(GPS): 읍·면 안이면 그곳을 하차 지점으로
-  const gps = useMyPosition()
-  const [gpsMsg, setGpsMsg] = useState(null)
-  const fromGps = () => {
-    if (!gps.pos) { gps.start(); return setGpsMsg('위치를 찾는 중이에요. 잠시 뒤 다시 눌러 주세요.') }
-    const p = locate(gps.pos.lat, gps.pos.lon)
-    if (!p) return setGpsMsg('지금 위치가 청주 밖이에요.')
-    if (!zoneById[p.zoneId].is_eupmyeon) return setGpsMsg(`지금은 ${zoneById[p.zoneId].name}(시내)이에요. 읍·면에 손님을 내려준 뒤 써 보세요.`)
-    setSel(emSpots.some((s) => s.id === p.id) ? p.id : `zone:${p.zoneId}`); setGpsMsg(null)
-  }
+  useRidesLive(async () => { if (live) setReal(await listAllOpen()) }, [live])
 
-  // 지금 이 지역에서 시내로 가려고 모인 손님 (귀로 손님)
-  const waiting = useMemo(() => open.filter((r) => {
-    const z = spotZoneId(placeFromId(r.spot_id) ?? place)
-    return z === zone && isReturnRoute(z, r.dest_zone)   // 인원이 다 찬 모집도 택시를 기다리는 손님이다
-  }), [open, zone])
+  const place = placeFromId(sel)
+  const start = placeAt(place.lat, place.lon, place.name)
+  const zone = spotZoneId(place)
+  const quoteOf = (r) => quoteBetween(start, r.dest_place ?? zonePlace(r.dest_zone), 1)
+
+  // 지금 이곳에서 시내로 가려고 모인 손님 (실제 모집 + 시연 모집)
+  const waiting = useMemo(() => [...real, ...demoRooms(now, trains, account?.profile?.gender)]
+    .filter((r) => { const o = placeFromId(r.spot_id); return o && spotZoneId(o) === zone && isReturnRoute(zone, r.dest_zone) && !taken[r.id] })
+    .sort((a, b) => a.depart_at.localeCompare(b.depart_at)), [real, now, trains, zone, taken, account?.profile?.gender])
   const people = waiting.reduce((a, r) => a + r.ride_members.length, 0)
-  const roundtrips = waiting.filter((r) => r.kind === 'roundtrip').length   // 왕복 매칭으로 귀로가 이미 확정된 운행
 
-  // 평소 이 시간 이 지역 택시 승차 (TIMS 2025)
-  const hour = new Date().getHours()
+  const take = (r) => {
+    const q = quoteOf(r)
+    setResult({ dest: r.dest_name, people: r.ride_members.length, fare: q.fare, policy: q.fareDongRate + fee, fuel: Math.round(q.km * FUEL_WON_PER_KM), km: q.km, virtual: r.virtual })
+    setTaken({ ...taken, [r.id]: q.fare })
+  }
+  const earned = Object.values(taken).reduce((a, b) => a + b, 0)
+  const count = Object.keys(taken).length
+
+  const hour = new Date(now).getHours()
   const perHour = Math.round(place.pickups_per_day * HOUR_PROFILE[hour] / SUM)
-  const toCity = place.surcharge_trip_ratio ? Math.round(perHour * place.surcharge_trip_ratio) : null
-
-  // 대표 귀로 손님: 열린 모집이 있으면 그것, 없으면 이 지역에서 가장 많이 가는 시내 목적지
-  const target = waiting[0]
-  const destZone = target?.dest_zone ?? cityDest(zone)
-  const q = destZone ? tripQuote(zone, destZone, 1) : null
-  const policyFare = q ? q.fareDongRate + full30.breakEvenFeePerTrip : 0
-  const emptyKm = q ? q.km : 0
+  const nextTrain = trains?.ok && sel.startsWith('osong') ? trains.next.find((t) => minutesUntil(t.time) >= 0) : null
 
   return (
     <>
       <h1 className="page-title">기사님 화면 <span className="tag gray">시범</span></h1>
-      <p className="form-msg"><b>정차한 뒤</b> 확인하세요 · 배차는 쓰시던 호출 앱으로</p>
+      <p className="page-sub">지금 기사님은 평소처럼 호출 앱으로 콜을 받으면 돼요. 택시는 방장이 불러요. 이 화면은 호출 플랫폼과 제휴한 뒤의 모습을 미리 보여 주는 체험이에요.</p>
 
-      <p className="label" style={{ margin: '0 0 6px' }}>방금 손님을 내려준 곳</p>
+      <p className="step-label"><i>1</i>방금 손님을 내려준 곳</p>
       <div className="chips">
-        <button className="chip" onClick={fromGps}>📍 내 위치</button>
-        {emSpots.map((s) => <button key={s.id} className={`chip ${s.id === sel ? 'on' : ''}`} onClick={() => setSel(s.id)}>{s.name}</button>)}
-        <select className="chip-select" value={sel.startsWith('zone:') ? sel : ''} onChange={(e) => e.target.value && setSel(e.target.value)}>
-          <option value="">다른 읍·면</option>
-          {emZones.map((z) => <option key={z.zone_id} value={`zone:${z.zone_id}`}>{z.name}</option>)}
-        </select>
+        {PLACES.map((s) => <button key={s.id} className={`chip ${s.id === sel ? 'on' : ''}`} onClick={() => { setSel(s.id); setResult(null) }}>{s.name}</button>)}
       </div>
 
-      {gpsMsg && <p className="form-msg">{gpsMsg}</p>}
+      <p className="step-label"><i>2</i>돌아가는 길에 태울 손님</p>
       <div className="hero driver-hero">
         <p className="label">지금 {place.name}에서 시내 방향</p>
-        <h2>{live ? `귀로 손님 ${people}명 대기 중` : '귀로 손님 대기 현황'}</h2>
-        <p className="sub">{live ? (people ? `${waiting.length}개 모집${roundtrips ? ` (왕복 확정 ${roundtrips})` : ''} · 가장 빠른 출발 ${new Date(waiting[0].depart_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}` : '지금 열린 모집이 없어요. 평소 이 시간 수요를 참고하세요.') : '로그인하면 실제 모집이 보여요.'}</p>
-        {!live && <button className="pill-btn" style={{ marginTop: 10 }} onClick={onLogin}>로그인 · 체험 계정</button>}
+        <h2>귀로 손님 {people}명 대기 중</h2>
+        <p className="sub">{nextTrain ? `다음 열차 ${nextTrain.time} 도착 · ` : ''}평소 이 시간 택시 승차 약 {perHour}명 (TIMS 2025)</p>
       </div>
 
-      {q && (
+      {waiting.length > 0 && (
         <div className="card">
-          <p className="card-title"><span className="with-badge"><Badge><Icon name="car" size={16} /></Badge>돌아갈 때 수입 비교</span><small>{zoneById[destZone].name}행 {q.km.toFixed(1)}km</small></p>
-          <div className="compare">
-            <div className="opt bad-opt">
-              <span>빈 차로 복귀</span>
-              <b>0원</b>
-              <small>연료 약 −{won(emptyKm * FUEL_WON_PER_KM)}</small>
+          {waiting.slice(0, 5).map((r) => (
+            <div key={r.id} className="ride-item">
+              <div>
+                <b>→ {r.dest_name}</b> {r.virtual && <span className="tag gray">시연</span>} {r.kind === 'roundtrip' && <span className="tag">왕복 확정</span>}
+                <span className="meta">손님 {r.ride_members.length}명 · {mins(r.depart_at, now)}분 뒤 · 미터 요금 약 {won(quoteOf(r).fare)}</span>
+              </div>
+              <button className="pill-btn small" onClick={() => take(r)}>태우기</button>
             </div>
-            <div className="opt good-opt">
-              <span>귀로 손님 태우기</span>
-              <b>+{won(q.fare)}</b>
-              <small>정책안(할증 면제+보전) 적용 시 +{won(policyFare)}</small>
+          ))}
+        </div>
+      )}
+      {waiting.length === 0 && <p className="sub" style={{ margin: '0 0 12px' }}>지금 이곳에 시내로 가는 모집이 없어요.</p>}
+
+      {result && (
+        <>
+          <p className="step-label"><i>3</i>태우면 이렇게 달라져요</p>
+          <div className="card">
+            <div className="compare">
+              <div className="opt bad-opt"><span>빈 차로 돌아가면</span><b>−{won(result.fuel)}</b><small>수입 0원, 연료비 ({result.km.toFixed(1)}km 가정)</small></div>
+              <div className="opt good-opt"><span>이 손님을 태우면</span><b>+{won(result.fare)}</b><small>{result.dest}행 {result.people}명</small></div>
             </div>
+            <p className="sub" style={{ marginTop: 10 }}>귀로 할증 면제 정책안이 시행되면 손님 요금은 내려가고, 기사 몫은 수수료 보전을 더해 약 {won(result.policy)}이에요.</p>
           </div>
-          {accepted
-            ? <p className="form-msg" style={{ marginTop: 10, marginBottom: 0 }}>시범 화면이에요. 실제 배차는 제휴 호출 플랫폼에서 이뤄져요.</p>
-            : <button className="btn" style={{ marginTop: 12 }} onClick={() => setAccepted(true)}>{people ? '귀로 손님 받기' : '여기서 귀로 손님 기다리기'}</button>}
+        </>
+      )}
+
+      {count > 0 && (
+        <div className="card earned">
+          <span>이번 시범에서 번 귀로 수입 <small>{count}건</small></span>
+          <b>+{won(earned)}</b>
         </div>
       )}
 
-      <DriverSim fuelPerKm={FUEL_WON_PER_KM} feePerTrip={full30.breakEvenFeePerTrip} />
-
-      <div className="grid2">
-        <div className="card">
-          <Badge tone="amber"><Icon name="users" size={18} /></Badge>
-          <p className="label">평소 이 시간 승차</p>
-          <p className="mid">{perHour}명</p>
-          <p className="sub">{toCity != null ? `그중 시내 방향 약 ${toCity}명` : `${place.name} 시간당`}</p>
-        </div>
-        <div className="card">
-          <Badge tone="blue"><Icon name="train" size={18} /></Badge>
-          <p className="label">다음 열차 도착</p>
-          {trains?.ok && trains.next[0]
-            ? <><p className="mid">{minutesUntil(trains.next[0].time)}분</p><p className="sub">{trains.next[0].grade} {trains.next[0].time} · 오늘 {trains.total}편</p></>
-            : <><p className="mid" style={{ color: 'var(--muted)' }}>–</p><p className="sub">{sel.startsWith('osong') ? '불러오는 중' : '오송역에서 볼 수 있어요'}</p></>}
-        </div>
+      <div className="card">
+        <button className="row-btn" onClick={() => setMore(!more)}><span>손님이 없거나 안 오면 어떻게 하나요?</span><span className="r">{more ? '▴' : '▾'}</span></button>
+        {more && <div style={{ marginTop: 12 }}><DriverSim fuelPerKm={FUEL_WON_PER_KM} feePerTrip={fee} /></div>}
       </div>
 
       <div className="card">
         <div className="row-item"><span>쉐어택 참여 기사 하루 수입<span className="meta">시뮬레이션 · 앱 이용 30%</span></span><span className="r">+{won(joined30.appDriverWonPerDay)}</span></div>
       </div>
+      <p className="sub">실제 배차는 등록 호출 플랫폼과 제휴를 전제로 해요. 금액은 앱 요금 계산값이고 연료비는 km당 {FUEL_WON_PER_KM}원 가정이에요.</p>
     </>
   )
 }

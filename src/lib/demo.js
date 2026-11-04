@@ -42,6 +42,8 @@ export async function resetDemo() {
   const { error } = await supabase.rpc('reset_demo')
   if (error) return { error }
   store.removeItem('history_v1')
+  store.removeItem('demo_joined_v1')
+  store.removeItem('paid_v1')
   location.reload()
   return {}
 }

@@ -47,11 +47,13 @@ export function taxiDemandNow(spot, hour = new Date().getHours()) {
 export function useLastBus(spot) {
   const [data, setData] = useState(null)
   useEffect(() => {
+    if (!spot) { setData(null); return }
     let alive = true
     setData(null)
-    getJSON(`/api/lastbus?lat=${(+spot.lat).toFixed(3)}&lon=${(+spot.lon).toFixed(3)}`, 15000)   // 좌표를 100m 단위로 맞춰 서버 캐시(6시간)를 같이 쓴다.then((d) => { if (alive) setData(d) })
+    // 좌표를 100m 단위로 맞춰 서버 캐시(6시간)를 같이 쓴다
+    getJSON(`/api/lastbus?lat=${(+spot.lat).toFixed(3)}&lon=${(+spot.lon).toFixed(3)}`, 15000).then((d) => { if (alive) setData(d) })
     return () => { alive = false }
-  }, [spot.id])
+  }, [spot?.id])
   return data
 }
 
@@ -73,7 +75,7 @@ export function useTrains(enabled) {
   useEffect(() => {
     if (!enabled) { setData(null); return }
     let alive = true
-    const load = () => getJSON('/api/train').then((d) => { if (alive) setData(d) })
+    const load = () => getJSON('/api/train').then((d) => { if (alive) setData({ ...d, at: new Date() }) })
     load()
     const t = setInterval(load, 300000)
     return () => { alive = false; clearInterval(t) }

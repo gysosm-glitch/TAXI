@@ -73,19 +73,10 @@ export function rideError(e) {
 
 // ---- 시범 운영 (supabase/ops.sql) ----
 export const saveTrip = (row) => supabase.from('trips').upsert(row, { onConflict: 'ride_id,user_id', ignoreDuplicates: true })
-// 평가는 남이 볼 수 없어(조회 권한 없음) upsert가 막힌다. insert만 쓰고, 이미 남긴 평가는 성공으로 본다.
-export async function rateMembers(rows) {
-  const { error } = await supabase.from('ratings').insert(rows)
-  return { error: error?.code === '23505' ? null : error }
-}
 export const sendFeedback = (message, userId) => supabase.from('feedback').insert({ message, user_id: userId ?? null })
 export async function getStats() {
   const { data, error } = await supabase.rpc('public_stats')
   return error ? null : data
-}
-export async function getMyRating(uid) {
-  const { data } = await supabase.rpc('user_rating', { uid })
-  return data
 }
 export async function myTripsThisMonth(uid) {
   const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0)
