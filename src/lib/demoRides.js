@@ -12,14 +12,19 @@ const here = (id, name) => { const s = spot(id); return placeAt(s.lat, s.lon, na
 const TERMINAL = '고속·시외버스터미널'
 const hash = (s) => [...String(s)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)
 
-// 데이터로 고른 거점 위주의 시범 경로. every: 몇 분마다 모이는지, train: 실제 열차 도착에 맞춘 모집
+// 하루 택시 승차가 많은 핵심 스팟 5곳 (TIMS 2025): 터미널 4,439 · 성안길 2,022 · 오송역 1,793 · 충북대 1,482 · 오창 호수공원 718건
+export const CORE_SPOTS = ['bus_terminal', 'downtown', 'osong_stn', 'cbnu', 'ochang_lake'].map(spot)
+
+// 시범 경로. every: 몇 분마다 모이는지, train: 실제 열차 도착에 맞춘 모집
 const ROUTES = [
   { id: 'osong-term', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, meets: ['택시 승강장 앞', '서편 출구', '동편 출구'], maxes: [3, 2, 4], every: 20, train: true },
   { id: 'osong-term-rt', from: 'osong_stn', to: 'bus_terminal', toName: TERMINAL, every: 45, phase: 13, maxes: [2], roundtrip: true, outFrom: '가경동' },
   { id: 'ochang-term', from: 'ochang_lake', to: 'bus_terminal', toName: TERMINAL, meets: ['호수공원 정문', '공원 주차장 입구'], maxes: [3, 4, 2], every: 20, phase: 7 },
   { id: 'term-cbnu', from: 'bus_terminal', fromName: TERMINAL, to: 'cbnu', toName: '충북대학교 중문', meets: ['택시 승강장', '터미널 정문'], maxes: [4, 3, 2], every: 15, phase: 4 },
+  { id: 'cbnu-osong', from: 'cbnu', fromName: '충북대학교 중문', to: 'osong_stn', meets: ['중문 앞', '중문 버스정류장'], maxes: [2, 3, 4], every: 25, phase: 9 },
+  { id: 'down-ochang', from: 'downtown', to: 'ochang_lake', meets: ['성안길 입구', '청주대교 앞'], maxes: [3, 2, 4], every: 30, phase: 14 },
 ]
-const CONDS = ['캐리어 OK', '조용히', '5분 대기', '바로 출발', '짐 적게', '중간 하차 없음']
+export const CONDITIONS = ['캐리어 OK', '조용히 이동', '5분 대기']
 
 function room(r, departMs, gender, note) {
   const key = `${r.id}-${departMs}`
@@ -32,7 +37,7 @@ function room(r, departMs, gender, note) {
     id: `demo-${key}`, virtual: true, kind: r.roundtrip ? 'roundtrip' : 'pool', status: 'open', gender, note,
     host_id: members[0].user_id, spot_id: r.from, max_people: max, depart_at: new Date(departMs).toISOString(),
     spot_name: r.roundtrip ? `${from.name} · 왕복 택시 도착` : `${r.fromName ?? from.name} · ${r.meets[h % r.meets.length]}`,
-    conds: r.roundtrip ? [] : [CONDS[h % CONDS.length], ...(h % 3 === 0 ? [CONDS[(h >> 3) % CONDS.length]] : [])].filter((c, i, l) => l.indexOf(c) === i),
+    conds: r.roundtrip ? [] : [CONDITIONS[h % CONDITIONS.length]],
     dest_zone: dest.zoneId, dest_name: dest.name, dest_place: dest, out_from: r.outFrom, ride_members: members,
     extra: NICK[(h + 11) % NICK.length],
   }
@@ -69,6 +74,28 @@ const save = (list) => { try { store.setItem(KEY, JSON.stringify(list)) } catch 
 const REPLIES = ['네, 좋아요!', '알겠습니다. 거기서 봬요.', '넵, 천천히 오세요.', '확인했어요. 고맙습니다!']
 
 // 참여한 뒤의 흐름: 참여 시각부터 지난 시간으로 계산한다 (새로고침해도 이어진다)
+// 내가 연 모집: 가상 동승자가 차례로 참여하고 금액을 보낸다
+function deriveOwn(j, me, myNick, now, send, close) {
+  const r = j.ride, at = (sec) => new Date(j.joinedAt + sec * 1000).toISOString()
+  const e = (now - j.joinedAt) / 1000
+  const h = hash(r.id)
+  const others = Array.from({ length: r.max_people - 1 }, (_, i) => ({ user_id: `v-${h}-${i}`, nickname: NICK[(h + i * 5) % NICK.length], joined_at: at(6 + i * 7) }))
+  const closedSec = j.closedAt ? (j.closedAt - j.joinedAt) / 1000 : Infinity
+  const joined = others.filter((_, i) => 6 + i * 7 <= Math.min(e, closedSec))
+  const full = joined.length === others.length || !!j.closedAt
+  const fullSec = Math.min(closedSec, 6 + (others.length - 1) * 7)
+  const msgs = []
+  joined.forEach((m, i) => {
+    msgs.push({ id: `${m.user_id}-hi`, user_id: m.user_id, body: i ? '저도 같이 갈게요!' : '참여했어요. 어디서 만날까요?', created_at: m.joined_at })
+    if (full && e >= fullSec + 4 + i * 2) msgs.push({ id: `${m.user_id}-pay`, user_id: m.user_id, body: '1인 금액 보냈어요', created_at: at(fullSec + 4 + i * 2) })
+  })
+  j.mine.forEach((m, i) => {
+    msgs.push({ id: `me-${i}`, user_id: me, body: m.body, created_at: new Date(m.at).toISOString() })
+    if (joined[0] && now - m.at >= 2500) msgs.push({ id: `re-${i}`, user_id: joined[0].user_id, body: REPLIES[i % REPLIES.length], created_at: new Date(m.at + 2500).toISOString() })
+  })
+  return { ...r, host_id: me, ride_members: [{ user_id: me, nickname: myNick, joined_at: at(0) }, ...joined], status: full ? 'full' : 'open', messages: msgs.sort((a, b) => a.created_at.localeCompare(b.created_at)), sendDemo: send, close }
+}
+
 function derive(j, me, myNick, now, send, pay) {
   const r = j.ride, at = (sec) => new Date(j.joinedAt + sec * 1000).toISOString()
   const e = (now - j.joinedAt) / 1000
@@ -111,11 +138,13 @@ export function useDemoJoined(me, myNick) {
   const [list, setList] = useState(load)
   const now = useNow(list.length ? 1000 : 30000)
   const update = (next) => { save(next); setList(next) }
+  const host = (ride) => update([...list, { ride: { ...ride, id: `mine-${Date.now()}`, virtual: true, kind: 'pool', status: 'open', ride_members: [] }, joinedAt: Date.now(), mine: [], own: true }])
+  const close = (id) => update(list.map((j) => (j.ride.id === id ? { ...j, closedAt: Date.now() } : j)))
   const join = (ride) => update([...list.filter((j) => j.ride.id !== ride.id), { ride, joinedAt: Date.now(), mine: [] }])
   const leave = (id) => update(list.filter((j) => j.ride.id !== id))
   const send = (id, body) => update(list.map((j) => (j.ride.id === id ? { ...j, mine: [...j.mine, { body, at: Date.now() }] } : j)))
   const pay = (id, body) => update(list.map((j) => (j.ride.id === id ? { ...j, paidAt: Date.now(), mine: [...j.mine, { body, at: Date.now(), silent: true }] } : j)))
-  const rides = me ? list.map((j) => derive(j, me, myNick, now, (body) => send(j.ride.id, body), (body) => pay(j.ride.id, body))) : []
-  return { rides, join, leave }
+  const rides = me ? list.map((j) => (j.own ? deriveOwn(j, me, myNick, now, (body) => send(j.ride.id, body), () => close(j.ride.id)) : derive(j, me, myNick, now, (body) => send(j.ride.id, body), (body) => pay(j.ride.id, body)))) : []
+  return { rides, join, leave, host }
 }
 

@@ -1,14 +1,12 @@
 // 교통: 열차와 버스를 나눠 보여 준다. 시연 데이터가 아니라 실제 공공데이터다.
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Icon from '../components/Icon.jsx'
-import { spots } from '../data.js'
 import { useLive, useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
-import { useNow } from '../lib/demoRides.js'
+import { useNow, CORE_SPOTS } from '../lib/demoRides.js'
 import { useMyPosition } from '../lib/geo.js'
 
 const clock = (d) => d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 const DIRS = [['all', '전체', []], ['seoul', '서울', ['서울', '용산']], ['busan', '부산·대구', ['부산', '동대구']], ['honam', '호남', ['광주송정', '목포', '익산']]]
-const BUS_PLACES = ['osong_stn', 'bus_terminal', 'cbnu', 'ochang_lake', 'downtown'].map((id) => spots.find((s) => s.id === id))
 const HUE = { train: 'blue', bus: 'green' }
 const left = (m) => (m <= 0 ? '곧 도착' : m < 60 ? `${m}분 후` : `${Math.floor(m / 60)}시간 ${m % 60}분 후`)
 
@@ -48,20 +46,21 @@ function Trains({ onRide }) {
 }
 
 function Buses() {
-  const [id, setId] = useState(BUS_PLACES[0].id)
+  const [id, setId] = useState('here')
   const gps = useMyPosition()
   const here = id === 'here' && gps.pos ? { id: `here-${gps.pos.lat.toFixed(3)},${gps.pos.lon.toFixed(3)}`, lat: gps.pos.lat, lon: gps.pos.lon } : null
-  const p = here ?? BUS_PLACES.find((s) => s.id === id) ?? BUS_PLACES[0]
+  const p = id === 'here' ? here : CORE_SPOTS.find((s) => s.id === id)
+  useEffect(() => { if (!gps.pos) gps.start() }, [])
   const { bus, at } = useLive(p)
   const last = lastBusState(useLastBus(p))
   return (
     <>
       <div className="card">
         <p className="card-title"><span className="with-badge"><span className="ibadge"><Icon name="bus" size={16} /></span>정류장 도착</span></p>
-        <div className="chips"><button className={`chip ${id === 'here' ? 'on' : ''}`} onClick={() => { setId('here'); if (!gps.pos) gps.start() }}>📍 내 주변</button>{BUS_PLACES.map((s) => <button key={s.id} className={`chip ${id === s.id ? 'on' : ''}`} onClick={() => setId(s.id)}>{s.name}</button>)}</div>
-        {id === 'here' && gps.state === 'denied' && <p className="sub">위치 권한 필요</p>}
+        <div className="chips"><button className={`chip ${id === 'here' ? 'on' : ''}`} onClick={() => { setId('here'); if (!gps.pos) gps.start() }}>📍 내 근처</button>{CORE_SPOTS.map((s) => <button key={s.id} className={`chip ${id === s.id ? 'on' : ''}`} onClick={() => setId(s.id)}>{s.name}</button>)}</div>
+        {id === 'here' && !gps.pos && gps.state !== 'finding' && <p className="sub">위치 권한을 켜거나 스팟을 골라 주세요</p>}
         {id === 'here' && gps.state === 'finding' && <p className="sub">위치 찾는 중</p>}
-        {!bus && <p className="sub">불러오는 중</p>}
+        {p && !bus && <p className="sub">불러오는 중</p>}
         {bus && !bus.ok && <p className="sub">버스 정보 없음</p>}
         {bus?.ok && bus.stations.filter((s) => s.arrivals.length).slice(0, 4).map((s) => (
           <div key={s.id} className="stop">

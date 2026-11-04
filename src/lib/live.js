@@ -13,6 +13,7 @@ export function useLive(spot) {
   const [bus, setBus] = useState(null)
   const [at, setAt] = useState(null)
   useEffect(() => {
+    if (!spot) { setBus(null); return }
     let alive = true
     const load = async () => {
       let b = await getJSON(`/api/bus?lat=${spot.lat}&lon=${spot.lon}`)
@@ -23,7 +24,7 @@ export function useLive(spot) {
     setBus(null); load()
     const t = setInterval(load, 60000)
     return () => { alive = false; clearInterval(t) }
-  }, [spot.id])
+  }, [spot?.id])
   return { bus, at }
 }
 

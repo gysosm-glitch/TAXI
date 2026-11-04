@@ -11,15 +11,14 @@ import { askNotify } from '../lib/alerts.js'
 import { useMyPosition } from '../lib/geo.js'
 import { searchPlaces } from '../lib/search.js'
 import { useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
-import { demoRooms, useDemoJoined, useNow } from '../lib/demoRides.js'
+import { demoRooms, useDemoJoined, useNow, CONDITIONS, CORE_SPOTS } from '../lib/demoRides.js'
 import { listAllOpen, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError, saveTrip } from '../lib/rides.js'
 
 const SEATS = ['조수석', '뒷좌석 오른쪽', '뒷좌석 왼쪽', '뒷좌석 가운데']
 const hhmm = (iso) => new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })
 const minsLeft = (iso) => Math.round((new Date(iso) - Date.now()) / 60000)
 const when = (iso) => { const m = minsLeft(iso); return m > 0 ? `${m}분 후` : m > -15 ? '출발 시간' : '지남' }
-const CONDITIONS = ['캐리어 OK', '조용히', '5분 대기', '바로 출발', '짐 적게', '중간 하차 없음']
-const HUE = { osong_stn: 'blue', osong_bio: 'blue', ochang_lake: 'orange', ochang_tech: 'orange', bus_terminal: 'violet', cbnu: 'pink' }
+const HUE = { osong_stn: 'blue', ochang_lake: 'orange', bus_terminal: 'violet', cbnu: 'pink', downtown: 'green' }
 const condsOf = (r) => r.conds ?? r.spot_name.split(' · ')[2]?.split(',').filter(Boolean) ?? []
 // 탑승 전 송금을 끝낸 모집 (이 기기에만 저장)
 const PAID = 'paid_v1'
@@ -80,8 +79,8 @@ function PlaceSheet({ title, near, onPick, onHere, onClose, gpsState }) {
             {loadRecent().map((p, i) => (
               <button key={i} className="pick-row" onClick={() => onPick(p)}><Icon name="pin" size={18} /><span><b>{p.name}</b><small>{zoneById[p.zoneId]?.name}</small></span></button>
             ))}
-            <p className="label" style={{ margin: '14px 0 4px' }}>자주 찾는 곳</p>
-            <div className="chips wrap">{spots.slice(0, 6).map((s) => <button key={s.id} className="chip" onClick={() => onPick(fromSpot(s))}>{s.name}</button>)}</div>
+            <p className="label" style={{ margin: '14px 0 4px' }}>핵심 스팟</p>
+            <div className="chips wrap">{CORE_SPOTS.map((s) => <button key={s.id} className="chip" onClick={() => onPick(fromSpot(s))}>{s.name}</button>)}</div>
           </>
         )}
       </div>
@@ -128,7 +127,7 @@ function MyRide({ r, me, busy, act, arrived, price, leaveDemo }) {
   }
   const canArrive = isRound || isHost || r.status === 'done' || (paid && (!r.virtual || r.taxi))
   const quit = isHost
-    ? <button className="btn ghost" disabled={busy} onClick={() => act(() => setRideStatus(r.id, 'cancelled'), '취소 완료')}>모집 취소</button>
+    ? <button className="btn ghost" disabled={busy} onClick={() => (r.virtual ? leaveDemo(r.id) : act(() => setRideStatus(r.id, 'cancelled'), '취소 완료'))}>모집 취소</button>
     : <button className="btn ghost" disabled={busy} onClick={() => (r.virtual ? leaveDemo(r.id) : act(() => leaveRide(r.id, me), '나가기 완료'))}>나가기</button>
 
   return (
@@ -148,7 +147,7 @@ function MyRide({ r, me, busy, act, arrived, price, leaveDemo }) {
       )}
       {stage === 'gathered' && (
         isHost
-          ? <div className="grid2 ride-actions">{quit}<button className="btn" disabled={busy} onClick={() => act(() => setRideStatus(r.id, 'full'), '마감 완료')}>이 인원으로 출발</button></div>
+          ? <div className="grid2 ride-actions">{quit}<button className="btn" disabled={busy} onClick={() => (r.virtual ? r.close() : act(() => setRideStatus(r.id, 'full'), '마감 완료'))}>이 인원으로 출발</button></div>
           : <div className="ride-actions">{quit}</div>
       )}
       {stage === 'ready' && (
@@ -242,7 +241,7 @@ export default function Ride({ account, route, setRoute, onLogin }) {
   const { from, to } = route
   const [sheet, setSheet] = useState(null)        // 'from' | 'to'
   const [wantHere, setWantHere] = useState(false)
-  const [people, setPeople] = useState(demoTab ? 2 : 3)   // 체험은 계정 2개라 2명 모집부터
+  const [people, setPeople] = useState(3)
   const [open, setOpen] = useState([])
   const [mine, setMine] = useState([])
   const [form, setForm] = useState(null)
@@ -335,6 +334,12 @@ export default function Ride({ account, route, setRoute, onLogin }) {
   }
   const submitNew = () => act(async () => {
     const meet = form.meet.trim()
+    // 체험 계정은 혼자서도 시연되도록 가상 동승자가 참여한다
+    if (demoTab) {
+      demo.host({ spot_id: originId(from), spot_name: `${from.name} · ${meet.slice(0, 30) || '출발지'}`, conds: form.conds ?? [], dest_zone: dest.zoneId, dest_name: dest.name, dest_place: dest, depart_at: new Date(Date.now() + form.leave * 60000).toISOString(), max_people: people, gender: profile.gender })
+      setForm(null); toMine()
+      return {}
+    }
     const r = await createRide({
       host_id: me, spot_id: originId(from), spot_name: [from.name, meet.slice(0, 30) || '출발지', ...(form.conds?.length ? [form.conds.join(',')] : [])].join(' · '),
       dest_zone: dest.zoneId, dest_name: dest.name, depart_at: new Date(Date.now() + form.leave * 60000).toISOString(), max_people: people, gender: profile.gender,

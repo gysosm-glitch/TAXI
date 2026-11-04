@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { signInWithEmail, signUpWithEmail, authError } from '../lib/auth.js'
+import { DEMO, DEMO_PASSWORD, enterDemo } from '../lib/demo.js'
 
 export default function Login() {
   const [mode, setMode] = useState('login')      // login | signup
-  const [email, setEmail] = useState('')
-  const [pw, setPw] = useState('')
+  const [email, setEmail] = useState(DEMO[0].email)   // 시연용 계정을 미리 채워 둔다
+  const [pw, setPw] = useState(DEMO_PASSWORD)
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
 
@@ -15,6 +16,8 @@ export default function Login() {
     e.preventDefault()
     if (!email.includes('@')) return setMsg({ bad: true, text: '이메일 주소를 확인해 주세요.' })
     if (pw.length < 6) return setMsg({ bad: true, text: '비밀번호는 6자 이상이어야 해요.' })
+    const demo = mode === 'login' && pw === DEMO_PASSWORD && DEMO.find((d) => d.email === email.trim())
+    if (demo) return enterDemo(demo.key)
     setBusy(true); setMsg(null)
     try {
       const { data, error } = mode === 'signup' ? await signUpWithEmail(email.trim(), pw) : await signInWithEmail(email.trim(), pw)
@@ -40,8 +43,8 @@ export default function Login() {
         {msg && <p className={`form-msg ${msg.bad ? 'bad' : ''}`}>{msg.text}</p>}
         <button className="btn" type="submit" disabled={busy}>{busy ? '잠시만요…' : mode === 'login' ? '로그인' : '가입하기'}</button>
       </form>
-      <button className="more" style={{ width: '100%' }} onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setMsg(null) }}>
-        {mode === 'login' ? '처음이세요? 이메일로 회원가입' : '이미 계정이 있어요. 로그인'}
+      <button className="more" style={{ width: '100%' }} onClick={() => { const next = mode === 'login' ? 'signup' : 'login'; setMode(next); setMsg(null); setEmail(next === 'signup' ? '' : DEMO[0].email); setPw(next === 'signup' ? '' : DEMO_PASSWORD) }}>
+        {mode === 'login' ? '회원가입' : '로그인으로 돌아가기'}
       </button>
     </div>
   )

@@ -12,7 +12,7 @@ import adoption from '../../data/web/12_simulation/adoption.json'
 
 const SUM = HOUR_PROFILE.reduce((a, b) => a + b, 0)
 const FUEL_WON_PER_KM = 130   // LPG 택시 km당 연료비 (가정)
-const PLACES = ['osong_stn', 'ochang_lake', 'ochang_tech', 'osong_bio'].map((id) => spots.find((s) => s.id === id))
+const PLACES = ['osong_stn', 'ochang_lake'].map((id) => spots.find((s) => s.id === id))
 const fee = analysis.grid.find((g) => g.appShare === 0.3 && g.exemptRatio === 1).breakEvenFeePerTrip   // 앱 이용 30%, 전액 면제 때 보전액
 const joined30 = adoption.drivers.find((d) => d.appShare === 0.3)   // 앱을 쓰는 기사만 본 수입 변화
 const zonePlace = (z) => placeAt(zoneById[z].centroid_lat, zoneById[z].centroid_lon, zoneById[z].name)

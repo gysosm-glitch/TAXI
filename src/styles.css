@@ -445,3 +445,6 @@ details.source p { margin: 6px 0 0; }
 .effect-return { background: var(--teal-soft); color: var(--teal-dark); }
 .room-fare s { color: var(--muted); font-size: 12px; }
 .room-fare b { font-size: 15px; color: var(--ink); }
+
+.welcome-body .card { padding: 0; box-shadow: none; background: none; }
+.welcome-body .card .card-title { display: none; }

@@ -9,7 +9,7 @@ export const DEMO = [
   { key: 'A', role: '시연 관리자', email: 'demo.a@gatita-cheongju.com', nickname: '시연 관리자', phone: '010-0000-0001' },
   { key: 'B', role: '참여하는 사람', email: 'demo.b@gatita-cheongju.com', nickname: '오창출근러', phone: '010-0000-0002' },
 ]
-const PASSWORD = 'gatita-demo-2026'
+export const DEMO_PASSWORD = 'gatita-demo-2026'
 const COMMON = { gender: 'F', age_group: '20s', org_email: null,
   agree_terms: true, agree_privacy: true, agree_location: true, agree_age14: true, agree_marketing: false }
 
@@ -22,9 +22,9 @@ export function enterDemo(key) {
 export const leaveDemoFlag = () => { try { sessionStorage.removeItem('demo_tab'); localStorage.removeItem('demo_auto') } catch {} }
 
 export async function startDemo(d) {
-  let { data, error } = await supabase.auth.signInWithPassword({ email: d.email, password: PASSWORD })
+  let { data, error } = await supabase.auth.signInWithPassword({ email: d.email, password: DEMO_PASSWORD })
   if (error && error.message.includes('Invalid login credentials')) {
-    ;({ data, error } = await supabase.auth.signUp({ email: d.email, password: PASSWORD }))
+    ;({ data, error } = await supabase.auth.signUp({ email: d.email, password: DEMO_PASSWORD }))
     if (!error && !data.session) return { error: { message: '체험 계정을 쓰려면 Supabase에서 Confirm email을 꺼 주세요.' } }
   }
   if (error) return { error }
