@@ -5,6 +5,8 @@ import { FIELDS, NOT_COLLECTED, RULES } from '../privacy.js'
 import { signOut, deleteProfile } from '../lib/auth.js'
 import { getMyRating, sendFeedback, getStats, myTripsThisMonth } from '../lib/rides.js'
 import { supabase } from '../lib/supabase.js'
+import { store, demoTab } from '../lib/store.js'
+import { resetDemo } from '../lib/demo.js'
 import { won } from '../data.js'
 
 const AGE = { '10s': '10대', '20s': '20대', '30s': '30대', '40s': '40대', '50s+': '50대 이상' }
@@ -40,7 +42,7 @@ const GOAL = 50000
 function savedLocal() {
   try {
     const m = new Date().toISOString().slice(0, 7)
-    const mine = (JSON.parse(localStorage.getItem('history_v1')) ?? []).filter((h) => h.at?.startsWith(m))
+    const mine = (JSON.parse(store.getItem('history_v1')) ?? []).filter((h) => h.at?.startsWith(m))
     return { won: mine.reduce((a, h) => a + (h.saving || 0), 0), count: mine.length }
   } catch { return { won: 0, count: 0 } }
 }
@@ -167,7 +169,9 @@ export default function Me({ account, onLogin }) {
         <div className="row-item"><span>혜택 알림</span><span className="r off">{profile.agree_marketing ? '받음' : '받지 않음'}</span></div>
         <div className="row-item" style={{ cursor: 'pointer' }} onClick={() => setEditing(true)}><span>정보 수정</span><span className="r">›</span></div>
         <div className="row-item" style={{ cursor: 'pointer' }} onClick={signOut}><span>로그아웃</span><span className="r">›</span></div>
-        <div className="row-item" style={{ cursor: 'pointer' }} onClick={() => setConfirmDel(true)}><span className="bad">탈퇴 · 정보 삭제</span><span className="r off">›</span></div>
+        {demoTab
+          ? <div className="row-item" style={{ cursor: 'pointer' }} onClick={resetDemo}><span>체험 기록 지우고 다시 하기</span><span className="r">›</span></div>
+          : <div className="row-item" style={{ cursor: 'pointer' }} onClick={() => setConfirmDel(true)}><span className="bad">탈퇴 · 정보 삭제</span><span className="r off">›</span></div>}
         {confirmDel && (
           <div className="detail">
             가입 정보가 바로 삭제돼요.

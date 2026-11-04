@@ -1,6 +1,7 @@
 // 로그인 상태와 회원 프로필 (Supabase Auth + profiles 테이블)
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { demoTab } from './store.js'
 
 export function useAccount() {
   const [session, setSession] = useState(null)
@@ -41,9 +42,12 @@ export const signInWithEmail = (email, password) =>
 
 // 로그아웃: 서버 응답이 실패하거나 인증 잠금에 걸려도 이 기기의 로그인 정보를 확실히 지우고 첫 화면으로
 export async function signOut() {
-  const done = supabase.auth.signOut({ scope: 'local' }).catch(() => {})
-  await Promise.race([done, new Promise((r) => setTimeout(r, 1500))])
+  const wait = (p) => Promise.race([p, new Promise((r) => setTimeout(r, 1500))])
+  if (demoTab) await wait(Promise.resolve(supabase.rpc('reset_demo')).catch(() => {}))   // 체험 기록은 나갈 때 지운다
+  await wait(supabase.auth.signOut({ scope: 'local' }).catch(() => {}))
   try {
+    sessionStorage.removeItem('demo_tab')
+    for (const k of ['history_v1', 'recent_places_v1']) sessionStorage.removeItem(k)
     for (const k of Object.keys(localStorage)) if (k.startsWith('sb-') && k.endsWith('-auth-token')) localStorage.removeItem(k)
   } catch {}
   window.location.replace('/')

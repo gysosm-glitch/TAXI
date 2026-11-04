@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import Icon from '../components/Icon.jsx'
 import { Badge } from '../components/Illust.jsx'
+import DriverSim from '../components/DriverSim.jsx'
 import { spots, zones, zoneById, tripQuote, won, spotZoneId, placeFromId, isReturnRoute, cityDest, locate } from '../data.js'
 import { useMyPosition } from '../lib/geo.js'
 import { supabase } from '../lib/supabase.js'
@@ -44,7 +45,7 @@ export default function Driver({ account, onLogin }) {
   // 지금 이 지역에서 시내로 가려고 모인 손님 (귀로 손님)
   const waiting = useMemo(() => open.filter((r) => {
     const z = spotZoneId(placeFromId(r.spot_id) ?? place)
-    return r.status === 'open' && z === zone && isReturnRoute(z, r.dest_zone)
+    return z === zone && isReturnRoute(z, r.dest_zone)   // 인원이 다 찬 모집도 택시를 기다리는 손님이다
   }), [open, zone])
   const people = waiting.reduce((a, r) => a + r.ride_members.length, 0)
   const roundtrips = waiting.filter((r) => r.kind === 'roundtrip').length   // 왕복 매칭으로 귀로가 이미 확정된 운행
@@ -104,6 +105,8 @@ export default function Driver({ account, onLogin }) {
             : <button className="btn" style={{ marginTop: 12 }} onClick={() => setAccepted(true)}>{people ? '귀로 손님 받기' : '여기서 귀로 손님 기다리기'}</button>}
         </div>
       )}
+
+      <DriverSim fuelPerKm={FUEL_WON_PER_KM} feePerTrip={full30.breakEvenFeePerTrip} />
 
       <div className="grid2">
         <div className="card">

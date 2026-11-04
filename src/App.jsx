@@ -7,6 +7,8 @@ import Driver from './screens/Driver.jsx'
 import Me from './screens/Me.jsx'
 import { useAccount, signOut } from './lib/auth.js'
 import { useRideAlerts } from './lib/alerts.js'
+import { useDemoIdleLogout } from './lib/demo.js'
+import { demoTab, isDemoEmail } from './lib/store.js'
 
 const TABS = [
   ['ride', 'taxi', '타기'],
@@ -19,9 +21,12 @@ export default function App() {
   const [browsing, setBrowsing] = useState(false)
   const account = useAccount()
   const { session, profile, loading, setProfile } = account
-  const { toast, close } = useRideAlerts(profile ? session?.user?.id : null)
+  const { toast, close } = useRideAlerts(profile ? session?.user?.id : null, tab)
+  useDemoIdleLogout(!!session)
   // 로그아웃하면 첫 화면(로그인)으로, 타기 탭부터 다시 시작
   useEffect(() => { if (!session) { setBrowsing(false); setTab('ride') } }, [session])
+  // 예전 방식으로 기기에 남아 있던 체험 로그인은 자동으로 정리
+  useEffect(() => { if (!demoTab && isDemoEmail(session?.user?.email)) signOut() }, [session])
 
   if (loading) return <div className="shell"><main className="content"><p className="sub">불러오는 중…</p></main></div>
 

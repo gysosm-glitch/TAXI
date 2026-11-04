@@ -1,4 +1,4 @@
-// 같이타기 알림: 참여·나감·모집 완료·출발 10분 전
+// 같이타기 알림: 참여·나감·모집 완료·출발 10분 전·새 메시지
 // 앱 화면 위 알림 띠 + (허용했다면) 휴대폰 알림
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from './supabase.js'
@@ -17,8 +17,10 @@ async function pushNotify(title, body) {
   } catch { /* 알림 표시 실패는 무시 */ }
 }
 
-export function useRideAlerts(userId) {
+export function useRideAlerts(userId, tab) {
   const [toast, setToast] = useState(null)
+  const tabRef = useRef(tab)
+  tabRef.current = tab
   const prev = useRef(null)          // ride_id → { members: Set, status }
   const sent = useRef(new Set())     // 출발 10분 전 알림 보낸 모집
 
@@ -44,7 +46,7 @@ export function useRideAlerts(userId) {
           if (!old) continue
           for (const [uid, nick] of cur.members) if (uid !== userId && !old.members.has(uid)) say('쉐어택 · 새 동승자', `${nick}님이 참여했어요 (${cur.members.size}/${r.max_people}명)`)
           for (const [uid, nick] of old.members) if (!cur.members.has(uid)) say('쉐어택 · 동승자 변경', `${nick}님이 나갔어요 (${cur.members.size}/${r.max_people}명)`)
-          if (old.status !== 'full' && cur.status === 'full') say('쉐어택 · 모집 완료', `${r.spot_name} 택시 승차장에서 만나요. ${r.dest_name}행`)
+          if (old.status !== 'full' && cur.status === 'full') say('쉐어택 · 모집 완료', r.kind === 'roundtrip' ? `왕복 매칭이 정해졌어요. ${r.spot_name.split(' · ')[0]} → ${r.dest_name}` : `${r.spot_name.replace(' · ', ' ')}에서 만나요. ${r.dest_name}행`)
         }
         for (const [id, old] of Object.entries(before)) {
           if (now[id] || old.r.host_id === userId) continue
@@ -69,8 +71,17 @@ export function useRideAlerts(userId) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ride_members' }, check)
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'rides' }, check)
       .subscribe()
+    // 채팅 알림은 채널을 따로 둔다 (채팅 테이블에 문제가 있어도 동승자 알림은 살아 있게)
+    const chat = supabase.channel(`alerts-chat-${userId}`)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ride_messages' }, ({ new: m }) => {
+        const nick = prev.current?.[m.ride_id]?.members.get(m.user_id)
+        if (m.user_id === userId || !nick) return
+        if (tabRef.current === 'ride' && !document.hidden) return   // 대화를 보고 있으면 띠를 띄우지 않는다
+        say('쉐어택 · 새 메시지', `${nick}: ${m.body}`)
+      })
+      .subscribe()
     const timer = setInterval(check, 30000)
-    return () => { alive = false; supabase.removeChannel(ch); clearInterval(timer) }
+    return () => { alive = false; supabase.removeChannel(ch); supabase.removeChannel(chat); clearInterval(timer) }
   }, [userId])
 
   useEffect(() => {

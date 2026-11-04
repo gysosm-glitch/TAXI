@@ -1,6 +1,7 @@
 // 같이타기 모집·참여 (Supabase rides, ride_members)
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from './supabase.js'
+import { store } from './store.js'
 
 const ACTIVE = ['open', 'full']
 const SELECT = '*, ride_members(user_id, nickname, joined_at)'
@@ -52,13 +53,13 @@ export function useRidesLive(load, deps) {
 // 같이 탄 기록 (이번 달 아낀 돈) — 이 기기에 저장
 export function recordTrip(rec) {
   try {
-    const list = JSON.parse(localStorage.getItem('history_v1')) ?? []
+    const list = JSON.parse(store.getItem('history_v1')) ?? []
     if (list.some((h) => h.rideId === rec.rideId)) return
-    localStorage.setItem('history_v1', JSON.stringify([{ ...rec, at: new Date().toISOString() }, ...list].slice(0, 100)))
+    store.setItem('history_v1', JSON.stringify([{ ...rec, at: new Date().toISOString() }, ...list].slice(0, 100)))
   } catch { /* 저장 불가 환경 */ }
 }
 export function tripRecorded(rideId) {
-  try { return (JSON.parse(localStorage.getItem('history_v1')) ?? []).some((h) => h.rideId === rideId) } catch { return false }
+  try { return (JSON.parse(store.getItem('history_v1')) ?? []).some((h) => h.rideId === rideId) } catch { return false }
 }
 
 export function rideError(e) {
@@ -72,7 +73,11 @@ export function rideError(e) {
 
 // ---- 시범 운영 (supabase/ops.sql) ----
 export const saveTrip = (row) => supabase.from('trips').upsert(row, { onConflict: 'ride_id,user_id', ignoreDuplicates: true })
-export const rateMembers = (rows) => supabase.from('ratings').upsert(rows, { onConflict: 'ride_id,rater_id,ratee_id', ignoreDuplicates: true })
+// 평가는 남이 볼 수 없어(조회 권한 없음) upsert가 막힌다. insert만 쓰고, 이미 남긴 평가는 성공으로 본다.
+export async function rateMembers(rows) {
+  const { error } = await supabase.from('ratings').insert(rows)
+  return { error: error?.code === '23505' ? null : error }
+}
 export const sendFeedback = (message, userId) => supabase.from('feedback').insert({ message, user_id: userId ?? null })
 export async function getStats() {
   const { data, error } = await supabase.rpc('public_stats')
