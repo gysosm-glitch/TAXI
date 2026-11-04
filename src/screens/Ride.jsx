@@ -9,7 +9,7 @@ import { supabase } from '../lib/supabase.js'
 import { askNotify } from '../lib/alerts.js'
 import { useMyPosition } from '../lib/geo.js'
 import { searchPlaces } from '../lib/search.js'
-import { useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
+import { useLive, nextBus, useLastBus, lastBusState, useTrains, minutesUntil } from '../lib/live.js'
 import { listAllOpen, myRides, createRide, joinRide, leaveRide, setRideStatus, useRidesLive, recordTrip, tripRecorded, rideError, saveTrip, rateMembers } from '../lib/rides.js'
 
 const SEATS = ['조수석', '뒷좌석 오른쪽', '뒷좌석 왼쪽', '뒷좌석 가운데']
@@ -164,6 +164,7 @@ export default function Ride({ account, onLogin }) {
   const [msg, setMsg] = useState(null)
   const [busy, setBusy] = useState(false)
   const [rating, setRating] = useState(null)
+  const [busOpen, setBusOpen] = useState(false)
   const [rt, setRt] = useState(null)              // 왕복 매칭 열기 폼 { arrive: 분 뒤, seats }
 
   const dest = to ?? (defaultDest(from.zoneId) ? zonePlace(defaultDest(from.zoneId)) : null)
@@ -189,8 +190,10 @@ export default function Ride({ account, onLogin }) {
 
 
 
-  // 막차·KTX (출발지 기준)
+  // 버스·막차·KTX (출발지 기준)
   const busSpot = { id: `${from.lat.toFixed(3)},${from.lon.toFixed(3)}`, lat: from.lat, lon: from.lon }
+  const { bus } = useLive(busSpot)
+  const nb = nextBus(bus)
   const last = lastBusState(useLastBus(busSpot))
   const trains = useTrains(distM(from, OSONG) < 3000)
   const ktx = trains?.ok ? trains.next.filter((t) => minutesUntil(t.time) >= 0 && minutesUntil(t.time) <= 90).slice(0, 3) : []
@@ -416,6 +419,21 @@ export default function Ride({ account, onLogin }) {
                 <button className="btn ghost" onClick={() => setForm(null)}>취소</button>
                 <button className="btn" disabled={busy} onClick={submitNew}>모집 열기</button>
               </div>
+            </div>
+          )}
+        </section>
+
+        <section className="card">
+          <button className="row-btn" onClick={() => setBusOpen(!busOpen)}>
+            <span className="with-badge"><span className="ibadge blue"><Icon name="bus" size={16} /></span>버스·열차 정보</span>
+            <span className="r">{nb ? `${nb.route}번 ${nb.min}분 후` : last?.ended ? '운행 끝' : bus?.ok ? '도착 예정 없음' : bus ? '실시간 정보 없음' : '불러오는 중'} {busOpen ? '▴' : '▾'}</span>
+          </button>
+          {busOpen && (
+            <div className="detail">
+              {bus?.ok && bus.stations.slice(0, 3).map((s) => <div key={s.id} className="seat"><span>{s.name}</span><span>{s.arrivals.slice(0, 2).map((a) => `${a.route}번 ${a.min}분`).join(' · ') || '없음'}</span></div>)}
+              {last && <div className="seat"><span>가장 늦은 막차</span><span>{last.latest.route}번 {last.latest.last}</span></div>}
+              {trains?.ok && trains.next.slice(0, 3).map((t) => <div key={t.no} className="seat"><span>{t.grade} {t.no} ({t.from})</span><span>{t.time} 도착</span></div>)}
+              {!bus?.ok && !last && <span>실시간 정보를 불러오지 못했어요.</span>}
             </div>
           )}
         </section>
