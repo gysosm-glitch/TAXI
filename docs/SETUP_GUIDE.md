@@ -51,4 +51,4 @@ npm run dev
 
 ## 6. 데이터 다시 만들기
 
-`docs/DATA_DICTIONARY.md` §3 참고.
+`docs/자료_총정리.md` §3 참고.
