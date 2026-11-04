@@ -217,7 +217,7 @@ function RideBoard({ rooms, from, dest, similar, price, now, onJoin, onRoute, bu
                       <span className="room-count">{n}/{r.max_people}명</span>
                       {r.kind === 'roundtrip' && <span className="tag">왕복 · 할증 없음</span>}
                     </div>
-                    <span className="room-fare">{r.kind === 'roundtrip' ? `약 ${won(price(r, 1).fareDongRate)}` : `1인 약 ${won(price(r, n + 1).share)}`}</span>
+                    <span className="room-fare"><s>{won(price(r, 1).fare)}</s> <b>{won(r.kind === 'roundtrip' ? price(r, 1).fareDongRate : price(r, n + 1).share)}</b></span>
                     {r.note && <span className="room-note">{r.note}</span>}
                     {r.kind !== 'roundtrip' && meet && <span className="room-note">{meet}{from && ` · 걸어서 ${Math.max(1, Math.round(distM(o, from) / 70))}분`}</span>}
                     {condsOf(r).length > 0 && <div className="cond-chips"><span>{condsOf(r)[0]}</span></div>}
@@ -305,6 +305,8 @@ export default function Ride({ account, route, setRoute, onLogin }) {
     setOpen(all); setMine(m.filter((r) => !tripRecorded(r.id)))   // 내가 이미 도착 처리한 모집은 다시 보이지 않게
   }, [canUse, me])
   const similar = (r) => !!dest && (r.dest_zone === dest.zoneId || distM(zonePlace(r.dest_zone), dest) <= SIMILAR_M)
+  const sampleFrom = fromSpot(OSONG), sampleTo = fromSpot(spots.find((s) => s.id === 'bus_terminal'))
+  const sample = quoteBetween(sampleFrom, sampleTo, 1), sample2 = quoteBetween(sampleFrom, sampleTo, 2)
   const joinedIds = new Set([...mine, ...demo.rides].map((r) => r.id))
   const rooms = [...open, ...demoRooms(now, trains, profile?.gender)]
     .filter((r) => !joinedIds.has(r.id))
@@ -449,6 +451,18 @@ export default function Ride({ account, route, setRoute, onLogin }) {
             <div className="rt-opt">
               <div className="rt-head"><b>귀로 연계 결제 <span className="tag gray">모의</span></b><span className="rt-price"><s>{won(solo.fare)}</s> {won(solo.fareDongRate)}</span></div>
               <p className="sub">30분 안에 귀로 손님을 태우면 할증 제외{chance ? ` · 가능성 약 ${Math.round(chance.p * 100)}%` : ''}</p>
+            </div>
+          </section>
+        )}
+
+        {!from && !dest && mine.length + demo.rides.length === 0 && (
+          <section className="card effect">
+            <p className="card-title"><span>복합할증 35%, 이렇게 줄여요</span></p>
+            <p className="sub effect-route">오송역 → 터미널 {sample.km.toFixed(1)}km</p>
+            <div className="effect-row">
+              <div className="effect-now"><small>혼자</small><b>{won(sample.fare)}</b><span>할증 포함</span></div>
+              <div className="effect-share"><small>2명</small><b>{won(sample2.share)}</b><span>1인</span></div>
+              <div className="effect-return"><small>귀로</small><b>{won(sample.fareDongRate)}</b><span>할증 면제</span></div>
             </div>
           </section>
         )}

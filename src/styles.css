@@ -431,3 +431,17 @@ details.source p { margin: 6px 0 0; }
 .driver-hero .label, .driver-hero .sub { color: #fff3e8; }
 .banner { font-weight: 600; }
 .sb-text b { font-size: 16px; }
+
+/* 할증 절감 */
+.effect .card-title { margin-bottom: 2px; }
+.effect-route { margin: 0 0 10px; }
+.effect-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.effect-row > div { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 12px; }
+.effect-row small { font-size: 12px; font-weight: 700; }
+.effect-row b { font-size: 16px; letter-spacing: -0.4px; }
+.effect-row span { font-size: 11px; }
+.effect-now { background: var(--red-soft); color: var(--red); }
+.effect-share { background: #e8f0fe; color: #2563eb; }
+.effect-return { background: var(--teal-soft); color: var(--teal-dark); }
+.room-fare s { color: var(--muted); font-size: 12px; }
+.room-fare b { font-size: 15px; color: var(--ink); }

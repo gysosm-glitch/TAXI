@@ -155,9 +155,9 @@ export default function Me({ account, onLogin }) {
     <>
       <div className="page-head">
         <h1 className="page-title">내 정보</h1>
-        <button className="logout-btn" onClick={signOut}>로그아웃</button>
+        {!demoTab && <button className="logout-btn" onClick={signOut}>로그아웃</button>}
       </div>
-      <p className="page-sub">{session.user.email}{session.user.email?.startsWith('demo.') ? ' · 체험 계정' : ''}</p>
+      <p className="page-sub">{session.user.email}{session.user.email?.startsWith('demo.') ? ' · 시연 계정' : ''}</p>
       <div className="card ring-card">
         <div className="avatar" style={{ width: 52, height: 52, fontSize: 20 }}>{profile.nickname.slice(0, 1)}</div>
         <div style={{ flex: 1 }}>
@@ -174,9 +174,9 @@ export default function Me({ account, onLogin }) {
         <div className="row-item"><span>휴대폰</span><span className="r off">{mask(profile.phone)}</span></div>
         <div className="row-item"><span>혜택 알림</span><span className="r off">{profile.agree_marketing ? '받음' : '받지 않음'}</span></div>
         <div className="row-item" style={{ cursor: 'pointer' }} onClick={() => setEditing(true)}><span>정보 수정</span><span className="r">›</span></div>
-        <div className="row-item" style={{ cursor: 'pointer' }} onClick={signOut}><span>로그아웃</span><span className="r">›</span></div>
+        {!demoTab && <div className="row-item" style={{ cursor: 'pointer' }} onClick={signOut}><span>로그아웃</span><span className="r">›</span></div>}
         {demoTab
-          ? <div className="row-item" style={{ cursor: 'pointer' }} onClick={resetDemo}><span>체험 기록 지우고 다시 하기</span><span className="r">›</span></div>
+          ? <div className="row-item" style={{ cursor: 'pointer' }} onClick={resetDemo}><span>시연 초기화</span><span className="r">›</span></div>
           : <div className="row-item" style={{ cursor: 'pointer' }} onClick={() => setConfirmDel(true)}><span className="bad">탈퇴 · 정보 삭제</span><span className="r off">›</span></div>}
         {confirmDel && (
           <div className="detail">
