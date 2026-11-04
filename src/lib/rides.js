@@ -65,13 +65,8 @@ export function rideError(e) {
   return m || '잠시 후 다시 시도해 주세요.'
 }
 
-// ---- 시범 운영 (supabase/ops.sql) ----
+// ---- 이용 기록 (supabase/ops.sql) ----
 export const saveTrip = (row) => supabase.from('trips').upsert(row, { onConflict: 'ride_id,user_id', ignoreDuplicates: true })
-export const sendFeedback = (message, userId) => supabase.from('feedback').insert({ message, user_id: userId ?? null })
-export async function getStats() {
-  const { data, error } = await supabase.rpc('public_stats')
-  return error ? null : data
-}
 export async function myTripsThisMonth(uid) {
   const start = new Date(); start.setDate(1); start.setHours(0, 0, 0, 0)
   const { data } = await supabase.from('trips').select('saving, created_at').eq('user_id', uid).gte('created_at', start.toISOString())

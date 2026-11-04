@@ -3,14 +3,12 @@ import Icon from '../components/Icon.jsx'
 import ProfileForm from './ProfileForm.jsx'
 import { FIELDS, NOT_COLLECTED, RULES } from '../privacy.js'
 import { signOut, deleteProfile } from '../lib/auth.js'
-import { sendFeedback, getStats, myTripsThisMonth } from '../lib/rides.js'
-import { supabase } from '../lib/supabase.js'
+import { myTripsThisMonth } from '../lib/rides.js'
 import { store, demoTab } from '../lib/store.js'
 import { resetDemo } from '../lib/demo.js'
 import { won } from '../data.js'
 
 const AGE = { '10s': '10대', '20s': '20대', '30s': '30대', '40s': '40대', '50s+': '50대 이상' }
-const mask = (p) => p.replace(/^(\d{3})-?(\d{3,4})-?(\d{4})$/, '$1-****-$3')
 
 function Guide() {
   const [open, setOpen] = useState(null)
@@ -68,62 +66,27 @@ function Ring({ ratio }) {
   )
 }
 
-// 이번 달 아낀 돈 + 시범 운영 현황
+// 이번 달 아낀 돈
 function Savings({ userId }) {
   const [server, setServer] = useState(null)
-  const [stats, setStats] = useState(null)
   useEffect(() => {
     if (userId) myTripsThisMonth(userId).then((t) => t && setServer({ won: t.reduce((a, x) => a + x.saving, 0), count: t.length }))
-    if (supabase) getStats().then(setStats)
   }, [userId])
   const saved = server ? { won: server.won + savedDemo().won, count: server.count + savedDemo().count } : savedLocal()
   return (
-    <>
-      <div className="card ring-card">
-        <Ring ratio={saved.won / GOAL} />
-        <div>
-          <p className="label">이번 달 아낀 돈</p>
-          <p className="big">{won(saved.won)}</p>
-          <p className="sub">{saved.count ? `같이 탄 횟수 ${saved.count}회 · 목표 ${won(GOAL)}` : '같이 타면 할증 붙는 요금도 나눠 내요'}</p>
-        </div>
+    <div className="card ring-card">
+      <Ring ratio={saved.won / GOAL} />
+      <div>
+        <p className="label">이번 달 아낀 돈</p>
+        <p className="big">{won(saved.won)}</p>
+        <p className="sub">{saved.count ? `${saved.count}회 · 목표 ${won(GOAL)}` : '같이 타면 쌓여요'}</p>
       </div>
-      {stats && (
-        <div className="card">
-          <p className="card-title">쉐어택 시범 운영 현황 <small>참여자 전체</small></p>
-          <div className="stat-grid">
-            <div><b>{stats.members}</b><span>가입</span></div>
-            <div><b>{stats.rides}</b><span>모집</span></div>
-            <div><b>{stats.matched}</b><span>매칭 성공</span></div>
-            <div><b>{stats.saving >= 10000 ? `${(stats.saving / 10000).toFixed(1)}만` : stats.saving.toLocaleString()}</b><span>아낀 돈(원)</span></div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
-
-function Feedback({ userId }) {
-  const [text, setText] = useState('')
-  const [msg, setMsg] = useState(null)
-  const send = async () => {
-    if (text.trim().length < 2) return setMsg({ bad: true, text: '두 글자 이상 적어 주세요.' })
-    const { error } = await sendFeedback(text.trim(), userId)
-    if (error) return setMsg({ bad: true, text: '보내지 못했어요. 잠시 후 다시 시도해 주세요.' })
-    setText(''); setMsg({ text: '고마워요! 다음 개선에 반영할게요.' })
-  }
-  return (
-    <div className="card">
-      <p className="card-title">의견 보내기 <small>시범 운영</small></p>
-      <textarea className="fb" rows={3} maxLength={1000} placeholder="불편했던 점, 있었으면 하는 기능을 적어 주세요" value={text} onChange={(e) => { setText(e.target.value); setMsg(null) }} />
-      {msg && <p className={`form-msg ${msg.bad ? 'bad' : ''}`} style={{ marginTop: 8 }}>{msg.text}</p>}
-      <button className="btn" style={{ marginTop: 8 }} onClick={send}>보내기</button>
     </div>
   )
 }
 
 export default function Me({ account, onLogin }) {
   const { session, profile, loading, setProfile } = account
-  const [editing, setEditing] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
 
   if (loading) return <p className="sub">불러오는 중…</p>
@@ -135,18 +98,17 @@ export default function Me({ account, onLogin }) {
       <p className="page-sub">가입하면 모집을 열거나 참여할 수 있어요</p>
       <button className="btn" style={{ marginBottom: 12 }} onClick={onLogin}>로그인 · 회원가입</button>
       <Savings />
-      <Feedback />
       <details className="guide-more"><summary>이용 기준·개인정보</summary><Guide /></details>
     </>
   )
 
   // 2) 로그인했지만 가입 정보가 없음 → 가입 정보 입력
-  if (!profile || editing) return (
+  if (!profile) return (
     <>
-      <h1 className="page-title">{profile ? '정보 수정' : '가입 정보 입력'}</h1>
+      <h1 className="page-title">가입 정보 입력</h1>
       <p className="page-sub">안전하게 같이 타기 위해 꼭 필요한 정보만 받아요</p>
-      <ProfileForm session={session} profile={profile} onSaved={(p) => { setProfile(p); setEditing(false) }} onCancel={profile ? () => setEditing(false) : null} />
-      {!profile && <button className="more" style={{ width: '100%' }} onClick={signOut}>다른 계정으로 로그인</button>}
+      <ProfileForm session={session} profile={profile} onSaved={setProfile} onCancel={null} />
+      <button className="more" style={{ width: '100%' }} onClick={signOut}>다른 계정으로 로그인</button>
     </>
   )
 
@@ -163,17 +125,10 @@ export default function Me({ account, onLogin }) {
         <div style={{ flex: 1 }}>
           <p style={{ margin: 0, fontWeight: 700, fontSize: 18 }}>{profile.nickname}</p>
           <p className="sub">{profile.gender === 'F' ? '여성' : '남성'}{profile.age_group ? ` · ${AGE[profile.age_group]}` : ''}</p>
-          <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
-            <span className="tag">본인확인 예정</span>
-            {profile.org_email && <span className="tag">{profile.org_email.split('@')[1]} 인증 예정</span>}
-          </div>
         </div>
       </div>
       <Savings userId={session.user.id} />
       <div className="card">
-        <div className="row-item"><span>휴대폰</span><span className="r off">{mask(profile.phone)}</span></div>
-        <div className="row-item"><span>혜택 알림</span><span className="r off">{profile.agree_marketing ? '받음' : '받지 않음'}</span></div>
-        <div className="row-item" style={{ cursor: 'pointer' }} onClick={() => setEditing(true)}><span>정보 수정</span><span className="r">›</span></div>
         <div className="row-item" style={{ cursor: 'pointer' }} onClick={signOut}><span>로그아웃</span><span className="r">›</span></div>
         {demoTab
           ? <div className="row-item" style={{ cursor: 'pointer' }} onClick={resetDemo}><span>시연 초기화</span><span className="r">›</span></div>
@@ -188,7 +143,6 @@ export default function Me({ account, onLogin }) {
           </div>
         )}
       </div>
-      <Feedback userId={session.user.id} />
       <details className="guide-more"><summary>이용 기준·개인정보</summary><Guide /></details>
     </>
   )

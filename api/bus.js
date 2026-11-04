@@ -33,11 +33,22 @@ export default async function handler(req, res) {
       let arr = null
       try { arr = JSON.parse(raw) } catch { /* XML 오류 응답 */ }
       const h = header(arr)
+      const arrivals = items(arr).map((a) => ({ route: String(a.routeno), min: Math.round(Number(a.arrtime) / 60), stops: Number(a.arrprevstationcnt) }))
+        .sort((a, b) => a.min - b.min)
+      // 도착 정보는 지금 오는 버스만 알려 주므로, 정류장을 지나는 노선 전체와 합친다
+      const through = await fetch(`${BASE}/BusSttnInfoInqireService/getSttnThrghRouteList?serviceKey=${k}&cityCode=${s.citycode}&nodeid=${s.nodeid}&numOfRows=60&pageNo=1&_type=json`)
+        .then((r) => r.json()).catch(() => null)
+      const routes = new Map()
+      for (const it of items(through)) routes.set(String(it.routeno), { route: String(it.routeno), toward: it.endnodenm ?? '', min: null, stops: null })
+      for (const a of arrivals) {
+        const cur = routes.get(a.route)
+        if (!cur || cur.min === null) routes.set(a.route, { route: a.route, toward: cur?.toward ?? '', min: a.min, stops: a.stops })
+      }
       return {
         name: s.nodenm, id: s.nodeid, city: s.citycode, lat: Number(s.gpslati), lon: Number(s.gpslong),
         status: h ? `${h.resultCode} ${h.resultMsg}` : raw.replace(/\s+/g, ' ').slice(0, 160),
-        arrivals: items(arr).map((a) => ({ route: String(a.routeno), min: Math.round(Number(a.arrtime) / 60), stops: Number(a.arrprevstationcnt) }))
-          .sort((a, b) => a.min - b.min).slice(0, 6),
+        arrivals,
+        routes: [...routes.values()].sort((a, b) => (a.min ?? 9999) - (b.min ?? 9999) || a.route.localeCompare(b.route, 'ko', { numeric: true })),
       }
     }))
     res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=30')

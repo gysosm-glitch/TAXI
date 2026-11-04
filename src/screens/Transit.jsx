@@ -62,13 +62,18 @@ function Buses() {
         {id === 'here' && gps.state === 'finding' && <p className="sub">위치 찾는 중</p>}
         {p && !bus && <p className="sub">불러오는 중</p>}
         {bus && !bus.ok && <p className="sub">버스 정보 없음</p>}
-        {bus?.ok && bus.stations.filter((s) => s.arrivals.length).slice(0, 4).map((s) => (
+        {bus?.ok && bus.stations.map((s) => ({ ...s, list: s.routes ?? s.arrivals })).filter((s) => s.list.length).map((s) => (
           <div key={s.id} className="stop">
             <b>{s.name}</b>
-            {s.arrivals.slice(0, 4).map((a, i) => <div key={i} className="stop-row"><span>{a.route}번</span><span>{left(a.min)}</span></div>)}
+            {s.list.map((a, i) => (
+              <div key={i} className="stop-row">
+                <span>{a.route}번{a.toward ? <small> {a.toward} 방면</small> : null}</span>
+                {a.min === null ? <span className="stop-none">도착 정보 없음</span> : <span>{left(a.min)}</span>}
+              </div>
+            ))}
           </div>
         ))}
-        {bus?.ok && !bus.stations.some((s) => s.arrivals.length) && <p className="sub">도착 예정 없음</p>}
+        {bus?.ok && !bus.stations.some((s) => (s.routes ?? s.arrivals).length) && <p className="sub">버스 정보 없음</p>}
         {last && <div className={`last-bus ${last.ended ? 'ended' : last.soon ? 'soon' : ''}`}><span>막차</span><b>{last.latest.route}번 {last.latest.last}{last.ended ? ' · 운행 끝' : last.soon ? ` · ${last.left}분 남음` : ''}</b></div>}
       </div>
       <Source at={at} note="1분마다 확인">국토교통부 TAGO 버스도착정보의 실시간 값이에요.</Source>

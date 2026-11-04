@@ -4,7 +4,7 @@ import Logo from '../components/Logo.jsx'
 import Icon from '../components/Icon.jsx'
 import RideChat from '../components/RideChat.jsx'
 import { store, demoTab } from '../lib/store.js'
-import { spots, zoneById, won, placeFromId, isReturnRoute, placeAt, originId, quoteBetween, distM, destChoices, returnChance } from '../data.js'
+import { spots, zoneById, won, placeFromId, isReturnRoute, placeAt, originId, quoteBetween, distM, destChoices } from '../data.js'
 import { supabase } from '../lib/supabase.js'
 import { sendMessage } from '../lib/chat.js'
 import { askNotify } from '../lib/alerts.js'
@@ -289,7 +289,6 @@ export default function Ride({ account, route, setRoute, onLogin }) {
   const shared = both ? quoteBetween(from, dest, people) : null
   const ret = both && isReturnRoute(from.zoneId, dest.zoneId)
   const outbound = both && solo?.surcharged && isReturnRoute(dest.zoneId, from.zoneId)   // 시내 → 읍·면 (돌아올 때 빈 차가 되는 방향)
-  const chance = outbound ? returnChance(dest.zoneId) : null
   // 모집 카드도 위 요금표와 같은 기준(실제 거리)으로 계산한다
   const price = (r, n) => {
     const o = placeFromId(r.spot_id)
@@ -452,22 +451,6 @@ export default function Ride({ account, route, setRoute, onLogin }) {
                   </div>
                 </div>
               )}
-            </div>
-            <div className="rt-opt">
-              <div className="rt-head"><b>귀로 연계 결제 <span className="tag gray">모의</span></b><span className="rt-price"><s>{won(solo.fare)}</s> {won(solo.fareDongRate)}</span></div>
-              <p className="sub">30분 안에 귀로 손님을 태우면 할증 제외{chance ? ` · 가능성 약 ${Math.round(chance.p * 100)}%` : ''}</p>
-            </div>
-          </section>
-        )}
-
-        {!from && !dest && mine.length + demo.rides.length === 0 && (
-          <section className="card effect">
-            <p className="card-title"><span>복합할증 35%, 이렇게 줄여요</span></p>
-            <p className="sub effect-route">오송역 → 터미널 {sample.km.toFixed(1)}km</p>
-            <div className="effect-row">
-              <div className="effect-now"><small>혼자</small><b>{won(sample.fare)}</b><span>할증 포함</span></div>
-              <div className="effect-share"><small>2명</small><b>{won(sample2.share)}</b><span>1인</span></div>
-              <div className="effect-return"><small>귀로</small><b>{won(sample.fareDongRate)}</b><span>할증 면제</span></div>
             </div>
           </section>
         )}
