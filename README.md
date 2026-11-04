@@ -14,8 +14,9 @@
 | [docs/DATA_DICTIONARY.md](docs/DATA_DICTIONARY.md) | 데이터 목록·출처·재생성 방법·가정·검증 필요 수치 |
 | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | 실행·배포·환경변수 |
 | [docs/복합할증_해결방안_리서치.md](docs/복합할증_해결방안_리서치.md) | 국내 사례·연구 19건 |
-| [docs/쉐어택_연구종합정리.docx](docs/쉐어택_연구종합정리.docx) | **연구 종합 정리 Word (문제·원인·해결·차별점·효과·한계·로드맵)** |
 | [docs/자료_출처_정리.md](docs/자료_출처_정리.md) | **아이디어·핵심 숫자·데이터·기사 출처 한곳 정리** |
+
+시연 안내와 QR은 캡스톤 폴더의 `쉐어택_PPT_작성가이드.docx`, `쉐어택_QR.png`에 있다.
 
 ## 폴더 구조
 
@@ -28,7 +29,6 @@ private/    KTDB OD 원자료 (재배포 불가, 저장소에 없음)
 scripts/    데이터 가공·분석·시뮬레이션
 supabase/   DB 설정 SQL (회원·모집·운영)
 docs/       문서
-presentation/ 발표 PPT 생성기와 완성본 (npm install && npm run art && npm run build)
 ```
 
 ## 빠른 시작

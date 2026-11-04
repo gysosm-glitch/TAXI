@@ -171,13 +171,6 @@ a { color: var(--teal-dark); }
 .toast b { font-size: 14px; color: #9fe1cb; } .toast span { font-size: 14px; }
 @keyframes drop { from { transform: translate(-50%, -20px); opacity: 0 } to { transform: translate(-50%, 0); opacity: 1 } }
 
-/* 동승 평가 */
-.rate-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
-.rate-row > span { font-weight: 700; min-width: 80px; }
-.stars { display: flex; gap: 2px; }
-.stars button { border: 0; background: none; font-size: 24px; color: var(--line); padding: 0 2px; }
-.stars button.on { color: #f5b400; }
-.noshow { font-size: 12px; color: var(--ink-2); display: flex; align-items: center; gap: 4px; }
 
 /* 운영 통계 · 의견 */
 .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; text-align: center; }
@@ -271,8 +264,6 @@ a { color: var(--teal-dark); }
 .mpin.ride { background: #e8f0fe; color: #1a56c4; border-color: #e8f0fe; font-size: 11px; }
 .mpin.ride::after { border-top-color: #e8f0fe; }
 .search-input { width: 100%; padding: 14px 16px; border-radius: 14px; border: 1.5px solid var(--teal); background: var(--bg); color: var(--ink); font: inherit; font-size: 16px; outline: none; margin-bottom: 6px; }
-.pick-tile { border: 0; border-radius: 14px; background: var(--bg); padding: 14px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; color: var(--teal-dark); }
-.pick-tile b { font-size: 15px; color: var(--ink); } .pick-tile small { font-size: 12px; color: var(--ink-2); }
 .chips.wrap { flex-wrap: wrap; }
 .safety-row button.ghost-link { flex: 1; border: 0; padding: 10px; border-radius: 12px; font-size: 13px; font-weight: 700; background: var(--teal-soft); color: var(--teal-ink); }
 .section-label.dark { color: var(--ink); margin-top: 4px; }
@@ -290,9 +281,6 @@ a { color: var(--teal-dark); }
 .rt-card .rt-opt .sub { margin-top: 4px; line-height: 1.55; }
 .chance { margin: 8px 0 0; padding: 10px 12px; border-radius: 12px; background: var(--teal-soft); color: var(--teal-ink); font-size: 13px; }
 .chance small { display: block; font-size: 11px; opacity: .8; margin-top: 2px; }
-.save-as { font-style: normal; font-size: 11px; font-weight: 700; color: var(--teal-dark); background: var(--teal-soft); border-radius: 999px; padding: 4px 8px; margin-left: 4px; flex: none; }
-.pick-tile:disabled { opacity: .55; }
-.pick-tile small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
 
 /* 지도 없는 타기 화면 (11/2: 지도 끊김·외부 지도 의존 위험 제거) */
 .ride-top { background: var(--brand); padding: calc(16px + env(safe-area-inset-top)) 16px 18px; }

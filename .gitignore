@@ -15,3 +15,6 @@ data/raw/국토교통부_*.zip
 
 # KTDB 여객 OD(원자료·파생)는 이용 조건상 재배포 금지 → 로컬 private/ 에만 보관
 private/
+
+# 로컬 도구 설정
+.claude/
