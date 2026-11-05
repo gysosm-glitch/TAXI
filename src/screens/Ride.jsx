@@ -24,6 +24,10 @@ const condsOf = (r) => r.conds ?? r.spot_name.split(' · ')[2]?.split(',').filte
 const PAID = 'paid_v1'
 const loadPaid = () => { try { return JSON.parse(store.getItem(PAID)) ?? [] } catch { return [] } }
 const markPaid = (id) => { try { store.setItem(PAID, JSON.stringify([id, ...loadPaid()].slice(0, 20))) } catch {} }
+// 탑승 전 안전·법적 확인을 마친 모집 (이 기기에만 저장)
+const CHECKED = 'prechecked_v1'
+const loadChecked = () => { try { return JSON.parse(store.getItem(CHECKED)) ?? [] } catch { return [] } }
+const markChecked = (id) => { try { store.setItem(CHECKED, JSON.stringify([id, ...loadChecked()].slice(0, 20))) } catch {} }
 const WINDOWS = [[0, '전체'], [15, '15분 안'], [30, '30분 안']]
 const LEAVE = [[5, '5분 뒤'], [15, '15분 뒤'], [30, '30분 뒤'], [60, '1시간 뒤']]
 const SHOW_RETURN = false   // 왕복 매칭은 제휴 이후 단계라 시연 화면에서 뺀다 (true로 켜면 다시 보임)
@@ -89,6 +93,39 @@ function PlaceSheet({ title, near, onPick, onHere, onClose, gpsState }) {
   )
 }
 
+// 탑승 직전 체크리스트. 택시발전법 시행규칙 제11조의2(2022.6): 플랫폼 신청·본인 확인·탑승 정보 고지·중형 이하 동성 동승
+// auto: 앱이 이미 보장하는 항목(동성 매칭, 번호 비공개)이라 미리 체크
+function PreRideCheck({ place, seat, label, onDone }) {
+  const rows = [
+    ['safe', '동승자 모두 같은 성별이에요', '가입 정보로 자동 매칭', true],
+    ['safe', '만날 곳·내 좌석을 확인했어요', `${place} · 나는 ${seat}`, false],
+    ['safe', '휴대폰 번호는 공개되지 않아요', '연락은 앱 대화로만', true],
+    ['safe', '문제가 생기면 방장·운영에 알릴게요', '정식 운영 때 신고·이용 제한', false],
+    ['law', '가입한 본인 계정으로 참여해요', '정식 운영 때 휴대폰 본인인증', false],
+    ['law', '탑승 시각·위치·좌석을 미리 안내받았어요', '아래 동승자·좌석 고지', false],
+    ['law', '중형 이하 택시는 동성끼리만 동승해요', '등록 플랫폼으로 신청한 동승만 가능, 기사 임의 합승은 금지', false],
+  ]
+  const [ok, setOk] = useState(() => rows.map((x) => x[3]))
+  const all = ok.every(Boolean)
+  const row = (x, i) => (
+    <label key={i} className={`check ${x[0]}`}>
+      <input type="checkbox" checked={ok[i]} onChange={(e) => setOk(ok.map((v, j) => (j === i ? e.target.checked : v)))} />
+      <span><b>{x[1]}</b><small>{x[2]}</small></span>
+    </label>
+  )
+  return (
+    <div className="precheck">
+      <h4>안전 확인 <small>내가 직접 체크</small></h4>
+      {rows.map((x, i) => x[0] === 'safe' && row(x, i))}
+      <div className="precheck-law">
+        <h4>법적 확인 <small>시행규칙 제11조의2</small></h4>
+        {rows.map((x, i) => x[0] === 'law' && row(x, i))}
+      </div>
+      <button className="btn ride-actions" disabled={!all} onClick={onDone}>{all ? label : `${ok.filter((v) => !v).length}개 더 확인하면 ${label.replace('모두 확인 · ', '')}`}</button>
+    </div>
+  )
+}
+
 // 내 모집 카드: 지금 할 일 하나만 크게 보여 준다
 function guideOf(r, stage, isHost, n, paid, share) {
   const hostName = r.ride_members.find((m) => m.user_id === r.host_id)?.nickname ?? '방장'
@@ -117,6 +154,9 @@ function MyRide({ r, me, busy, act, arrived, price, leaveDemo }) {
   const place = r.spot_name.split(' · ')[0]
   const stage = r.status === 'full' || r.status === 'done' ? 'ready' : n >= 2 ? 'gathered' : 'waiting'
   const [paidHere, setPaidHere] = useState(() => loadPaid().includes(r.id))
+  const [checked, setChecked] = useState(() => loadChecked().includes(r.id))
+  const confirm = () => { markChecked(r.id); setChecked(true) }
+  const mySeat = SEATS[Math.max(0, members.findIndex((m) => m.user_id === me))]
   const share = price(r, n).share
   const paid = r.virtual ? r.paid : paidHere
   const [title, body] = guideOf(r, stage, isHost, n, paid, share)
@@ -151,11 +191,19 @@ function MyRide({ r, me, busy, act, arrived, price, leaveDemo }) {
           ? <div className="grid2 ride-actions">{quit}<button className="btn" disabled={busy} onClick={() => (r.virtual ? r.close() : act(() => setRideStatus(r.id, 'full'), '마감 완료'))}>이 인원으로 출발</button></div>
           : <div className="ride-actions">{quit}</div>
       )}
-      {stage === 'ready' && (
+      {stage === 'ready' && !isRound && r.status !== 'done' && !checked && (isHost || !paid) && (
+        <PreRideCheck place={place} seat={mySeat} label={isHost ? '모두 확인 · 택시 부르기' : `모두 확인 · ${won(share)} 송금`}
+          onDone={() => { confirm(); if (!isHost) pay() }} />
+      )}
+      {stage === 'ready' && (checked || isRound || r.status === 'done') && (
         <>
           {isHost && <a href="kakaot://" className="btn btn-link ride-actions">택시 호출</a>}
           {!isHost && !isRound && !paid && r.status !== 'done' && <div className="grid2 ride-actions">{quit}<button className="btn" onClick={pay}>{won(share)} 송금 완료</button></div>}
-          {canArrive && <div className="grid2 ride-actions">{r.status === 'done' || (!isHost && !isRound) ? <span /> : quit}<button className={isHost ? 'btn ghost' : 'btn'} onClick={() => arrived(r)}>도착</button></div>}
+        </>
+      )}
+      {stage === 'ready' && (
+        <>
+          {canArrive && (checked || isRound || r.status === 'done' || !isHost) && <div className="grid2 ride-actions">{r.status === 'done' || (!isHost && !isRound) ? <span /> : quit}<button className={isHost ? 'btn ghost' : 'btn'} onClick={() => arrived(r)}>도착</button></div>}
         </>
       )}
 

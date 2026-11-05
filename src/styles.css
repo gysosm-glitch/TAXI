@@ -449,3 +449,17 @@ details.source p { margin: 6px 0 0; }
 
 .stop-row small { font-size: 12px; color: var(--muted); font-weight: 400; }
 .hue-green .stop-row span.stop-none, .stop-row span.stop-none { color: var(--muted); font-weight: 400; font-size: 13px; }
+
+/* 탑승 전 안전·법적 확인 */
+.precheck { margin-top: 10px; border: 1px solid var(--line); border-radius: 14px; padding: 2px 12px 12px; }
+.precheck h4 { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; margin: 10px 0 2px; }
+.precheck h4 small { font-size: 11px; font-weight: 600; color: var(--ink-2); }
+.precheck .check { align-items: flex-start; justify-content: flex-start; padding: 8px 0; }
+.precheck .check span { display: flex; flex-direction: column; gap: 2px; }
+.precheck .check b { font-size: 13px; }
+.precheck .check small { font-size: 11px; color: var(--ink-2); line-height: 1.4; }
+.precheck-law { background: var(--amber-soft); border-radius: 12px; padding: 0 10px; margin-top: 8px; }
+.precheck-law h4 small { color: var(--amber); }
+.precheck-law .check { border-bottom-color: #f3dcbc; }
+.precheck-law .check:last-child { border-bottom: 0; }
+.precheck-law .check input { accent-color: var(--amber); }
