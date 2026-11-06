@@ -8,7 +8,7 @@
 |---|---|
 | [PRD.md](PRD.md) | 앱 기능, 운영 방식, 남은 일 |
 | [docs/시연_안내.md](docs/시연_안내.md) | 시연 순서 |
-| [docs/발표원고.md](docs/발표원고.md) | PPT 8페이지 구성·내용, 예상 질문 |
+| [docs/발표원고.md](docs/발표원고.md) | PPT 8장별 메시지와 발표 멘트 |
 | [docs/자료_총정리.md](docs/자료_총정리.md) | 숫자, 데이터, API, 출처 전체 |
 | [docs/SETUP_GUIDE.md](docs/SETUP_GUIDE.md) | 실행, 배포, 환경변수 |
 
